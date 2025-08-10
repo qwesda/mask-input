@@ -1,9 +1,8 @@
 <template>
   <div class="app">
     <div class="section">
-      <MaskedText :mask="numericMask" v-model="numericValue" />
-
       <div class="row">
+        <div class="row-label">value</div>
         <button @click="setRandomNumericValue()">n.n</button>
         <button @click="setRandomNumericValue(0, 0)">0.0</button>
         <button @click="setRandomNumericValue(0)">0.n</button>
@@ -12,6 +11,7 @@
       </div>
 
       <div class="row">
+        <div class="row-label">value</div>
         <button @click="setSeparators('.')">nnnn.dd</button>
         <button @click="setSeparators('.', ',')">n,nnn.dd</button>
         <button @click="setSeparators('.', ' ')">n nnn.dd</button>
@@ -22,6 +22,7 @@
       </div>
 
       <div class="row">
+        <div class="row-label">pre/in/suffixes</div>
         <button @click="clearFixes()">clear</button>
         <button @click="setRandomPrefixes()">prefixes</button>
         <button @click="setRandomInfixes()">infixes</button>
@@ -29,6 +30,7 @@
       </div>
 
       <div class="sliders-row">
+        <div class="row-label">digits</div>
         <div class="slider-group">
           <label>minDigits: {{ minDigits }}</label>
           <input type="range" v-model.number="minDigits" min="0" max="30" />
@@ -48,6 +50,8 @@
       </div>
 
       <div class="monospace">{{ numericValue.toString() }}</div>
+
+      <MaskedText :mask="numericMask" v-model="numericValue" />
     </div>
   </div>
 </template>
@@ -55,6 +59,23 @@
 <script setup lang="ts">
   import { default as MaskedText, type MaskSectionPropsFixed, type MaskSectionPropsInput } from '@/masked-text/masked-text.vue';
   import { type Ref, ref, computed } from 'vue';
+  import { bindToLocalStorage } from '@/helper/bindToLocalStorage.ts';
+
+  const minDigits = ref(0);
+  const maxDigits = ref(20);
+  const minDecimals = ref(1);
+  const maxDecimals = ref(8);
+  const decimalSeparator = ref('.');
+  const thousandSeparator = ref(',');
+  const numericValue = ref(['', ''] as string[]);
+
+  bindToLocalStorage(minDigits, 'numeric-input/minDigits');
+  bindToLocalStorage(maxDigits, 'numeric-input/maxDigits');
+  bindToLocalStorage(minDecimals, 'numeric-input/minDecimals');
+  bindToLocalStorage(maxDecimals, 'numeric-input/maxDecimals');
+  bindToLocalStorage(decimalSeparator, 'numeric-input/decimalSeparator');
+  bindToLocalStorage(thousandSeparator, 'numeric-input/thousandSeparator');
+  bindToLocalStorage(numericValue, 'numeric-input/numericValue');
 
   const setRandomNumericValue = (countDigits?: number, countDecimals?: number) => {
     countDigits = countDigits ?? Math.floor(Math.random() * 20);
@@ -152,17 +173,9 @@
     thousandSeparator.value = newThousandSeparator ?? '';
   };
 
-  const minDigits = ref(0);
-  const maxDigits = ref(20);
-  const minDecimals = ref(1);
-  const maxDecimals = ref(8);
-  const decimalSeparator = ref('.');
-  const thousandSeparator = ref(',');
-
-  const numericValue = ref(['1234567890', '99'] as string[]);
-  const numericMaskPrefixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomPrefixes());
-  const numericMaskInfixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomInfixes());
-  const numericMaskSuffixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomSuffixes());
+  const numericMaskPrefixes: Ref<MaskSectionPropsFixed[]> = ref([]);
+  const numericMaskInfixes: Ref<MaskSectionPropsFixed[]> = ref([]);
+  const numericMaskSuffixes: Ref<MaskSectionPropsFixed[]> = ref([]);
   const numericMask = computed(() => {
     const currentMinDigits = minDigits.value;
     const currentMaxDigits = Math.max(maxDigits.value, currentMinDigits);
@@ -251,15 +264,19 @@
 <style scoped>
   .app {
     margin-top: 100px;
-    font-size: 20px;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   }
   .row {
     display: flex;
     flex-direction: row;
     gap: 10px;
   }
-  .monospace {
-    font-family: monospace;
+  .row-label {
+    width: 100px;
+    text-align: right;
+    padding-right: 10px;
+    font-weight: bold;
   }
   .section {
     display: flex;
@@ -277,10 +294,6 @@
     flex-direction: column;
     gap: 5px;
     min-width: 150px;
-  }
-  .slider-group label {
-    font-size: 14px;
-    font-weight: bold;
   }
   .slider-group input[type='range'] {
     width: 100%;
