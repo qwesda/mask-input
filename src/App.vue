@@ -18,6 +18,7 @@
         <button @click="setSeparators(',')">nnnn,dd</button>
         <button @click="setSeparators(',', '.')">n.nnn,dd</button>
         <button @click="setSeparators(',', ' ')">n nnn,dd</button>
+        <button @click="setSeparators('\\DEC', '\\SEP')">n\DECnnn\SEPdd</button>
       </div>
 
       <div class="row">
@@ -25,6 +26,25 @@
         <button @click="setRandomPrefixes()">prefixes</button>
         <button @click="setRandomInfixes()">infixes</button>
         <button @click="setRandomSuffixes()">suffixes</button>
+      </div>
+
+      <div class="sliders-row">
+        <div class="slider-group">
+          <label>minDigits: {{ minDigits }}</label>
+          <input type="range" v-model.number="minDigits" min="0" max="30" />
+        </div>
+        <div class="slider-group">
+          <label>maxDigits: {{ maxDigits }}</label>
+          <input type="range" v-model.number="maxDigits" min="1" max="30" />
+        </div>
+        <div class="slider-group">
+          <label>minDecimals: {{ minDecimals }}</label>
+          <input type="range" v-model.number="minDecimals" min="0" max="15" />
+        </div>
+        <div class="slider-group">
+          <label>maxDecimals: {{ maxDecimals }}</label>
+          <input type="range" v-model.number="maxDecimals" min="1" max="15" />
+        </div>
       </div>
 
       <div class="monospace">{{ numericValue.toString() }}</div>
@@ -134,7 +154,7 @@
 
   const minDigits = ref(0);
   const maxDigits = ref(20);
-  const minDecimals = ref(0);
+  const minDecimals = ref(1);
   const maxDecimals = ref(8);
   const decimalSeparator = ref('.');
   const thousandSeparator = ref(',');
@@ -143,77 +163,89 @@
   const numericMaskPrefixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomPrefixes());
   const numericMaskInfixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomInfixes());
   const numericMaskSuffixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomSuffixes());
-  const numericMask = computed(() => [
-    ...numericMaskPrefixes.value,
-    {
-      type: 'input',
-      maskFn: (x: string) => {
-        if (x.length === 0) {
-          return [{ char: '0', type: 'mask', displayBounds: [0, 1] }];
-        }
+  const numericMask = computed(() => {
+    const currentMinDigits = minDigits.value;
+    const currentMaxDigits = Math.max(maxDigits.value, currentMinDigits);
+    const currentMinDecimals = minDecimals.value;
+    const currentMaxDecimals = Math.max(maxDecimals.value, currentMinDecimals);
+    const currentDecimalSeparator = decimalSeparator.value;
+    const currentThousandSeparator = thousandSeparator.value;
 
-        const ret = [];
+    return [
+      ...numericMaskPrefixes.value,
+      {
+        type: 'input',
+        maskFn: (x: string) => {
+          const ret = [];
 
-        let displayOffset = 0;
+          for (let i = 0; i < Math.max(currentMinDigits - x.length, 0); i++) {
+            ret.push({ char: '0', type: 'mask', displayBounds: [0, 1] });
+          }
 
-        for (let i = 0; i < x.length; i++) {
-          const char = x[i];
+          let displayOffset = 0;
 
-          ret.push({ char, type: 'value', valueBounds: [i, i + 1], displayBounds: [i + displayOffset, i + displayOffset + 1] });
+          for (let i = 0; i < x.length; i++) {
+            const char = x[i];
 
-          if (thousandSeparator.value) {
-            if (i % 3 == 0 && i >= 0 && i < x.length - 1) {
-              ret.push({
-                char: thousandSeparator.value,
-                type: 'mask',
-                displayBounds: [i + displayOffset + 1, i + displayOffset + thousandSeparator.value.length],
-              });
+            ret.push({ char, type: 'value', valueBounds: [i, i + 1], displayBounds: [i + displayOffset, i + displayOffset + 1] });
 
-              displayOffset += 3;
+            if (currentThousandSeparator) {
+              // Add separator every 3 digits from the right, but not after the last digit
+              const digitsFromRight = x.length - i - 1;
+              if (digitsFromRight > 0 && digitsFromRight % 3 === 0) {
+                ret.push({
+                  char: currentThousandSeparator,
+                  type: 'mask',
+                  displayBounds: [i + displayOffset + 1, i + displayOffset + 1 + currentThousandSeparator.length],
+                });
+
+                displayOffset += currentThousandSeparator.length;
+              }
             }
           }
-        }
 
-        return ret;
+          return ret;
+        },
+        validationFn: (x: string) =>
+          new RegExp(currentMaxDigits <= 1 ? `^[0-9]{0,${currentMaxDigits}}$` : `^[1-9][0-9]{0,${currentMaxDigits - 1}}$`).test(x),
+        inputBehavior: 'shift-left',
+        inputAlign: 'right',
+        maxLength: currentMaxDigits,
       },
-      validationFn: (x: string) => /^([0-9]{0,20})$/.test(x),
-      inputBehavior: 'shift-left',
-      inputAlign: 'right',
-      maxLength: 20,
-    },
-    ...numericMaskInfixes.value,
-    ...(decimalSeparator.value
-      ? [
-          {
-            type: 'fixed',
-            mask: decimalSeparator.value,
-          },
-        ]
-      : []),
-    {
-      type: 'input',
-      maskFn: (x: string) => {
-        const ret = [];
+      ...numericMaskInfixes.value,
+      ...(currentDecimalSeparator
+        ? [
+            {
+              type: 'fixed',
+              mask: currentDecimalSeparator,
+            },
+          ]
+        : []),
+      {
+        type: 'input',
+        maskFn: (x: string) => {
+          const ret = [];
 
-        for (let i = 0; i < Math.max(x.length, 4); i++) {
-          const char = x[i];
+          for (let i = 0; i < Math.max(x.length, currentMinDecimals); i++) {
+            const char = x[i];
 
-          if (i < x.length) {
-            ret.push({ char, type: 'value', valueBounds: [i, i + 1], displayBounds: [i, i + 1] });
-          } else {
-            ret.push({ char: '0', type: 'mask', displayBounds: [i, i + 1] });
+            if (i < x.length) {
+              ret.push({ char, type: 'value', valueBounds: [i, i + 1], displayBounds: [i, i + 1] });
+            } else {
+              ret.push({ char: '0', type: 'mask', displayBounds: [i, i + 1] });
+            }
           }
-        }
 
-        return ret;
+          return ret;
+        },
+        validationFn: (x: string) => new RegExp(`^([0-9]{0,${currentMaxDecimals}})$`).test(x),
+        inputBehavior: 'shift-right',
+        inputAlign: 'left',
+        maxLength: currentMaxDecimals,
       },
-      validationFn: (x: string) => /^([0-9]{0,8})$/.test(x),
-      inputBehavior: 'shift-right',
-      inputAlign: 'left',
-      maxLength: 8,
-    },
-    ...numericMaskSuffixes.value,
-  ]);
+      ...numericMaskSuffixes.value,
+    ];
+  });
 </script>
 
 <style scoped>
@@ -233,5 +265,24 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+  .sliders-row {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 150px;
+  }
+  .slider-group label {
+    font-size: 14px;
+    font-weight: bold;
+  }
+  .slider-group input[type='range'] {
+    width: 100%;
   }
 </style>
