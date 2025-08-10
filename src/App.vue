@@ -61,21 +61,33 @@
   import { type Ref, ref, computed } from 'vue';
   import { bindToLocalStorage } from '@/helper/bindToLocalStorage.ts';
 
+  const numericValue = ref(['', ''] as string[]);
+
   const minDigits = ref(0);
   const maxDigits = ref(20);
   const minDecimals = ref(1);
   const maxDecimals = ref(8);
+
   const decimalSeparator = ref('.');
   const thousandSeparator = ref(',');
-  const numericValue = ref(['', ''] as string[]);
+
+  const numericMaskPrefixes: Ref<MaskSectionPropsFixed[]> = ref([]);
+  const numericMaskInfixes: Ref<MaskSectionPropsFixed[]> = ref([]);
+  const numericMaskSuffixes: Ref<MaskSectionPropsFixed[]> = ref([]);
+
+  bindToLocalStorage(numericValue, 'numeric-input/numericValue');
 
   bindToLocalStorage(minDigits, 'numeric-input/minDigits');
   bindToLocalStorage(maxDigits, 'numeric-input/maxDigits');
   bindToLocalStorage(minDecimals, 'numeric-input/minDecimals');
   bindToLocalStorage(maxDecimals, 'numeric-input/maxDecimals');
+
   bindToLocalStorage(decimalSeparator, 'numeric-input/decimalSeparator');
   bindToLocalStorage(thousandSeparator, 'numeric-input/thousandSeparator');
-  bindToLocalStorage(numericValue, 'numeric-input/numericValue');
+
+  bindToLocalStorage(numericMaskPrefixes, 'numeric-input/numericMaskPrefixes');
+  bindToLocalStorage(numericMaskInfixes, 'numeric-input/numericMaskInfixes');
+  bindToLocalStorage(numericMaskSuffixes, 'numeric-input/numericMaskSuffixes');
 
   const setRandomNumericValue = (countDigits?: number, countDecimals?: number) => {
     countDigits = countDigits ?? Math.floor(Math.random() * 20);
@@ -173,9 +185,6 @@
     thousandSeparator.value = newThousandSeparator ?? '';
   };
 
-  const numericMaskPrefixes: Ref<MaskSectionPropsFixed[]> = ref([]);
-  const numericMaskInfixes: Ref<MaskSectionPropsFixed[]> = ref([]);
-  const numericMaskSuffixes: Ref<MaskSectionPropsFixed[]> = ref([]);
   const numericMask = computed(() => {
     const currentMinDigits = minDigits.value;
     const currentMaxDigits = Math.max(maxDigits.value, currentMinDigits);
@@ -187,73 +196,53 @@
     return [
       ...numericMaskPrefixes.value,
       {
-        type: 'input',
-        maskFn: (x: string) => {
+        type: 'input' as const,
+        maskFn: (chars: string) => {
           const ret = [];
 
-          for (let i = 0; i < Math.max(currentMinDigits - x.length, 0); i++) {
-            ret.push({ char: '0', type: 'mask', displayBounds: [0, 1] });
+          for (let i = 0; i < Math.max(currentMinDigits - chars.length, 0); i++) {
+            ret.push({ char: '0', type: 'mask' as const });
           }
 
-          let displayOffset = 0;
-
-          for (let i = 0; i < x.length; i++) {
-            const char = x[i];
-
-            ret.push({ char, type: 'value', valueBounds: [i, i + 1], displayBounds: [i + displayOffset, i + displayOffset + 1] });
+          for (let i = 0; i < chars.length; i++) {
+            ret.push({ char: chars[i], type: 'value' as const });
 
             if (currentThousandSeparator) {
-              // Add separator every 3 digits from the right, but not after the last digit
-              const digitsFromRight = x.length - i - 1;
-              if (digitsFromRight > 0 && digitsFromRight % 3 === 0) {
-                ret.push({
-                  char: currentThousandSeparator,
-                  type: 'mask',
-                  displayBounds: [i + displayOffset + 1, i + displayOffset + 1 + currentThousandSeparator.length],
-                });
+              const digitsFromRight = chars.length - i - 1;
 
-                displayOffset += currentThousandSeparator.length;
+              if (digitsFromRight > 0 && digitsFromRight % 3 === 0) {
+                ret.push({ char: currentThousandSeparator, type: 'mask' as const });
               }
             }
           }
 
           return ret;
         },
-        validationFn: (x: string) =>
-          new RegExp(currentMaxDigits <= 1 ? `^[0-9]{0,${currentMaxDigits}}$` : `^[1-9][0-9]{0,${currentMaxDigits - 1}}$`).test(x),
-        inputBehavior: 'shift-left',
-        inputAlign: 'right',
+        validationFn: (x: string) => new RegExp(currentMinDigits <= 1 ? `^(|[0-9]$` : `^(|[0-9]|[1-9][0-9]{0,${currentMaxDigits - 1}})$`).test(x),
+        inputBehavior: 'insert' as const,
+        inputAlign: 'right' as const,
         maxLength: currentMaxDigits,
       },
       ...numericMaskInfixes.value,
-      ...(currentDecimalSeparator
-        ? [
-            {
-              type: 'fixed',
-              mask: currentDecimalSeparator,
-            },
-          ]
-        : []),
+      ...(currentDecimalSeparator ? [{ type: 'fixed' as const, mask: currentDecimalSeparator, value: '' }] : []),
       {
-        type: 'input',
-        maskFn: (x: string) => {
+        type: 'input' as const,
+        maskFn: (chars: string) => {
           const ret = [];
 
-          for (let i = 0; i < Math.max(x.length, currentMinDecimals); i++) {
-            const char = x[i];
-
-            if (i < x.length) {
-              ret.push({ char, type: 'value', valueBounds: [i, i + 1], displayBounds: [i, i + 1] });
+          for (let i = 0; i < Math.max(chars.length, currentMinDecimals); i++) {
+            if (i < chars.length) {
+              ret.push({ char: chars[i], type: 'value' as const });
             } else {
-              ret.push({ char: '0', type: 'mask', displayBounds: [i, i + 1] });
+              ret.push({ char: '0', type: 'mask' as const });
             }
           }
 
           return ret;
         },
         validationFn: (x: string) => new RegExp(`^([0-9]{0,${currentMaxDecimals}})$`).test(x),
-        inputBehavior: 'shift-right',
-        inputAlign: 'left',
+        inputBehavior: 'insert' as const,
+        inputAlign: 'left' as const,
         maxLength: currentMaxDecimals,
       },
       ...numericMaskSuffixes.value,
