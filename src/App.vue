@@ -1,116 +1,237 @@
 <template>
   <div class="app">
-    <MaskedText :mask="numericMask" v-model="numericValue" />
-    <MaskedText :mask="serialMask" v-model="serialValue" />
+    <div class="section">
+      <MaskedText :mask="numericMask" v-model="numericValue" />
+
+      <div class="row">
+        <button @click="setRandomNumericValue()">n.n</button>
+        <button @click="setRandomNumericValue(0, 0)">0.0</button>
+        <button @click="setRandomNumericValue(0)">0.n</button>
+        <button @click="setRandomNumericValue(undefined, 0)">n.0</button>
+        <button @click="setRandomNumericValue(undefined, 0)">\ツ/</button>
+      </div>
+
+      <div class="row">
+        <button @click="setSeparators('.')">nnnn.dd</button>
+        <button @click="setSeparators('.', ',')">n,nnn.dd</button>
+        <button @click="setSeparators('.', ' ')">n nnn.dd</button>
+        <button @click="setSeparators(',')">nnnn,dd</button>
+        <button @click="setSeparators(',', '.')">n.nnn,dd</button>
+        <button @click="setSeparators(',', ' ')">n nnn,dd</button>
+      </div>
+
+      <div class="row">
+        <button @click="clearFixes()">clear</button>
+        <button @click="setRandomPrefixes()">prefixes</button>
+        <button @click="setRandomInfixes()">infixes</button>
+        <button @click="setRandomSuffixes()">suffixes</button>
+      </div>
+
+      <div class="monospace">{{ numericValue.toString() }}</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { default as MaskedText } from '@/masked-text/masked-text.vue';
-  import { ref } from 'vue';
+  import { default as MaskedText, type MaskSectionPropsFixed, type MaskSectionPropsInput } from '@/masked-text/masked-text.vue';
+  import { type Ref, ref, computed } from 'vue';
 
-  const numericValue = ref(['987654321', '1236'] as string[]);
-  const numericMask = [
+  const setRandomNumericValue = (countDigits?: number, countDecimals?: number) => {
+    countDigits = countDigits ?? Math.floor(Math.random() * 20);
+    countDecimals = countDecimals ?? Math.floor(Math.random() * 8);
+    const digits = Array.from({ length: countDigits }, (x, i) => Math.floor(Math.random() * 10));
+    const decimals = Array.from({ length: countDecimals }, () => Math.floor(Math.random() * 10));
+
+    while (digits.length > 1 && digits[0] === 0) {
+      digits.sort((a, b) => Math.random() - 0.5);
+    }
+
+    numericValue.value = [digits.join(''), decimals.join('')];
+  };
+
+  const getRandomPrefixes = (count?: number): MaskSectionPropsFixed[] => {
+    count = count ?? Math.floor(Math.random() * 3);
+    const prefixPool = ['(USD)', '(EUR)'];
+    const prefixes: MaskSectionPropsFixed[] = [];
+
+    for (let i = 0; i < count && prefixPool.length > 0; i++) {
+      const prefixIndex = Math.floor(Math.random() * prefixPool.length);
+      const [prefix] = prefixPool.splice(prefixIndex, 1);
+      const addExtraSpace = Math.random() < 0.5;
+
+      prefixes.push({
+        type: 'fixed',
+        mask: prefix + (addExtraSpace ? ' ' : ''),
+        value: '',
+        key: '',
+        skipKeys: [],
+      });
+    }
+
+    return prefixes;
+  };
+  const getRandomSuffixes = (count?: number): MaskSectionPropsFixed[] => {
+    count = count ?? Math.floor(Math.random() * 3);
+    const suffixPool = ['[per annum]', '[per mile]', '[per kilo]', '[per se]'];
+    const suffixes: MaskSectionPropsFixed[] = [];
+
+    for (let i = 0; i < count && suffixPool.length > 0; i++) {
+      const suffixIndex = Math.floor(Math.random() * suffixPool.length);
+      const [suffix] = suffixPool.splice(suffixIndex, 1);
+      const addExtraSpace = Math.random() < 0.5;
+
+      suffixes.push({
+        type: 'fixed',
+        mask: (addExtraSpace ? ' ' : '') + suffix,
+        value: '',
+        key: '',
+        skipKeys: [],
+      });
+    }
+
+    return suffixes;
+  };
+  const getRandomInfixes = (count?: number): MaskSectionPropsFixed[] => {
+    count = count ?? Math.floor(Math.random() * 3);
+    const infixPool = ['.', ',', ' '];
+    const infixes: MaskSectionPropsFixed[] = [];
+
+    for (let i = 0; i < count && infixPool.length > 0; i++) {
+      const infixIndex = Math.floor(Math.random() * infixPool.length);
+      const [infix] = infixPool.splice(infixIndex, 1);
+      const addExtraSpace = Math.random() < 0.5;
+
+      infixes.push({
+        type: 'fixed',
+        mask: (addExtraSpace ? ' ' : '') + infix,
+        value: '',
+        key: '',
+        skipKeys: [],
+      });
+    }
+
+    return infixes;
+  };
+
+  const clearFixes = () => {
+    numericMaskPrefixes.value = [];
+    numericMaskSuffixes.value = [];
+    numericMaskInfixes.value = [];
+  };
+  const setRandomPrefixes = () => {
+    numericMaskPrefixes.value = getRandomPrefixes();
+  };
+  const setRandomSuffixes = () => {
+    numericMaskSuffixes.value = getRandomSuffixes();
+  };
+  const setRandomInfixes = () => {
+    numericMaskInfixes.value = getRandomInfixes();
+  };
+  const setSeparators = (newDecimalSeparator: string, newThousandSeparator?: string) => {
+    decimalSeparator.value = newDecimalSeparator;
+    thousandSeparator.value = newThousandSeparator ?? '';
+  };
+
+  const minDigits = ref(0);
+  const maxDigits = ref(20);
+  const minDecimals = ref(0);
+  const maxDecimals = ref(8);
+  const decimalSeparator = ref('.');
+  const thousandSeparator = ref(',');
+
+  const numericValue = ref(['1234567890', '99'] as string[]);
+  const numericMaskPrefixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomPrefixes());
+  const numericMaskInfixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomInfixes());
+  const numericMaskSuffixes: Ref<MaskSectionPropsFixed[]> = ref(getRandomSuffixes());
+  const numericMask = computed(() => [
+    ...numericMaskPrefixes.value,
     {
       type: 'input',
-      maskFn: (x: string) =>
-        x
-          .split('')
-          .map((a, i) => ((a.length - i - 2) % 3 == 0 && x.length - i != 1 ? `${a},` : a))
-          .join('') ?? '0',
-      cursorPositionsFn: (x: string) => {
-        const ret: number[] = [];
+      maskFn: (x: string) => {
+        if (x.length === 0) {
+          return [{ char: '0', type: 'mask', displayBounds: [0, 1] }];
+        }
 
-        for (let i = x.length - 1 + x.length / 3; i >= 0; i--) {
-          if (i % 4 != 0) {
-            ret.push(i);
+        const ret = [];
+
+        let displayOffset = 0;
+
+        for (let i = 0; i < x.length; i++) {
+          const char = x[i];
+
+          ret.push({ char, type: 'value', valueBounds: [i, i + 1], displayBounds: [i + displayOffset, i + displayOffset + 1] });
+
+          if (thousandSeparator.value) {
+            if (i % 3 == 0 && i >= 0 && i < x.length - 1) {
+              ret.push({
+                char: thousandSeparator.value,
+                type: 'mask',
+                displayBounds: [i + displayOffset + 1, i + displayOffset + thousandSeparator.value.length],
+              });
+
+              displayOffset += 3;
+            }
           }
         }
 
         return ret;
       },
       validationFn: (x: string) => /^([0-9]{0,20})$/.test(x),
-      inputBehavior: 'shift-right',
+      inputBehavior: 'shift-left',
+      inputAlign: 'right',
       maxLength: 20,
     },
-    {
-      type: 'fixed',
-      mask: '.',
-      value: '.',
-      key: '.',
-      skipKeys: ['.', ','],
-    },
+    ...numericMaskInfixes.value,
+    ...(decimalSeparator.value
+      ? [
+          {
+            type: 'fixed',
+            mask: decimalSeparator.value,
+          },
+        ]
+      : []),
     {
       type: 'input',
-      maskFn: (x: string) => x.padEnd(6, '0'),
-      cursorPositionsFn: (x: string) => Array.from(Array(x.length + 1).keys()).map((x) => x),
-      validationFn: (x: string) => /^([0-9]{0,6})$/.test(x),
-      inputBehavior: 'shift-right',
-      maxLength: 6,
-    },
-  ];
+      maskFn: (x: string) => {
+        const ret = [];
 
-  const serialValue = ref(['12', '123456', '1236', '0'] as string[]);
-  const serialMask = [
-    {
-      type: 'input',
-      maskFn: (x: string) => x.padEnd(4, '_'),
-      cursorPositionsFn: (x: string) => Array.from(Array(x.length + 1).keys()).map((x) => x),
-      validationFn: (x: string) => /^([0-9]{0,4})$/.test(x),
-      inputBehavior: 'shift-right',
-      maxLength: 4,
-    },
-    {
-      type: 'fixed',
-      mask: '-',
-      value: '-',
-      key: '-',
-      skipKeys: ['-', ' '],
-    },
-    {
-      type: 'input',
-      maskFn: (x: string) => x.padStart(8, '_'),
-      cursorPositionsFn: (x: string) => Array.from(Array(x.length + 1).keys()).map((x) => 8 - x),
+        for (let i = 0; i < Math.max(x.length, 4); i++) {
+          const char = x[i];
+
+          if (i < x.length) {
+            ret.push({ char, type: 'value', valueBounds: [i, i + 1], displayBounds: [i, i + 1] });
+          } else {
+            ret.push({ char: '0', type: 'mask', displayBounds: [i, i + 1] });
+          }
+        }
+
+        return ret;
+      },
       validationFn: (x: string) => /^([0-9]{0,8})$/.test(x),
-      inputBehavior: 'shift-left',
+      inputBehavior: 'shift-right',
+      inputAlign: 'left',
       maxLength: 8,
     },
-    {
-      type: 'fixed',
-      mask: '-',
-      value: '-',
-      key: '-',
-      skipKeys: ['-', ' '],
-    },
-    {
-      type: 'input',
-      maskFn: (x: string) => x.padStart(6, '_'),
-      cursorPositionsFn: (x: string) => Array.from(Array(x.length + 1).keys()).map((x) => 6 - x),
-      validationFn: (x: string) => /^([0-9]{0,6})$/.test(x),
-      inputBehavior: 'shift-left',
-      maxLength: 6,
-    },
-    {
-      type: 'fixed',
-      mask: '-',
-      value: '-',
-      key: '-',
-      skipKeys: ['-', ' '],
-    },
-    {
-      type: 'input',
-      maskFn: (x: string) => x.padStart(2, '_'),
-      cursorPositionsFn: (x: string) => Array.from(Array(x.length + 1).keys()).map((x) => 2 - x),
-      validationFn: (x: string) => /^([0-9]{0,2})$/.test(x),
-      inputBehavior: 'shift-left',
-      maxLength: 2,
-    },
-  ];
+    ...numericMaskSuffixes.value,
+  ]);
 </script>
 
 <style scoped>
   .app {
     margin-top: 100px;
     font-size: 20px;
+  }
+  .row {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+  }
+  .monospace {
+    font-family: monospace;
+  }
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 </style>
