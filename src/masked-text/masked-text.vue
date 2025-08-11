@@ -15,7 +15,6 @@
   </div>
 
   <pre v-if="hasFocus" class="masked-text-debug">
-currentSectionIndex: {{ currentSectionIndex }}
 currentCursorPos: {{ currentCursorPos }}
 sectionBounds: [
 <template v-for="(section, index) in maskSections" :key="index">  [{{section.bounds.join(', ')}}],
@@ -34,67 +33,17 @@ displayBounds: [
 
 <script setup lang="ts">
   import { ref, watch, nextTick, type Ref } from 'vue';
-
-  export interface MaskSectionPropsFixed {
-    type: 'fixed';
-    mask: string;
-    value: string;
-    key?: string;
-    skipKeys?: string[];
-  }
-
-  export interface MaskSectionPropsInput {
-    type: 'input';
-    inputBehavior: 'replace' | 'insert';
-    inputAlign: 'left' | 'right';
-    maxLength?: number;
-    defaultValue?: string;
-    maskFn: (x: string) => MaskCharacter[];
-    validationFn: (x: string) => boolean;
-  }
-
-  interface MaskSectionInput extends MaskSectionPropsInput {
-    valueIndex: number;
-  }
-
-  // interface MaskCalculatedProperties
-
-  type MaskCharacter = {
-    char: string;
-    type: 'mask' | 'value';
-  };
-
-  type MaskCharacterWithBounds = MaskCharacter & {
-    valueBounds: [number, number];
-    displayBounds: [number, number];
-  };
-
-  type MaskSectionFixedWithCalculatedProperties = MaskSectionPropsFixed & {
-    type: 'fixed';
-    index: number;
-    bounds: [number, number];
-
-    displayValue: string;
-    displayHTML: string;
-
-    validCursorDisplayPositions: number[];
-  };
-  type MaskSectionInputWithCalculatedProperties = MaskSectionInput & {
-    type: 'input';
-    index: number;
-    bounds: [number, number];
-
-    displayValue: string;
-    displayHTML: string;
-
-    validCursorDisplayPositions: number[];
-    maxValidCursorPosition: number;
-    minValidCursorPosition: number;
-    valueRelPositionToDisplayBounds: Record<number, [number, number]>;
-  };
+  import type {
+    MaskCharacter,
+    MaskCharacterWithBounds,
+    MaskSectionFixedWithCalculatedProperties,
+    MaskSectionInputWithCalculatedProperties,
+    MaskDefinition,
+    MaskDefinitionSection,
+  } from './masks/base.ts';
 
   interface Props {
-    mask: (MaskSectionPropsFixed | MaskSectionPropsInput)[];
+    mask: MaskDefinition;
     modelValue?: string[];
   }
 
@@ -106,12 +55,16 @@ displayBounds: [
     'update:modelValue': [value: string[]];
   }>();
 
+  const sectionValues = ref<string[]>([]);
+  const currentCursorPos = ref(0);
+  const hasFocus = ref(false);
+
   const inputRef = ref<HTMLInputElement>();
   const textOverlayRef = ref<HTMLSpanElement>();
 
   const maskSections: Ref<(MaskSectionFixedWithCalculatedProperties | MaskSectionInputWithCalculatedProperties)[]> = ref([]);
 
-  const updateMaskCharacters = (maskCharacters: MaskCharacter[], _section: MaskSectionPropsInput) => {
+  const updateMaskCharacters = (maskCharacters: MaskCharacter[], _section: MaskDefinitionSection) => {
     const ret: MaskCharacterWithBounds[] = [];
 
     let valueIndex = 0;
@@ -146,34 +99,34 @@ displayBounds: [
     let currentEnd = 0;
     let currentValueIndex = 0;
 
-    for (let i = 0; i < props.mask.length; i++) {
+    for (let i = 0; i < props.mask.sections.length; i++) {
       const displayHTMLChars: { char: string; class: string }[] = [];
-      const section = props.mask[i];
+      const section = props.mask.sections[i];
 
       if (section.type === 'input') {
         const value = sectionValues.value[i] || '';
-        const maskCharacters = updateMaskCharacters(section.maskFn(value) || [], section);
+        const maskCharacters = updateMaskCharacters(section.maskingFn(value) || [], section);
 
         const displayValue = maskCharacters.map((char) => char.char).join('');
         const validCursorPositions: number[] = [];
-        const valueRelPositionToDisplayBounds: Record<number, [number, number]> = {};
+        const valueRelPositionToDisplayBounds: Map<number, [number, number]> = new Map();
 
         for (const maskChar of maskCharacters.values()) {
           if (maskChar.type === 'value' && maskChar.displayBounds && maskChar.valueBounds) {
             validCursorPositions.push(maskChar.displayBounds[0]);
             validCursorPositions.push(maskChar.displayBounds[1]);
 
-            valueRelPositionToDisplayBounds[maskChar.valueBounds[0]] = maskChar.displayBounds;
+            valueRelPositionToDisplayBounds.set(maskChar.valueBounds[0], maskChar.displayBounds);
           }
         }
 
         if (validCursorPositions.length === 0) {
-          if (section.inputAlign === 'left') {
+          if (section.alignment === 'left') {
             validCursorPositions.push(0);
-            valueRelPositionToDisplayBounds[0] = maskCharacters[0].displayBounds;
+            valueRelPositionToDisplayBounds.set(0, maskCharacters[0].displayBounds);
           } else {
             validCursorPositions.push(displayValue.length);
-            valueRelPositionToDisplayBounds[0] = maskCharacters[maskCharacters.length - 1].displayBounds;
+            valueRelPositionToDisplayBounds.set(0, maskCharacters[maskCharacters.length - 1].displayBounds);
           }
         }
 
@@ -246,29 +199,20 @@ displayBounds: [
     textOverlayRef.value.innerHTML = displayHTML;
   };
 
-  const sectionValues = ref<string[]>([]);
-  const currentSectionIndex = ref(0);
-  const currentCursorPos = ref(0);
-  const hasFocus = ref(false);
-
   const initializeSectionValues = () => {
     const newSectionValues: string[] = [];
 
     let valueIndex = 0;
 
-    for (const section of props.mask) {
+    for (const section of props.mask.sections) {
       if (section.type === 'input') {
         if (props.modelValue && props.modelValue.length > valueIndex && section.validationFn(props.modelValue[valueIndex])) {
           newSectionValues.push(props.modelValue[valueIndex]);
         } else {
-          newSectionValues.push(section.defaultValue || '');
+          newSectionValues.push('');
         }
 
         valueIndex += 1;
-      } else if (section.type === 'fixed') {
-        newSectionValues.push(section.value);
-      } else {
-        newSectionValues.push('');
       }
     }
 
@@ -279,7 +223,7 @@ displayBounds: [
     event.preventDefault();
   };
 
-  const getSectionsAtPosition = (
+  const getSectionsAtDisplayPosition = (
     position: number,
     type: 'input' | 'fixed' | undefined = undefined,
   ): (MaskSectionFixedWithCalculatedProperties | MaskSectionInputWithCalculatedProperties)[] => {
@@ -297,12 +241,6 @@ displayBounds: [
   };
 
   const chooseBestSection = (sectionCandidates: (MaskSectionFixedWithCalculatedProperties | MaskSectionInputWithCalculatedProperties)[]) => {
-    for (let i = 0; i < sectionCandidates.length; i++) {
-      if (sectionCandidates[i].index === currentSectionIndex.value) {
-        return sectionCandidates[i];
-      }
-    }
-
     for (let i = 0; i < sectionCandidates.length; i++) {
       if (sectionCandidates[i].type === 'input') {
         return sectionCandidates[i];
@@ -336,13 +274,16 @@ displayBounds: [
     }
   };
 
-  const findSection = (options: {
-    startIndex: number;
-    direction: 'left' | 'right';
-    type?: 'input' | 'fixed';
-    includeStartIndex?: boolean;
-    allowSameBounds?: boolean;
-  }): (MaskSectionFixedWithCalculatedProperties | MaskSectionInputWithCalculatedProperties) | undefined => {
+  const findSection = (
+    sections: MaskDefinitionSection[],
+    options: {
+      startIndex: number;
+      direction: 'left' | 'right';
+      type?: 'input' | 'fixed';
+      includeStartIndex?: boolean;
+      allowSameBounds?: boolean;
+    },
+  ): MaskDefinitionSection | undefined => {
     const needleIndex = options.startIndex;
     const direction = options.direction;
     const type = options.type;
@@ -350,7 +291,7 @@ displayBounds: [
     const allowSameBounds = options.allowSameBounds ?? includeStartIndex;
     const searchStartIndex = direction === 'right' ? needleIndex + (includeStartIndex ? 0 : 1) : needleIndex - (includeStartIndex ? 0 : 1);
 
-    if (needleIndex < 0 || needleIndex >= props.mask.length || searchStartIndex < 0 || searchStartIndex >= props.mask.length) {
+    if (needleIndex < 0 || needleIndex >= props.mask.sections.length || searchStartIndex < 0 || searchStartIndex >= props.mask.sections.length) {
       return undefined;
     }
 
@@ -358,7 +299,7 @@ displayBounds: [
     const [needleStart, needleEnd] = needleSection.bounds;
 
     if (direction === 'right') {
-      for (let i = searchStartIndex; i < props.mask.length; i++) {
+      for (let i = searchStartIndex; i < props.mask.sections.length; i++) {
         const candidateSection = maskSections.value[i];
         const [candidateStart, candidateEnd] = candidateSection.bounds;
 
@@ -390,109 +331,104 @@ displayBounds: [
     return undefined;
   };
 
-  const getPatchedValue = (section: MaskSectionInputWithCalculatedProperties, key: string): [string, number, 'left' | 'right' | undefined] => {
+  const getPatchedValue = (
+    section: MaskSectionInputWithCalculatedProperties,
+    key: string,
+  ): [string, number | undefined, 'left' | 'right' | undefined] => {
     const currentValue = sectionValues.value[section.index] || '';
-    const currentDisplayCursorPosition = currentCursorPos.value - section.bounds[0];
-    const currentValueCursorPosition = section.validCursorDisplayPositions.findIndex((position) => position === currentDisplayCursorPosition);
 
-    // Handle special keys
+    const prePatchDisplayCursorPosition = currentCursorPos.value - section.bounds[0];
+    let valueCursorPosLeftLooking = undefined;
+    let valueCursorPosRightLooking = undefined;
+
+    for (const [x, [lowerBound, upperBound]] of section.valueRelPositionToDisplayBounds.entries()) {
+      if (upperBound === prePatchDisplayCursorPosition) {
+        valueCursorPosLeftLooking = x;
+      } else if (lowerBound === prePatchDisplayCursorPosition) {
+        valueCursorPosRightLooking = x;
+      }
+    }
+
+    console.log('prePatchDisplayCursorPosition:', prePatchDisplayCursorPosition);
+    console.log('valueCursorPosLeftLooking:', valueCursorPosLeftLooking);
+    console.log('valueCursorPosRightLooking:', valueCursorPosRightLooking);
+
     if (key === 'Backspace') {
-      if (currentValueCursorPosition > 0) {
-        switch (section.inputBehavior) {
-          case 'replace': // Replace character with empty (delete) at current position - 1
-            return [
-              currentValue.substring(0, currentDisplayCursorPosition - 1) + currentValue.substring(currentDisplayCursorPosition),
-              currentValueCursorPosition - 1,
-              'left',
-            ];
-
-          case 'insert': // Insert behavior: remove character and shift based on alignment
-            if (section.inputAlign === 'left') {
-              return [
-                currentValue.slice(0, currentValueCursorPosition - 1) + currentValue.slice(currentValueCursorPosition),
-                currentValueCursorPosition - 1,
-                'left',
-              ];
-            } else {
-              return [
-                currentValue.slice(0, currentValueCursorPosition - 1) + currentValue.slice(currentValueCursorPosition),
-                currentValueCursorPosition - 2,
-                'right',
-              ];
-            }
-        }
-      }
-
-      return [currentValue, currentDisplayCursorPosition, undefined];
-    }
-
-    if (key === 'Delete') {
-      if (currentValueCursorPosition < currentValue.length) {
-        switch (section.inputBehavior) {
-          case 'replace': // Delete character at current position (default behavior)
-            return [
-              currentValue.slice(0, currentValueCursorPosition) + currentValue.slice(currentValueCursorPosition + 1),
-              currentValueCursorPosition + 1,
-              'right',
-            ];
-
-          case 'insert': // Insert behavior: delete character and shift based on alignment
-            if (section.inputAlign === 'left') {
-              // Delete character at current position and shift remaining characters left
-              return [
-                currentValue.slice(0, currentValueCursorPosition) + currentValue.slice(currentValueCursorPosition + 1),
-                currentValueCursorPosition,
-                'left',
-              ];
-            } else {
-              // Remove character from the end of the string (right alignment)
-              return [
-                currentValue.slice(0, currentValueCursorPosition) + currentValue.slice(currentValueCursorPosition + 1),
-                currentValueCursorPosition - 1,
-                'right',
-              ];
-            }
-        }
-      }
-
-      return [currentValue, currentDisplayCursorPosition, undefined];
-    }
-
-    // Handle regular character input based on inputBehavior
-    if (key.length === 1) {
-      switch (section.inputBehavior) {
-        case 'replace': // Replace character at current position
+      if (valueCursorPosLeftLooking !== undefined && valueCursorPosLeftLooking >= 0) {
+        if (section.inputBehavior === 'replace') {
           return [
-            currentValue.substring(0, currentValueCursorPosition) + key + currentValue.substring(currentValueCursorPosition + 1),
-            currentValueCursorPosition + 1,
+            currentValue.substring(0, valueCursorPosLeftLooking) + currentValue.substring(valueCursorPosLeftLooking + 1),
+            valueCursorPosLeftLooking,
+            'left',
+          ];
+        } else if (section.alignment === 'left') {
+          return [
+            currentValue.substring(0, valueCursorPosLeftLooking) + currentValue.substring(valueCursorPosLeftLooking + 1),
+            valueCursorPosLeftLooking,
+            'left',
+          ];
+        } else {
+          return [
+            currentValue.substring(0, valueCursorPosLeftLooking) + currentValue.substring(valueCursorPosLeftLooking + 1),
+            valueCursorPosLeftLooking,
+            'left',
+          ];
+        }
+      }
+    } else if (key === 'Delete') {
+      debugger;
+      if (valueCursorPosRightLooking !== undefined && valueCursorPosRightLooking < currentValue.length) {
+        if (section.inputBehavior === 'replace') {
+          return [
+            currentValue.substring(0, valueCursorPosRightLooking) + currentValue.substring(valueCursorPosRightLooking + 1),
+            valueCursorPosRightLooking,
             'right',
           ];
-
-        case 'insert': // Insert character and shift based on alignment
-          if (section.inputAlign === 'left') {
-            // Insert character and shift existing characters to the right
-            return [
-              currentValue.substring(0, currentValueCursorPosition) + key + currentValue.substring(currentValueCursorPosition),
-              currentValueCursorPosition + 1,
-              'left',
-            ];
-          } else {
-            // Insert character at the end and shift left (right alignment)
-            return [
-              currentValue.substring(0, currentValueCursorPosition) + key + currentValue.substring(currentValueCursorPosition),
-              currentValueCursorPosition,
-              'right',
-            ];
-          }
+        } else if (section.alignment === 'left') {
+          return [
+            currentValue.substring(0, valueCursorPosRightLooking) + currentValue.substring(valueCursorPosRightLooking + 1),
+            valueCursorPosRightLooking,
+            'right',
+          ];
+        } else {
+          return [
+            currentValue.substring(0, valueCursorPosRightLooking) + currentValue.substring(valueCursorPosRightLooking + 1),
+            valueCursorPosRightLooking,
+            'right',
+          ];
+        }
+      }
+    } else if (key.length === 1 && valueCursorPosRightLooking !== undefined) {
+      if (section.inputBehavior === 'replace') {
+        return [
+          currentValue.substring(0, valueCursorPosRightLooking) + key + currentValue.substring(valueCursorPosRightLooking + 1),
+          valueCursorPosRightLooking + 1,
+          'right',
+        ];
+      } else if (section.inputBehavior === 'insert') {
+        if (section.alignment === 'left') {
+          return [
+            currentValue.substring(0, valueCursorPosRightLooking) + key + currentValue.substring(valueCursorPosRightLooking),
+            valueCursorPosRightLooking + 1,
+            'left',
+          ];
+        } else {
+          // Insert character at the end and shift left (right alignment)
+          return [
+            currentValue.substring(0, valueCursorPosRightLooking) + key + currentValue.substring(valueCursorPosRightLooking),
+            valueCursorPosRightLooking,
+            'right',
+          ];
+        }
       }
     }
 
     // For any other keys, return unchanged
-    return [currentValue, currentValueCursorPosition, undefined];
+    return [currentValue, undefined, undefined];
   };
 
   const handleKeydown = (event: KeyboardEvent) => {
-    let section = chooseBestSection(getSectionsAtPosition(currentCursorPos.value));
+    let section = chooseBestSection(getSectionsAtDisplayPosition(currentCursorPos.value));
 
     if (!section || section.type === 'fixed') {
       return;
@@ -501,42 +437,63 @@ displayBounds: [
     const firstRightAdjacentInputSection = findSection({ startIndex: section.index, direction: 'right', type: 'input' });
     const firstRightAdjacentSection = findSection({ startIndex: section.index, direction: 'right' });
     const firstLeftAdjacentInputSection = findSection({ startIndex: section.index, direction: 'left', type: 'input' });
+    const firstInputSection = findSection({ startIndex: 0, direction: 'right', type: 'input', includeStartIndex: true });
+    const lastInputSection = findSection({ startIndex: props.mask.sections.length - 1, direction: 'left', type: 'input', includeStartIndex: true });
 
     const currentSectionRelCursorPosition = currentCursorPos.value - section.bounds[0];
 
     if (event.key === 'Tab' && !event.shiftKey) {
       if (firstRightAdjacentInputSection) {
+        // on tab key, move to next input section if exists else let event propagate to next tabbable element
         setCaretToSection(firstRightAdjacentInputSection, 0);
 
         event.preventDefault();
       }
     } else if (event.key === 'Tab' && event.shiftKey) {
       if (firstLeftAdjacentInputSection) {
+        // on shift+tab key, move to previous input section if exists else let event propagate to previous tabbable element
         setCaretToSection(firstLeftAdjacentInputSection, -1);
 
         event.preventDefault();
       }
     } else if (event.key === 'ArrowRight') {
-      if (currentSectionRelCursorPosition < section.maxValidCursorPosition) {
-        const nextValidPosition = Math.min(...section.validCursorDisplayPositions.filter((position) => position > currentSectionRelCursorPosition));
-        setCaretToSection(section, nextValidPosition);
+      if (event.metaKey) {
+        if (lastInputSection) {
+          setCaretToSection(lastInputSection, -1);
+        }
+      } else if (currentSectionRelCursorPosition < section.maxValidCursorPosition && event.altKey) {
+        setCaretToSection(section, -1);
+      } else if (currentSectionRelCursorPosition < section.maxValidCursorPosition) {
+        // if cursor is not at the end of the section, move to the next valid position
+
+        setCaretToSection(section, Math.min(...section.validCursorDisplayPositions.filter((position) => position > currentSectionRelCursorPosition)));
       } else if (firstRightAdjacentInputSection) {
         setCaretToSection(firstRightAdjacentInputSection, 0);
       }
 
       event.preventDefault();
     } else if (event.key === 'ArrowLeft') {
-      if (currentSectionRelCursorPosition > section.minValidCursorPosition) {
-        const nextValidPosition = Math.max(...section.validCursorDisplayPositions.filter((position) => position < currentSectionRelCursorPosition));
-        setCaretToSection(section, nextValidPosition);
+      if (event.metaKey) {
+        if (firstInputSection) {
+          setCaretToSection(firstInputSection, 0);
+        }
+      } else if (currentSectionRelCursorPosition > section.minValidCursorPosition && event.altKey) {
+        setCaretToSection(section, 0);
+      } else if (currentSectionRelCursorPosition > section.minValidCursorPosition) {
+        setCaretToSection(section, Math.max(...section.validCursorDisplayPositions.filter((position) => position < currentSectionRelCursorPosition)));
       } else if (firstLeftAdjacentInputSection) {
         setCaretToSection(firstLeftAdjacentInputSection, -1);
       }
 
       event.preventDefault();
-    } else if (event.key === 'Backspace' && currentSectionRelCursorPosition === section.minValidCursorPosition) {
-      if (firstLeftAdjacentInputSection) {
-        setCaretToSection(firstLeftAdjacentInputSection, -1);
+    } else if (event.key === 'Backspace') {
+      if (currentSectionRelCursorPosition === section.minValidCursorPosition) {
+        if (firstLeftAdjacentInputSection) {
+          setCaretToSection(firstLeftAdjacentInputSection, -1);
+        }
+      } else {
+        // const [patchedValue, newValueCursorPosition, direction] = getPatchedValue(section, event.key);
+        // handle backspace here !!!
       }
 
       event.preventDefault();
@@ -560,19 +517,23 @@ displayBounds: [
 
       event.preventDefault();
     } else if (section.type === 'input') {
-      event.preventDefault();
+      const [patchedValue, newValueCursorPosition, direction] = getPatchedValue(section, event.key);
 
-      let [patchedValue, newValueCursorPosition, direction] = getPatchedValue(section, event.key);
+      if (newValueCursorPosition !== undefined && direction !== undefined && section.validationFn(patchedValue)) {
+        event.preventDefault();
+        // if (newValueCursorPosition < 0) {
+        //   newValueCursorPosition = 0;
+        //   direction = 'left';
+        // } else if (newValueCursorPosition >= patchedValue.length && newValueCursorPosition > 0) {
+        //   newValueCursorPosition = patchedValue.length - 1;
+        //   direction = 'right';
+        // }
 
-      if (newValueCursorPosition < 0) {
-        newValueCursorPosition = 0;
-        direction = 'left';
-      } else if (newValueCursorPosition >= patchedValue.length && newValueCursorPosition > 0) {
-        newValueCursorPosition = patchedValue.length - 1;
-        direction = 'right';
-      }
+        console.log(section);
+        console.log('old value:', sectionValues.value[section.index]);
+        console.log('event.key:', event.key, patchedValue);
+        console.log('newValueCursorPosition:', newValueCursorPosition, 'direction:', direction);
 
-      if (direction !== undefined && section.validationFn(patchedValue)) {
         sectionValues.value[section.index] = patchedValue;
 
         updateMaskSections();
@@ -582,27 +543,29 @@ displayBounds: [
         const newFirstRightAdjacentInputSection = findSection({ startIndex: section.index, direction: 'right', type: 'input' });
         const newFirstRightAdjacentSection = findSection({ startIndex: section.index, direction: 'right' });
 
-        const newRelDisplayCursorPosition = (section as MaskSectionInputWithCalculatedProperties).valueRelPositionToDisplayBounds[
-          newValueCursorPosition
-        ][direction === 'right' ? 1 : 0];
-        const newAbsDisplayCursorPosition = newRelDisplayCursorPosition + section.bounds[0];
+        const newRelDisplayCursorPosition = (section as MaskSectionInputWithCalculatedProperties).valueRelPositionToDisplayBounds.get(
+          newValueCursorPosition,
+        )?.[direction === 'right' ? 1 : 0];
 
-        if (
-          section.type === 'input' &&
-          section.maxLength === patchedValue.length &&
-          newFirstRightAdjacentInputSection &&
-          newFirstRightAdjacentSection?.type === 'fixed' &&
-          newFirstRightAdjacentSection.bounds[0] === newAbsDisplayCursorPosition
-        ) {
-          setCaretToSection(newFirstRightAdjacentInputSection, 0);
-        } else {
-          setCaretToSection(section, newRelDisplayCursorPosition);
+        if (newRelDisplayCursorPosition !== undefined) {
+          const newAbsDisplayCursorPosition = newRelDisplayCursorPosition + section.bounds[0];
+
+          if (
+            section.type === 'input' &&
+            section.maxLength !== undefined &&
+            section.maxLength === patchedValue.length &&
+            newFirstRightAdjacentInputSection &&
+            newFirstRightAdjacentSection?.type === 'fixed' &&
+            newFirstRightAdjacentSection.bounds[0] === newAbsDisplayCursorPosition
+          ) {
+            setCaretToSection(newFirstRightAdjacentInputSection, 0);
+          } else {
+            setCaretToSection(section, newRelDisplayCursorPosition);
+          }
+
+          console.log('patch value', event.key);
         }
-
-        console.log('patch value', event.key);
       }
-    } else {
-      event.preventDefault();
     }
   };
 
@@ -621,7 +584,6 @@ displayBounds: [
       }
 
       currentCursorPos.value = section.bounds[0] + clampedPosition;
-      currentSectionIndex.value = section.index;
 
       inputRef.value?.setSelectionRange(currentCursorPos.value, currentCursorPos.value);
     }
@@ -638,8 +600,6 @@ displayBounds: [
     });
 
     if (firstInputSection) {
-      currentSectionIndex.value = firstInputSection.index;
-
       setCaretToSection(firstInputSection, 0);
     }
   };
@@ -655,7 +615,7 @@ displayBounds: [
 
     const clickPosition = inputRef.value.selectionStart ?? 0;
 
-    const sectionCandidates = getSectionsAtPosition(clickPosition);
+    const sectionCandidates = getSectionsAtDisplayPosition(clickPosition);
     const section = chooseBestSection(sectionCandidates);
 
     if (!section || section.type === 'fixed') {
