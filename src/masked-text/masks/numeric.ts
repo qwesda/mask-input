@@ -1,6 +1,6 @@
 import {
-  type MaskSectionDefinitionFixed,
-  type MaskDefinitionSection,
+  type MaskSectionFixedDefinition,
+  type MaskSectionDefinition,
   type MaskDefinition,
   type MaskCharacter,
   MaskSectionFixed,
@@ -12,9 +12,9 @@ export type NumericMaskProps = {
   decimalSeparator?: string;
   thousandSeparator?: string;
 
-  prefixes?: MaskSectionDefinitionFixed[];
-  infixes?: MaskSectionDefinitionFixed[];
-  suffixes?: MaskSectionDefinitionFixed[];
+  prefixes?: MaskSectionFixedDefinition[];
+  infixes?: MaskSectionFixedDefinition[];
+  suffixes?: MaskSectionFixedDefinition[];
 
   minIntegerDigits?: number;
   maxIntegerDigits?: number;

@@ -56,8 +56,6 @@
         </div>
       </div>
 
-      <div class="monospace">{{ numericValue.toString() }}</div>
-
       <MaskedText :mask="numericMask" v-model="numericValue" />
     </div>
   </div>
@@ -65,10 +63,11 @@
 
 <script setup lang="ts">
   import { default as MaskedText } from '@/masked-text/masked-text.vue';
+  import { default as VarDump } from '@/helper/var-dump.vue';
   import { type Ref, ref, computed } from 'vue';
   import { bindToLocalStorage } from '@/helper/bindToLocalStorage.ts';
   import { NumericMask } from '@/masked-text/masks';
-  import { type MaskSectionDefinitionFixed, MaskSectionFixed } from '@/masked-text/masks/base.ts';
+  import { type MaskSectionFixedDefinition, MaskSectionFixed } from '@/masked-text/masks/base.ts';
 
   const numericValue = ref(['', ''] as string[]);
 
@@ -80,9 +79,9 @@
   const minDecimals = ref(1);
   const maxDecimals = ref(8);
 
-  const numericMaskPrefixes: Ref<MaskSectionDefinitionFixed[]> = ref([]);
-  const numericMaskInfixes: Ref<MaskSectionDefinitionFixed[]> = ref([]);
-  const numericMaskSuffixes: Ref<MaskSectionDefinitionFixed[]> = ref([]);
+  const numericMaskPrefixes: Ref<MaskSectionFixedDefinition[]> = ref([]);
+  const numericMaskInfixes: Ref<MaskSectionFixedDefinition[]> = ref([]);
+  const numericMaskSuffixes: Ref<MaskSectionFixedDefinition[]> = ref([]);
 
   bindToLocalStorage(numericValue, 'numeric-input/numericValue');
 
@@ -112,10 +111,10 @@
     numericValue.value = [digits.join(''), decimals.join('')];
   };
 
-  const getRandomPrefixes = (count?: number): MaskSectionDefinitionFixed[] => {
+  const getRandomPrefixes = (count?: number): MaskSectionFixedDefinition[] => {
     count = count ?? Math.floor(Math.random() * 3);
     const prefixPool = ['(USD)', '(EUR)'];
-    const prefixes: MaskSectionDefinitionFixed[] = [];
+    const prefixes: MaskSectionFixedDefinition[] = [];
 
     for (let i = 0; i < count && prefixPool.length > 0; i++) {
       const prefixIndex = Math.floor(Math.random() * prefixPool.length);
@@ -127,10 +126,10 @@
 
     return prefixes;
   };
-  const getRandomSuffixes = (count?: number): MaskSectionDefinitionFixed[] => {
+  const getRandomSuffixes = (count?: number): MaskSectionFixedDefinition[] => {
     count = count ?? Math.floor(Math.random() * 3);
     const suffixPool = ['[per annum]', '[per mile]', '[per kilo]', '[per se]'];
-    const suffixes: MaskSectionDefinitionFixed[] = [];
+    const suffixes: MaskSectionFixedDefinition[] = [];
 
     for (let i = 0; i < count && suffixPool.length > 0; i++) {
       const suffixIndex = Math.floor(Math.random() * suffixPool.length);
@@ -142,10 +141,10 @@
 
     return suffixes;
   };
-  const getRandomInfixes = (count?: number): MaskSectionDefinitionFixed[] => {
+  const getRandomInfixes = (count?: number): MaskSectionFixedDefinition[] => {
     count = count ?? Math.floor(Math.random() * 3);
     const infixPool = ['.', ',', ' '];
-    const infixes: MaskSectionDefinitionFixed[] = [];
+    const infixes: MaskSectionFixedDefinition[] = [];
 
     for (let i = 0; i < count && infixPool.length > 0; i++) {
       const infixIndex = Math.floor(Math.random() * infixPool.length);
