@@ -67,7 +67,7 @@
   import { type Ref, ref, computed } from 'vue';
   import { bindToLocalStorage } from '@/helper/bindToLocalStorage.ts';
   import { NumericMask } from '@/masked-text/masks';
-  import { type MaskSectionFixedDefinition, MaskSectionFixed } from '@/masked-text/masks/base.ts';
+  import { type MaskSectionFixedDefinition, MaskSectionFixed } from '@/masked-text/masks/index.ts';
 
   const numericValue = ref(['', ''] as string[]);
 
@@ -128,7 +128,7 @@
   };
   const getRandomSuffixes = (count?: number): MaskSectionFixedDefinition[] => {
     count = count ?? Math.floor(Math.random() * 3);
-    const suffixPool = ['[per annum]', '[per mile]', '[per kilo]', '[per se]'];
+    const suffixPool = ['(per annum)', '(per mile)', '(per kilo)', '(per se)'];
     const suffixes: MaskSectionFixedDefinition[] = [];
 
     for (let i = 0; i < count && suffixPool.length > 0; i++) {

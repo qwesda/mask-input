@@ -1,12 +1,11 @@
 import {
   type MaskSectionFixedDefinition,
-  type MaskSectionDefinition,
   type MaskDefinition,
   type MaskCharacter,
   MaskSectionFixed,
   MaskSectionInput,
   validationFnFromRegexString,
-} from './base.ts';
+} from './base/index.ts';
 
 export type NumericMaskProps = {
   decimalSeparator?: string;
@@ -92,7 +91,7 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
 
   const decimalsDigitsMaskFn = DecimalsDigitsMaskFn(minDecimalDigits);
   const decimalsValidationFn = validationFnFromRegexString(`^([0-9]{0,${maxDecimalDigits}})$`);
-  const decimalsInputSection = MaskSectionInput('insert', 'right', decimalsDigitsMaskFn, decimalsValidationFn, maxDecimalDigits);
+  const decimalsInputSection = MaskSectionInput('insert', 'left', decimalsDigitsMaskFn, decimalsValidationFn, maxDecimalDigits);
 
   return {
     sections: [...prefixes, integerInputSection, ...infixes, decimalsInputSection, ...suffixes],

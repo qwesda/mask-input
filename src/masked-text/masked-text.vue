@@ -1,37 +1,20 @@
 <template>
-  <div class="masked-text-container">
-    <div @click="setFocus">
-      <span class="text-overlay" ref="preInputHTMLRef" v-html="lastDerivedState.preInputHTMLString" />
+  <div class="masked-text-container" @mousedown.capture="handleMousedown" @mouseup.capture="handleMouseup">
+    <div class="text-overlay" ref="preInputHTMLRef" v-html="lastDerivedState.preInputHTMLString" />
 
-      <input
-        ref="inputRef"
-        @input.capture="handleInput"
-        @keydown.capture="handleKeydown"
-        @focus="handleFocus"
-        @blur="handleBlur"
-        @click="handleClick"
-        class="masked-text-input"
-        autofocus
-        style="width: 4px; margin-left: 0; margin-right: -4px; background: transparent"
-      />
+    <input
+      ref="inputRef"
+      @input.capture="handleInput"
+      @keydown.capture="handleKeydown"
+      @focus="handleFocus"
+      @blur="handleBlur"
+      @click="setFocus"
+      class="masked-text-input"
+      autofocus
+      style="width: 4px; margin-left: 0; margin-right: -4px; background: transparent"
+    />
 
-      <span class="text-overlay" ref="postInputHTMLRef" v-html="lastDerivedState.postInputHTMLString" />
-    </div>
-
-    <div>
-      <input
-        ref="inputShadowRef"
-        @input.capture="handleInput"
-        @keydown.capture="handleKeydown"
-        @focus="handleFocus"
-        @blur="handleBlur"
-        @click="handleClick"
-        class="masked-text-shadow-input"
-        autofocus
-        disabled
-        :value="lastDerivedState.textInputDisplayString"
-      />
-    </div>
+    <div class="text-overlay" ref="postInputHTMLRef" v-html="lastDerivedState.postInputHTMLString" />
   </div>
 
   <template v-if="hasFocus">
@@ -54,7 +37,7 @@
     updateMaskStateValues,
     updateMaskStateCaretAndSelection,
     findClosestValidValueSpaceCoordinates,
-  } from './masks/base.ts';
+  } from './masks/base/index.ts';
 
   import VarDump from '@/helper/var-dump.vue';
 
@@ -111,23 +94,109 @@
 
     state.value = _state;
     lastDerivedState.value = _lastDerivedState;
+
+    updateInputRefSize();
   };
 
   const handleInput = (event: Event) => {
-    console.log('handleInput', event);
+    // console.log('handleInput', event);
     updateInputRefSize();
   };
   const handleKeydown = (event: KeyboardEvent) => {
-    console.log('handleKeydown', event);
+    // console.log('handleKeydown', event);
   };
   const handleFocus = (event: FocusEvent) => {
-    console.log('handleFocus', event);
+    // console.log('handleFocus', event);
   };
   const handleBlur = (event: FocusEvent) => {
-    console.log('handleBlur', event);
+    // console.log('handleBlur', event);
   };
-  const handleClick = (event: MouseEvent) => {
-    console.log('handleClick', event);
+
+  const getClosestValueSpaceCoordinates = (event: MouseEvent) => {
+    const containersToCheck: HTMLElement[] = [preInputHTMLRef.value, postInputHTMLRef.value].filter((x) => x !== undefined) as HTMLElement[];
+    const containerElement = event.currentTarget as HTMLElement;
+    const containerRect = containerElement.getBoundingClientRect();
+    const relativeX = event.clientX - containerRect.left;
+
+    let closestValueSpaceCoordinates: string | undefined = undefined;
+    let minDistance = Infinity;
+
+    for (const container of containersToCheck) {
+      if (!container) {
+        continue;
+      }
+
+      const spans = container.querySelectorAll('span');
+
+      spans.forEach((span: Element) => {
+        const spanElement = span as HTMLElement;
+        const spanRect = spanElement.getBoundingClientRect();
+        const spanRelativeLeft = spanRect.left - containerRect.left;
+        const spanRelativeRight = spanRect.right - containerRect.left;
+
+        let distance;
+
+        if (relativeX < spanRelativeLeft) {
+          distance = spanRelativeLeft - relativeX;
+        } else if (relativeX > spanRelativeRight) {
+          distance = relativeX - spanRelativeRight;
+        } else {
+          distance = 0;
+        }
+
+        if (distance < minDistance) {
+          const clickWasRightish = relativeX > spanRelativeLeft + spanRect.width / 2;
+
+          if (clickWasRightish) {
+            if (spanElement.hasAttribute('data-value-pos-right')) {
+              closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-right')!;
+            } else if (spanElement.hasAttribute('data-value-pos-left')) {
+              closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-left')!;
+            }
+          } else {
+            if (spanElement.hasAttribute('data-value-pos-left')) {
+              closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-left')!;
+            } else if (spanElement.hasAttribute('data-value-pos-right')) {
+              closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-right')!;
+            }
+          }
+
+          if (closestValueSpaceCoordinates !== undefined) {
+            minDistance = distance;
+          }
+        }
+      });
+    }
+
+    return closestValueSpaceCoordinates;
+  };
+
+  const handleMousedown = (event: MouseEvent) => {
+    const closestValueSpaceCoordinates = getClosestValueSpaceCoordinates(event);
+
+    if (closestValueSpaceCoordinates !== undefined) {
+      state.value = updateMaskStateCaretAndSelection(state.value, closestValueSpaceCoordinates, closestValueSpaceCoordinates);
+
+      if (inputRef.value) {
+        inputRef.value.focus();
+      }
+
+      runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+    }
+  };
+
+  const handleMouseup = (event: MouseEvent) => {
+    const closestValueSpaceCoordinates = getClosestValueSpaceCoordinates(event);
+
+    if (closestValueSpaceCoordinates !== undefined) {
+      state.value = updateMaskStateCaretAndSelection(state.value, closestValueSpaceCoordinates, closestValueSpaceCoordinates);
+
+      if (inputRef.value) {
+        inputRef.value.focus();
+      }
+
+      runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+    }
   };
 
   const setFocus = (event: MouseEvent) => {
@@ -140,18 +209,20 @@
     () => [props.mask, props.modelValue],
     () => {
       runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
-      updateInputRefSize();
     },
     { immediate: true },
+  );
+
+  watch(
+    () => inputRef,
+    (newValue) => {
+      console.log('inputRef', newValue);
+    },
   );
 </script>
 
 <style scoped>
   .masked-text-container {
-    display: flex;
-    flex-direction: column;
-  }
-  .masked-text-container > * {
     display: flex;
     flex-direction: row;
     position: relative;
@@ -167,6 +238,7 @@
     border: none;
     outline: none;
     flex-shrink: 1;
+    z-index: 1;
   }
 
   .masked-text-shadow-input {
@@ -186,8 +258,8 @@
   }
 
   .text-overlay {
+    display: inline-block;
     font-size: 1rem;
-    pointer-events: none;
 
     padding: 0;
     border: none;
@@ -195,12 +267,26 @@
 
     font-family: monospace;
     white-space: pre;
+    pointer-events: none;
   }
 
-  .text-overlay :deep(.input-mask-char-input) {
+  .text-overlay :deep(.section-input) {
+    cursor: text;
+  }
+
+  .text-overlay :deep(div) {
+    display: inline-block;
+  }
+
+  .text-overlay :deep(.section-input.active) {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  }
+
+  .text-overlay :deep(.mask-char-input) {
     color: rgba(0, 0, 0, 1);
   }
-  .text-overlay :deep(.input-mask-char-mask) {
+  .text-overlay :deep(.mask-char-mask) {
     color: rgba(0, 0, 0, 0.2);
   }
   .text-overlay :deep(.fixed-mask) {
