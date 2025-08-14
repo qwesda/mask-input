@@ -15,18 +15,13 @@ const componentMaskFn = (sectionValue: string): MaskCharacter[] => {
 export const IPv4Mask = (): MaskDefinition => {
   const componentValidationFn = validationFnFromRegexString(`^([0-9]|[1-9][0-9]{0,2)$`);
 
-  // use 3 and it will fail with
-  // TypeError: can't access property Symbol.iterator, sectionValue is undefined
-  const inputSections = Array(2).fill(
+  const inputSections = Array(4).fill(
     MaskSectionInput('insert', 'right', componentMaskFn, componentValidationFn, 3)
   );
 
-  // using this below (with intersperse) fails with
-  // TypeError: sectionDefinition.maskingFn is not a function
-  const separator = {char: '.', type: 'mask' as const};
+  const separator = MaskSectionFixed('.');
 
   return {
     sections: intersperse(inputSections, separator),
-    // sections: inputSections,
   };
 };
