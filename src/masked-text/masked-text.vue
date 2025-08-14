@@ -47,7 +47,7 @@
 
   import VarDump from '@/helper/var-dump.vue';
 
-  const showDebugState = ref(false);
+  const showDebugState = ref(true);
   const showDebugLastDerivedState = ref(false);
 
   interface Props {
