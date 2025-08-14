@@ -703,8 +703,6 @@ export const applyPatchOperationSetCursorPosition = (
   currentState: MaskState,
   currentDerivedState: MaskDerivedState,
 ): MaskState => {
-  // For now, this operation maintains current cursor position
-  // but clears selection if keepSelectionEnd is false
   const newState: MaskState = {
     ...currentState,
     selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd
@@ -720,7 +718,6 @@ export const applyPatchOperationClearSelection = (
   currentState: MaskState,
   currentDerivedState: MaskDerivedState,
 ): MaskState => {
-  // Clear selection by setting selection end to caret position
   const newState: MaskState = {
     ...currentState,
     selectionEndPositionInValueSpace: currentState.caretPositionInValueSpace,
@@ -734,6 +731,8 @@ export const applyPatchOperationDeleteSelection = (
   currentState: MaskState,
   currentDerivedState: MaskDerivedState,
 ): MaskState => {
+  // todo: AI generated - human validation pending
+
   const { valueSpace } = currentDerivedState;
   const caretPosition = currentState.caretPositionInValueSpace;
   const selectionEndPosition = currentState.selectionEndPositionInValueSpace;
@@ -760,9 +759,10 @@ export const applyPatchOperationDeleteSelection = (
 
   // Group positions by section and sort by position in descending order for proper deletion
   const positionsBySection = new Map();
-  for (let i = startIndex; i < endIndex; i++) { // Note: exclusive end to match selection behavior
+  for (let i = startIndex; i < endIndex; i++) {
+    // Note: exclusive end to match selection behavior
     const position = valueSpace[i];
-    const [sectionIndex, positionInSection] = position.split(':').map(x => parseInt(x));
+    const [sectionIndex, positionInSection] = position.split(':').map((x) => parseInt(x));
 
     if (!isNaN(sectionIndex) && !isNaN(positionInSection)) {
       if (!positionsBySection.has(sectionIndex)) {
@@ -789,8 +789,26 @@ export const applyPatchOperationDeleteSelection = (
     }
   });
 
-  // Create new state with updated values and collapsed selection
-  const newCaretPosition = valueSpace[startIndex] || caretPosition;
+  // Determine the original section of the caret position
+  const [originalSectionIndex, originalPositionInSection] = caretPosition.split(':').map((x) => parseInt(x));
+
+  // Calculate how many characters were deleted before the original caret position in the same section
+  let deletedBeforeCaretInSameSection = 0;
+  if (positionsBySection.has(originalSectionIndex)) {
+    const deletedPositions = positionsBySection.get(originalSectionIndex);
+    deletedBeforeCaretInSameSection = deletedPositions.filter((pos) => pos < originalPositionInSection).length;
+  }
+
+  // Calculate the new position within the original section
+  const newPositionInSection = Math.max(0, originalPositionInSection - deletedBeforeCaretInSameSection);
+
+  // Ensure the new position doesn't exceed the section's new length
+  const newSectionLength = newValues[originalSectionIndex]?.length || 0;
+  const clampedPosition = Math.min(newPositionInSection, newSectionLength);
+
+  // Create the new caret position in the original section
+  const newCaretPosition = `${originalSectionIndex}:${clampedPosition}`;
+
   const newState: MaskState = {
     ...currentState,
     values: newValues,
