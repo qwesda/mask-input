@@ -9,7 +9,9 @@ import {
 const intersperse = (arr: T[], sep: T): T[] => arr.flatMap(e => [sep, e]).slice(1)
 
 const componentMaskFn = (sectionValue: string): MaskCharacter[] => {
-  return [...sectionValue].map(c => { return {char: c, type: 'value' as const} });
+  // default to "0"
+  let sectionArray = [...sectionValue || "0"];
+  return sectionArray.map(c => { return {char: c, type: 'value' as const} });
 };
 
 export const IPv4Mask = (): MaskDefinition => {
