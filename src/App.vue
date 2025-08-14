@@ -1,6 +1,7 @@
 <template>
   <div class="app">
     <div class="section">
+      <MaskedText :mask="dateMask" v-model="dateValue" />
       <MaskedText :mask="ipv4Mask" v-model="ipv4Value" />
       <MaskedText :mask="ipv6Mask" v-model="ipv6Value" />
 
@@ -8,6 +9,7 @@
         <div class="row-label">plain input</div>
         <input type="text" value="779126479 23798467912364 9123864781234" style="flex-grow: 1" />
       </div>
+
       <div class="row">
         <div class="row-label">value</div>
 
@@ -73,8 +75,11 @@
   import { default as VarDump } from '@/helper/var-dump.vue';
   import { type Ref, ref, computed } from 'vue';
   import { bindToLocalStorage } from '@/helper/bindToLocalStorage.ts';
-  import { NumericMask, IPv4Mask, IPv6Mask } from '@/masked-text/masks';
+  import { NumericMask, IPv4Mask, IPv6Mask, DateMask } from '@/masked-text/masks';
   import { type MaskSectionFixedDefinition, MaskSectionFixed } from '@/masked-text/masks/index.ts';
+
+  const dateValue = ref(['', '', ''] as string[]);
+  const dateMask = DateMask();
 
   const ipv4Value = ref(['127', '0', '0', '1'] as string[]);
   const ipv4Mask = IPv4Mask();
