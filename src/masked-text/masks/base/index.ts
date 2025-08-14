@@ -43,18 +43,43 @@ export const MaskSectionFixed = (mask: string, skipKeys?: string[]): MaskSection
 });
 
 export const MaskSectionInput = (
-  inputBehavior: 'replace' | 'insert',
-  alignment: 'left' | 'right',
   maskingFn: (sectionValue: string) => MaskCharacter[],
-  validationFn: (sectionValue: string) => boolean,
-  maxLength: number,
+  options: {
+    inputBehavior?: 'replace' | 'insert';
+    alignment?: 'left' | 'right';
+
+    inputCharacterFilterFn?: (inputCharacter: string) => boolean;
+    inputCharacterSubstitutionFn?: (inputCharacter: string) => string;
+
+    syntacticValidationFn?: (sectionValue: string) => boolean;
+    semanticValidationFn?: (sectionValue: string) => boolean;
+
+    spingUpFn?: (sectionValue: string) => string;
+    spingDownFn?: (sectionValue: string) => string;
+
+    sectionCommitValueTransformation?: (sectionValue: string) => string;
+
+    maxLength?: number;
+  },
 ): MaskSectionInputDefinition => ({
   type: 'input',
-  inputBehavior,
-  alignment,
   maskingFn,
-  validationFn,
-  maxLength,
+
+  inputBehavior: options.inputBehavior ?? 'insert',
+  alignment: options.alignment ?? 'left',
+
+  inputCharacterFilterFn: options.inputCharacterFilterFn,
+  inputCharacterSubstitutionFn: options.inputCharacterSubstitutionFn,
+
+  syntacticValidationFn: options.syntacticValidationFn,
+  semanticValidationFn: options.semanticValidationFn,
+
+  spingUpFn: options.spingUpFn,
+  spingDownFn: options.spingDownFn,
+
+  sectionCommitValueTransformation: options.sectionCommitValueTransformation,
+
+  maxLength: options.maxLength,
 });
 
 export const getInitialMaskState = (values: string[]): MaskState => {
@@ -554,7 +579,7 @@ export function getTextInputDisplayStringWithSelection(
 }
 
 export const determinePatchOperationFromKeyboardEvent = (
-  type: 'keydown' | 'keyup ',
+  type: 'keyup' | 'keydown' | 'keyup ',
   event: KeyboardEvent,
   state: MaskState,
   maskDefinition: MaskDefinition,

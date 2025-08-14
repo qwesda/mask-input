@@ -6,6 +6,7 @@
       ref="inputRef"
       @input.capture="handleInput"
       @keydown.capture="handleKeydown"
+      @keyup.capture="handleKeyup"
       @focus="handleFocus"
       @blur="handleBlur"
       @click="setFocus"
@@ -108,7 +109,8 @@
   };
 
   const handleInput = (event: Event) => {
-    // console.log('handleInput', event);
+    console.log('handleInput', event);
+
     updateInputRefSize();
   };
 
@@ -134,11 +136,23 @@
   }
 
   const handleKeydown = (event: KeyboardEvent) => {
-    // console.log('handleKeydown', event);
-
     const patchOperations = determinePatchOperationFromKeyboardEvent('keydown', event, state.value, props.mask, lastDerivedState.value);
 
-    console.log('handleKeydown -> ', patchOperations);
+    console.log('handleKeydown', event.isComposing ? 'composing' : '', event, patchOperations);
+
+    if (patchOperations !== undefined) {
+      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
+
+      event.preventDefault();
+
+      resetInputCursorAnimation();
+    }
+  };
+
+  const handleKeyup = (event: KeyboardEvent) => {
+    const patchOperations = determinePatchOperationFromKeyboardEvent('keyup', event, state.value, props.mask, lastDerivedState.value);
+
+    console.log('handleKeyup', event.isComposing ? 'composing' : '', event, patchOperations);
 
     if (patchOperations !== undefined) {
       [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);

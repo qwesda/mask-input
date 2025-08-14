@@ -86,12 +86,20 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
   }
 
   const integerDigitsMaskFn = IntegerDigitsMaskFn(minIntegerDigits, thousandSeparator);
-  const integerValidationFn = validationFnFromRegexString(`^([0-9]|[1-9][0-9]{0,${minIntegerDigits - 1})$`);
-  const integerInputSection = MaskSectionInput('insert', 'right', integerDigitsMaskFn, integerValidationFn, maxIntegerDigits);
+  const integerSyntacticValidationFn = validationFnFromRegexString(`^([0-9]|[1-9][0-9]{0,${minIntegerDigits - 1})$`);
+  const integerInputSection = MaskSectionInput(integerDigitsMaskFn, {
+    alignment: 'right',
+    syntacticValidationFn: integerSyntacticValidationFn,
+    maxLength: maxIntegerDigits,
+  });
 
   const decimalsDigitsMaskFn = DecimalsDigitsMaskFn(minDecimalDigits);
-  const decimalsValidationFn = validationFnFromRegexString(`^([0-9]{0,${maxDecimalDigits}})$`);
-  const decimalsInputSection = MaskSectionInput('insert', 'left', decimalsDigitsMaskFn, decimalsValidationFn, maxDecimalDigits);
+  const decimalsSyntacticValidationFn = validationFnFromRegexString(`^([0-9]{0,${maxDecimalDigits}})$`);
+  const decimalsInputSection = MaskSectionInput(decimalsDigitsMaskFn, {
+    alignment: 'left',
+    syntacticValidationFn: decimalsSyntacticValidationFn,
+    maxLength: maxDecimalDigits,
+  });
 
   return {
     sections: [...prefixes, integerInputSection, ...infixes, decimalsInputSection, ...suffixes],

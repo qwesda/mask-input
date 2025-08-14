@@ -1,8 +1,6 @@
 import { type MaskDefinition, type MaskCharacter, MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from './base/index.ts';
 
-const intersperse = (arr: T[], sep: T): T[] => arr.flatMap((e) => [sep, e]).slice(1);
-
-const componentMaskFn = (sectionValue: string): MaskCharacter[] => {
+const ipv4BlockMaskFn = (sectionValue: string): MaskCharacter[] => {
   if (sectionValue === '') {
     return [{ char: '0', type: 'mask' as const }];
   }
@@ -13,13 +11,15 @@ const componentMaskFn = (sectionValue: string): MaskCharacter[] => {
 };
 
 export const IPv4Mask = (): MaskDefinition => {
-  const componentValidationFn = validationFnFromRegexString(`^([0-9]|[1-9][0-9]{0,2)$`);
+  const inputBlockSection = MaskSectionInput(ipv4BlockMaskFn, {
+    alignment: 'right',
+    syntacticValidationFn: validationFnFromRegexString(`^([0-9a-f]{0,6})$`),
+    maxLength: 3,
+  });
 
-  const inputSections = Array(4).fill(MaskSectionInput('insert', 'right', componentMaskFn, componentValidationFn, 3));
-
-  const separator = MaskSectionFixed('.');
+  const separatorSection = MaskSectionFixed(':');
 
   return {
-    sections: intersperse(inputSections, separator),
+    sections: [inputBlockSection, separatorSection, inputBlockSection, separatorSection, inputBlockSection, separatorSection, inputBlockSection],
   };
 };

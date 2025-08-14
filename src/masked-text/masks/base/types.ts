@@ -6,11 +6,23 @@ export interface MaskSectionFixedDefinition {
 
 export interface MaskSectionInputDefinition {
   type: 'input';
+  maskingFn: (sectionValue: string) => MaskCharacter[];
+
   inputBehavior: 'replace' | 'insert';
   alignment: 'left' | 'right';
-  maskingFn: (sectionValue: string) => MaskCharacter[];
-  validationFn: (sectionValue: string) => boolean;
-  maxLength: number;
+
+  inputCharacterFilterFn: ((inputCharacter: string) => boolean) | undefined;
+  inputCharacterSubstitutionFn: ((inputCharacter: string) => string) | undefined;
+
+  syntacticValidationFn: ((sectionValue: string) => boolean) | undefined;
+  semanticValidationFn: ((sectionValue: string) => boolean) | undefined;
+
+  spingUpFn: ((sectionValue: string) => string) | undefined;
+  spingDownFn: ((sectionValue: string) => string) | undefined;
+
+  sectionCommitValueTransformation: ((sectionValue: string) => string) | undefined;
+
+  maxLength: number | undefined;
 }
 
 export interface MaskSectionInput extends MaskSectionInputDefinition {
