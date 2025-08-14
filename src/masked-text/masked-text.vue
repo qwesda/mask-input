@@ -37,6 +37,8 @@
     updateMaskStateValues,
     updateMaskStateCaretAndSelection,
     findClosestValidValueSpaceCoordinates,
+    determinePatchOperationFromKeyboardEvent,
+    applyPatchOperations,
   } from './masks/base/index.ts';
 
   import VarDump from '@/helper/var-dump.vue';
@@ -127,37 +129,23 @@
   const handleKeydown = (event: KeyboardEvent) => {
     // console.log('handleKeydown', event);
 
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+    const patchOperations = determinePatchOperationFromKeyboardEvent('keydown', event, state.value, props.mask, lastDerivedState.value);
+
+    console.log('handleKeydown -> ', patchOperations);
+
+    if (patchOperations !== undefined) {
+      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
+
       event.preventDefault();
 
-      const currentPosition = state.value.caretPositionInValueSpace;
-      const valueSpace = lastDerivedState.value.valueSpace;
-
-      const currentIndex = valueSpace.indexOf(currentPosition);
-
-      if (currentIndex !== -1) {
-        let newIndex: number;
-
-        if (event.key === 'ArrowLeft') {
-          newIndex = Math.max(0, currentIndex - 1);
-        } else {
-          newIndex = Math.min(valueSpace.length - 1, currentIndex + 1);
-        }
-
-        const newPosition = valueSpace[newIndex];
-
-        if (newPosition !== currentPosition) {
-          state.value = updateMaskStateCaretAndSelection(state.value, newPosition, newPosition);
-          runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
-        }
-      }
+      resetInputCursorAnimation();
     }
-    resetInputCursorAnimation();
   };
 
   const handleFocus = (event: FocusEvent) => {
     // console.log('handleFocus', event);
   };
+
   const handleBlur = (event: FocusEvent) => {
     // console.log('handleBlur', event);
   };
@@ -338,6 +326,9 @@
   }
   .text-overlay :deep(.mask-char-mask) {
     color: rgba(0, 0, 0, 0.2);
+  }
+  .text-overlay :deep(.selected) {
+    background-color: rgba(0, 0, 0, 0.2);
   }
   .text-overlay :deep(.fixed-mask) {
     color: oklch(71.5% 0.143 215.221);

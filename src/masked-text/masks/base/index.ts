@@ -9,6 +9,11 @@ import type {
   MaskDefinition,
   MaskState,
   MaskDerivedState,
+  PatchOperation,
+  PatchOperationMoveCursor,
+  PatchOperationSetCursorPosition,
+  PatchOperationClearSelection,
+  PatchOperationDeleteSelection,
 } from './types';
 
 export type {
@@ -237,7 +242,7 @@ const getInputSectionHTMLStrings = (
 
     const htmlStringParts = isBeforeCursor ? preInputHTMLStringParts : postInputHTMLStringParts;
     const htmlStringPartClass =
-      maskChar.type === 'mask' ? 'mask-char-mask' : 'mask-char-value' + (isBeforeCursor !== isBeforeSelectionEnd ? ' selected' : '');
+      (maskChar.type === 'mask' ? 'mask-char-mask' : 'mask-char-value') + (isBeforeCursor !== isBeforeSelectionEnd ? ' selected' : '');
 
     const dataAttrs: { [key: string]: string } = {};
 
@@ -487,7 +492,7 @@ export function encodeState(state: MaskState): string {
     } else if (i === caretSectionIndex && i !== selectionEndSectionIndex) {
       encodedStateParts.push(value.substring(0, caretPosition) + '[' + value.substring(caretPosition));
     } else if (i !== caretSectionIndex && i === selectionEndSectionIndex) {
-      encodedStateParts.push(value.substring(0, caretPosition) + '[' + value.substring(caretPosition));
+      encodedStateParts.push(value.substring(0, selectionEndPosition) + ']' + value.substring(selectionEndPosition));
     } else if (caretPosition <= selectionEndPosition) {
       encodedStateParts.push(
         value.substring(0, caretPosition) + '[' + value.substring(caretPosition, selectionEndPosition) + ']' + value.substring(selectionEndPosition),
@@ -547,3 +552,280 @@ export function getTextInputDisplayStringWithSelection(
 
   return textInputDisplayStringWithSelectionParts.join('|');
 }
+
+export const determinePatchOperationFromKeyboardEvent = (
+  type: 'keydown' | 'keyup ',
+  event: KeyboardEvent,
+  state: MaskState,
+  maskDefinition: MaskDefinition,
+  currentDerivedState?: MaskDerivedState,
+): PatchOperation[] | undefined => {
+  // returns array of patch operations to apply to state. Special return values:
+  // - `[]` - no change, but stop event propagation
+  // - `undefined` - no change, but let event propagate
+
+  if (!currentDerivedState) {
+    currentDerivedState = getDerivedState(state, maskDefinition);
+  }
+
+  const maintainSelectionKeyPressed = event.shiftKey;
+  const skipSectionLevelKeyPressed = !navigator.userAgent.includes('Mac') ? event.ctrlKey : event.altKey;
+  const skipLineLevelKeyPressed = !navigator.userAgent.includes('Mac') ? false : event.metaKey;
+  const selectionIsPresent = state.selectionEndPositionInValueSpace !== state.caretPositionInValueSpace;
+
+  if (type === 'keydown') {
+    if (event.key === 'Backspace') {
+      if (selectionIsPresent) {
+        return [{ op: 'delete-selection' }];
+      }
+    }
+
+    if (event.key === 'Delete') {
+      if (selectionIsPresent) {
+        return [{ op: 'delete-selection' }];
+      }
+    }
+
+    if (event.key === 'ArrowLeft') {
+      if (selectionIsPresent && !maintainSelectionKeyPressed) {
+        return [{ op: 'clear-selection' }];
+      } else if (skipLineLevelKeyPressed) {
+        return [{ op: 'move-cursor', direction: 'left', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
+      } else if (skipSectionLevelKeyPressed) {
+        return [{ op: 'move-cursor', direction: 'left', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }];
+      } else {
+        return [{ op: 'move-cursor', direction: 'left', level: 'character', keepSelectionEnd: maintainSelectionKeyPressed }];
+      }
+    }
+
+    if (event.key === 'ArrowRight') {
+      if (selectionIsPresent && !maintainSelectionKeyPressed) {
+        return [{ op: 'clear-selection' }];
+      } else if (skipLineLevelKeyPressed) {
+        return [{ op: 'move-cursor', direction: 'right', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
+      } else if (skipSectionLevelKeyPressed) {
+        return [{ op: 'move-cursor', direction: 'right', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }];
+      } else {
+        return [{ op: 'move-cursor', direction: 'right', level: 'character', keepSelectionEnd: maintainSelectionKeyPressed }];
+      }
+    }
+  }
+
+  return undefined;
+};
+
+export const applyPatchOperationMoveCursor = (
+  patchOperation: PatchOperationMoveCursor,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+): MaskState => {
+  // todo: AI generated - human validation pending
+  const { direction, level, keepSelectionEnd } = patchOperation;
+  const { valueSpace } = currentDerivedState;
+
+  // Get current cursor position
+  const currentCaretPosition = currentState.caretPositionInValueSpace;
+  let newCaretPosition = currentCaretPosition;
+
+  // Find current position index in valueSpace
+  const currentIndex = valueSpace.indexOf(currentCaretPosition);
+
+  if (currentIndex === -1) {
+    // If current position is not found, don't move
+    return currentState;
+  }
+
+  // Calculate new position based on direction and level
+  if (level === 'character') {
+    // Move one character at a time
+    if (direction === 'left' && currentIndex > 0) {
+      newCaretPosition = valueSpace[currentIndex - 1];
+    } else if (direction === 'right' && currentIndex < valueSpace.length - 1) {
+      newCaretPosition = valueSpace[currentIndex + 1];
+    }
+  } else if (level === 'section') {
+    // Move to beginning/end of current section or to adjacent section
+    const [currentSectionIndex, currentPosition] = currentCaretPosition.split(':').map((x) => parseInt(x));
+
+    if (direction === 'left') {
+      // Find the first position of current section or move to previous section's end
+      const targetSectionIndex = currentPosition === 0 ? currentSectionIndex - 1 : currentSectionIndex;
+      const targetPosition = currentPosition === 0 ? undefined : 0;
+
+      if (targetSectionIndex >= 0) {
+        if (targetPosition !== undefined) {
+          newCaretPosition = `${currentSectionIndex}:${targetPosition}`;
+        } else {
+          // Find last position of previous section
+          const previousSectionPositions = valueSpace.filter((pos) => pos.startsWith(`${targetSectionIndex}:`));
+          if (previousSectionPositions.length > 0) {
+            newCaretPosition = previousSectionPositions[previousSectionPositions.length - 1];
+          }
+        }
+      }
+    } else if (direction === 'right') {
+      // Find the last position of current section or move to next section's beginning
+      const currentSectionPositions = valueSpace.filter((pos) => pos.startsWith(`${currentSectionIndex}:`));
+      const isAtSectionEnd = currentIndex === valueSpace.indexOf(currentSectionPositions[currentSectionPositions.length - 1]);
+
+      if (isAtSectionEnd) {
+        // Move to next section's beginning
+        const nextSectionPosition = valueSpace.find((pos) => pos.startsWith(`${currentSectionIndex + 1}:`));
+        if (nextSectionPosition) {
+          newCaretPosition = nextSectionPosition;
+        }
+      } else {
+        // Move to current section's end
+        newCaretPosition = currentSectionPositions[currentSectionPositions.length - 1];
+      }
+    }
+  } else if (level === 'line') {
+    // Move to beginning or end of entire line
+    if (direction === 'left') {
+      newCaretPosition = valueSpace[0];
+    } else if (direction === 'right') {
+      newCaretPosition = valueSpace[valueSpace.length - 1];
+    }
+  }
+
+  // Create new state with updated cursor position
+  const newState: MaskState = {
+    ...currentState,
+    caretPositionInValueSpace: newCaretPosition,
+    selectionEndPositionInValueSpace: keepSelectionEnd ? currentState.selectionEndPositionInValueSpace : newCaretPosition,
+  };
+
+  return newState;
+};
+
+export const applyPatchOperationSetCursorPosition = (
+  patchOperation: PatchOperationSetCursorPosition,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+): MaskState => {
+  // For now, this operation maintains current cursor position
+  // but clears selection if keepSelectionEnd is false
+  const newState: MaskState = {
+    ...currentState,
+    selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd
+      ? currentState.selectionEndPositionInValueSpace
+      : currentState.caretPositionInValueSpace,
+  };
+
+  return newState;
+};
+
+export const applyPatchOperationClearSelection = (
+  patchOperation: PatchOperationClearSelection,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+): MaskState => {
+  // Clear selection by setting selection end to caret position
+  const newState: MaskState = {
+    ...currentState,
+    selectionEndPositionInValueSpace: currentState.caretPositionInValueSpace,
+  };
+
+  return newState;
+};
+
+export const applyPatchOperationDeleteSelection = (
+  patchOperation: PatchOperationDeleteSelection,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+): MaskState => {
+  const { valueSpace } = currentDerivedState;
+  const caretPosition = currentState.caretPositionInValueSpace;
+  const selectionEndPosition = currentState.selectionEndPositionInValueSpace;
+
+  // If no selection, nothing to delete
+  if (caretPosition === selectionEndPosition) {
+    return currentState;
+  }
+
+  // Find the indices of the selection range in valueSpace
+  const caretIndex = valueSpace.indexOf(caretPosition);
+  const selectionEndIndex = valueSpace.indexOf(selectionEndPosition);
+
+  if (caretIndex === -1 || selectionEndIndex === -1) {
+    return currentState;
+  }
+
+  // Determine the start and end of the selection (handle both directions)
+  const startIndex = Math.min(caretIndex, selectionEndIndex);
+  const endIndex = Math.max(caretIndex, selectionEndIndex);
+
+  // Extract section and position information for the selected range
+  const newValues = [...currentState.values];
+
+  // Group positions by section and sort by position in descending order for proper deletion
+  const positionsBySection = new Map();
+  for (let i = startIndex; i < endIndex; i++) { // Note: exclusive end to match selection behavior
+    const position = valueSpace[i];
+    const [sectionIndex, positionInSection] = position.split(':').map(x => parseInt(x));
+
+    if (!isNaN(sectionIndex) && !isNaN(positionInSection)) {
+      if (!positionsBySection.has(sectionIndex)) {
+        positionsBySection.set(sectionIndex, []);
+      }
+      positionsBySection.get(sectionIndex).push(positionInSection);
+    }
+  }
+
+  // Delete characters from each section (in reverse order to maintain indices)
+  positionsBySection.forEach((positions, sectionIndex) => {
+    if (newValues[sectionIndex]) {
+      const sortedPositions = positions.sort((a, b) => b - a); // Sort in descending order
+      const sectionValue = newValues[sectionIndex];
+      let newSectionValue = sectionValue;
+
+      for (const positionInSection of sortedPositions) {
+        if (positionInSection < newSectionValue.length) {
+          newSectionValue = newSectionValue.slice(0, positionInSection) + newSectionValue.slice(positionInSection + 1);
+        }
+      }
+
+      newValues[sectionIndex] = newSectionValue;
+    }
+  });
+
+  // Create new state with updated values and collapsed selection
+  const newCaretPosition = valueSpace[startIndex] || caretPosition;
+  const newState: MaskState = {
+    ...currentState,
+    values: newValues,
+    caretPositionInValueSpace: newCaretPosition,
+    selectionEndPositionInValueSpace: newCaretPosition,
+  };
+
+  return newState;
+};
+
+export const applyPatchOperations = (
+  patchOperations: PatchOperation[],
+  currentState: MaskState,
+  maskDefinition: MaskDefinition,
+  currentDerivedState?: MaskDerivedState,
+): [MaskState, MaskDerivedState] => {
+  if (!currentDerivedState) {
+    currentDerivedState = getDerivedState(currentState, maskDefinition);
+  }
+
+  for (const patchOperation of patchOperations) {
+    if (patchOperation.op === 'move-cursor') {
+      currentState = applyPatchOperationMoveCursor(patchOperation, currentState, currentDerivedState);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    } else if (patchOperation.op === 'set-cursor-position') {
+      currentState = applyPatchOperationSetCursorPosition(patchOperation, currentState, currentDerivedState);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    } else if (patchOperation.op === 'clear-selection') {
+      currentState = applyPatchOperationClearSelection(patchOperation, currentState, currentDerivedState);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    } else if (patchOperation.op === 'delete-selection') {
+      currentState = applyPatchOperationDeleteSelection(patchOperation, currentState, currentDerivedState);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    }
+  }
+
+  return [currentState, currentDerivedState];
+};

@@ -2,6 +2,10 @@
   <div class="app">
     <div class="section">
       <div class="row">
+        <div class="row-label">plain input</div>
+        <input type="text" value="779126479 23798467912364 9123864781234" style="flex-grow: 1" />
+      </div>
+      <div class="row">
         <div class="row-label">value</div>
 
         <button @click="setRandomNumericValue()">n.n</button>
