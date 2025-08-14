@@ -56,7 +56,7 @@
     'update:modelValue': [value: string[]];
   }>();
 
-  const state: Ref<MaskState> = ref(getInitialMaskState(['', '']));
+  const state: Ref<MaskState> = ref(getInitialMaskState(props.modelValue));
   const lastDerivedState: Ref<MaskDerivedState> = ref(getDerivedState(state.value, props.mask));
 
   const hasFocus = ref(true);
