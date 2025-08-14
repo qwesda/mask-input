@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch, type Ref } from 'vue';
+  import { ref, watch, type Ref, nextTick } from 'vue';
   import {
     type MaskDefinition,
     type MaskState,
@@ -102,9 +102,59 @@
     // console.log('handleInput', event);
     updateInputRefSize();
   };
+
+  function resetInputCursorAnimation() {
+    if (inputRef.value) {
+      const currentSelectionStart = inputRef.value.selectionStart;
+      const currentSelectionEnd = inputRef.value.selectionEnd;
+
+      requestAnimationFrame(() => {
+        if (inputRef.value) {
+          inputRef.value.blur();
+
+          requestAnimationFrame(() => {
+            if (inputRef.value) {
+              inputRef.value.setSelectionRange(currentSelectionStart, currentSelectionEnd);
+
+              inputRef.value.focus();
+            }
+          });
+        }
+      });
+    }
+  }
+
   const handleKeydown = (event: KeyboardEvent) => {
     // console.log('handleKeydown', event);
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault();
+
+      const currentPosition = state.value.caretPositionInValueSpace;
+      const valueSpace = lastDerivedState.value.valueSpace;
+
+      const currentIndex = valueSpace.indexOf(currentPosition);
+
+      if (currentIndex !== -1) {
+        let newIndex: number;
+
+        if (event.key === 'ArrowLeft') {
+          newIndex = Math.max(0, currentIndex - 1);
+        } else {
+          newIndex = Math.min(valueSpace.length - 1, currentIndex + 1);
+        }
+
+        const newPosition = valueSpace[newIndex];
+
+        if (newPosition !== currentPosition) {
+          state.value = updateMaskStateCaretAndSelection(state.value, newPosition, newPosition);
+          runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+        }
+      }
+    }
+    resetInputCursorAnimation();
   };
+
   const handleFocus = (event: FocusEvent) => {
     // console.log('handleFocus', event);
   };
