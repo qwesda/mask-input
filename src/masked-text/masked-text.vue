@@ -18,11 +18,15 @@
   </div>
 
   <template v-if="hasFocus">
-    <i>state</i>
-    <var-dump :data="state" />
+    <div style="display: flex; flex-direction: row; gap: 1em">
+      <label style="display: flex; flex-direction: row; align-items: center"> <input type="checkbox" v-model="showDebugState" /> state </label>
+      <label style="display: flex; flex-direction: row; align-items: center">
+        <input type="checkbox" v-model="showDebugLastDerivedState" /> lastDerivedState
+      </label>
+    </div>
 
-    <i>lastDerivedState</i>
-    <var-dump :data="lastDerivedState" />
+    <var-dump v-if="showDebugState" :data="state" />
+    <var-dump v-if="showDebugLastDerivedState" :data="lastDerivedState" />
   </template>
 </template>
 
@@ -42,6 +46,9 @@
   } from './masks/base/index.ts';
 
   import VarDump from '@/helper/var-dump.vue';
+
+  const showDebugState = ref(false);
+  const showDebugLastDerivedState = ref(false);
 
   interface Props {
     mask: MaskDefinition;
