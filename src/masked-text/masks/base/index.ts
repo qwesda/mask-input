@@ -731,83 +731,43 @@ export const applyPatchOperationDeleteSelection = (
   currentState: MaskState,
   currentDerivedState: MaskDerivedState,
 ): MaskState => {
-  // todo: AI generated - human validation pending
+  const comparison = compareSpaceCoordinates(currentState.caretPositionInValueSpace, currentState.selectionEndPositionInValueSpace);
 
-  const { valueSpace } = currentDerivedState;
-  const caretPosition = currentState.caretPositionInValueSpace;
-  const selectionEndPosition = currentState.selectionEndPositionInValueSpace;
-
-  // If no selection, nothing to delete
-  if (caretPosition === selectionEndPosition) {
+  if (comparison === 0 || comparison === undefined) {
     return currentState;
   }
 
-  // Find the indices of the selection range in valueSpace
-  const caretIndex = valueSpace.indexOf(caretPosition);
-  const selectionEndIndex = valueSpace.indexOf(selectionEndPosition);
+  const lowerSelectionCoordinates = comparison < 0 ? currentState.caretPositionInValueSpace : currentState.selectionEndPositionInValueSpace;
+  const upperSelectionCoordinates = comparison < 0 ? currentState.selectionEndPositionInValueSpace : currentState.caretPositionInValueSpace;
 
-  if (caretIndex === -1 || selectionEndIndex === -1) {
-    return currentState;
-  }
+  const [lowerSelectionIndex, lowerSelectionPosition] = lowerSelectionCoordinates.split(':').map((x) => parseInt(x));
+  const [upperSelectionIndex, upperSelectionPosition] = upperSelectionCoordinates.split(':').map((x) => parseInt(x));
+  let newCaretPosition = '0:0';
 
-  // Determine the start and end of the selection (handle both directions)
-  const startIndex = Math.min(caretIndex, selectionEndIndex);
-  const endIndex = Math.max(caretIndex, selectionEndIndex);
-
-  // Extract section and position information for the selected range
   const newValues = [...currentState.values];
 
-  // Group positions by section and sort by position in descending order for proper deletion
-  const positionsBySection = new Map();
-  for (let i = startIndex; i < endIndex; i++) {
-    // Note: exclusive end to match selection behavior
-    const position = valueSpace[i];
-    const [sectionIndex, positionInSection] = position.split(':').map((x) => parseInt(x));
+  for (let i = lowerSelectionIndex; i <= upperSelectionIndex; i++) {
+    const oldSectionValue = newValues[i];
 
-    if (!isNaN(sectionIndex) && !isNaN(positionInSection)) {
-      if (!positionsBySection.has(sectionIndex)) {
-        positionsBySection.set(sectionIndex, []);
+    if (i === lowerSelectionIndex && i === upperSelectionIndex) {
+      newValues[i] = oldSectionValue.substring(0, lowerSelectionPosition) + oldSectionValue.substring(upperSelectionPosition);
+      newCaretPosition = `${i}:${lowerSelectionPosition}`;
+    } else if (i === lowerSelectionIndex && i !== upperSelectionIndex) {
+      newValues[i] = oldSectionValue.substring(0, lowerSelectionPosition);
+
+      if (lowerSelectionCoordinates === currentState.caretPositionInValueSpace) {
+        newCaretPosition = `${i}:${lowerSelectionPosition}`;
       }
-      positionsBySection.get(sectionIndex).push(positionInSection);
+    } else if (i !== lowerSelectionIndex && i === upperSelectionIndex) {
+      newValues[i] = oldSectionValue.substring(upperSelectionPosition);
+
+      if (upperSelectionCoordinates === currentState.caretPositionInValueSpace) {
+        newCaretPosition = `${i}:0`;
+      }
+    } else if (i !== lowerSelectionIndex && i !== upperSelectionIndex) {
+      newValues[i] = '';
     }
   }
-
-  // Delete characters from each section (in reverse order to maintain indices)
-  positionsBySection.forEach((positions, sectionIndex) => {
-    if (newValues[sectionIndex]) {
-      const sortedPositions = positions.sort((a, b) => b - a); // Sort in descending order
-      const sectionValue = newValues[sectionIndex];
-      let newSectionValue = sectionValue;
-
-      for (const positionInSection of sortedPositions) {
-        if (positionInSection < newSectionValue.length) {
-          newSectionValue = newSectionValue.slice(0, positionInSection) + newSectionValue.slice(positionInSection + 1);
-        }
-      }
-
-      newValues[sectionIndex] = newSectionValue;
-    }
-  });
-
-  // Determine the original section of the caret position
-  const [originalSectionIndex, originalPositionInSection] = caretPosition.split(':').map((x) => parseInt(x));
-
-  // Calculate how many characters were deleted before the original caret position in the same section
-  let deletedBeforeCaretInSameSection = 0;
-  if (positionsBySection.has(originalSectionIndex)) {
-    const deletedPositions = positionsBySection.get(originalSectionIndex);
-    deletedBeforeCaretInSameSection = deletedPositions.filter((pos) => pos < originalPositionInSection).length;
-  }
-
-  // Calculate the new position within the original section
-  const newPositionInSection = Math.max(0, originalPositionInSection - deletedBeforeCaretInSameSection);
-
-  // Ensure the new position doesn't exceed the section's new length
-  const newSectionLength = newValues[originalSectionIndex]?.length || 0;
-  const clampedPosition = Math.min(newPositionInSection, newSectionLength);
-
-  // Create the new caret position in the original section
-  const newCaretPosition = `${originalSectionIndex}:${clampedPosition}`;
 
   const newState: MaskState = {
     ...currentState,
