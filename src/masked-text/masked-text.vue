@@ -1,52 +1,65 @@
 <template>
-  <div class="masked-text-container" @mousedown.capture="handleMousedown" @mouseup.capture="handleMouseup">
-    <div class="text-overlay" ref="preInputHTMLRef" v-html="lastDerivedState.preInputHTMLString" />
+  <div ref="containerRef">
+    <div
+      class="masked-text-container"
+      @mousedown.capture="handleMousedown"
+      @mouseup.capture="handleMouseup"
+      @focusin="handleFocusin"
+      @focusout="handleFocusout"
+    >
+      <div ref="preInputHTMLRef" class="text-overlay" v-html="lastDerivedState.preInputHTMLString" />
 
-    <input
-      ref="inputRef"
-      @input.capture="handleInput"
-      @keydown.capture="handleKeydown"
-      @keyup.capture="handleKeyup"
-      @focus="handleFocus"
-      @blur="handleBlur"
-      @click="setFocus"
-      class="masked-text-input"
-      autofocus
-      style="width: 4px; margin-left: 0; margin-right: -4px; background: transparent"
-    />
+      <input
+        ref="inputRef"
+        autofocus
+        class="masked-text-input"
+        style="width: 4px; margin-left: 0; margin-right: -4px; background: transparent"
+        @keydown.capture="handleKeydown"
+        @keyup.capture="handleKeyup"
+        @beforeinput="handleBeforeInput"
+        @compositionend="handleCompositionEnd"
+      />
 
-    <div class="text-overlay" ref="postInputHTMLRef" v-html="lastDerivedState.postInputHTMLString" />
-  </div>
+      <div ref="postInputHTMLRef" class="text-overlay" v-html="lastDerivedState.postInputHTMLString" />
 
-  <template v-if="hasFocus">
-    <div style="display: flex; flex-direction: row; gap: 1em">
-      <label style="display: flex; flex-direction: row; align-items: center"> <input type="checkbox" v-model="showDebugState" /> state </label>
-      <label style="display: flex; flex-direction: row; align-items: center">
-        <input type="checkbox" v-model="showDebugLastDerivedState" /> lastDerivedState
-      </label>
+      <input ref="textMeasureHelperRef" style="visibility: hidden" type="text" />
     </div>
 
-    <var-dump v-if="showDebugState" :data="state" />
-    <var-dump v-if="showDebugLastDerivedState" :data="lastDerivedState" />
-  </template>
+    <template v-if="hasFocus">
+      <div style="display: flex; flex-direction: row; gap: 1em">
+        <label style="display: flex; flex-direction: row; align-items: center"> <input v-model="showDebugState" type="checkbox" /> state </label>
+        <label style="display: flex; flex-direction: row; align-items: center">
+          <input v-model="showDebugLastDerivedState" type="checkbox" /> lastDerivedState
+        </label>
+      </div>
+
+      <var-dump v-if="showDebugState" :data="state" />
+      <var-dump v-if="showDebugLastDerivedState" :data="lastDerivedState" />
+    </template>
+  </div>
 </template>
 
-<script setup lang="ts">
-  import { ref, watch, type Ref, nextTick } from 'vue';
+<script lang="ts" setup>
+  import { ref, type Ref, watch } from 'vue';
   import {
-    type MaskDefinition,
-    type MaskState,
-    type MaskDerivedState,
-    getInitialMaskState,
     getDerivedState,
-    updateMaskStateValues,
+    getInitialMaskState,
+    type MaskDefinition,
+    type MaskDerivedState,
+    type MaskState,
     updateMaskStateCaretAndSelection,
-    findClosestValidValueSpaceCoordinates,
-    determinePatchOperationFromKeyboardEvent,
-    applyPatchOperations,
+    updateMaskStateValues,
   } from './masks/base/index.ts';
 
   import VarDump from '@/helper/var-dump.vue';
+  import { findClosestValidValueSpaceCoordinates, splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
+  import { applyPatchOperations } from '@/masked-text/masks/base/applyPatchOperations.ts';
+  import {
+    determinePatchOperationFromBeforeInputEvent,
+    determinePatchOperationFromCompositionEndEvent,
+    determinePatchOperationFromKeydownEvent,
+    determinePatchOperationFromKeyupEvent,
+  } from '@/masked-text/masks/base/determinePatchOperations.ts';
 
   const showDebugState = ref(true);
   const showDebugLastDerivedState = ref(false);
@@ -67,20 +80,85 @@
   const state: Ref<MaskState> = ref(getInitialMaskState(props.modelValue));
   const lastDerivedState: Ref<MaskDerivedState> = ref(getDerivedState(state.value, props.mask));
 
-  const hasFocus = ref(true);
+  const hasFocus = ref(false);
 
+  const containerRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
   const preInputHTMLRef: Ref<HTMLInputElement | undefined> = ref<HTMLInputElement>();
   const inputRef: Ref<HTMLInputElement | undefined> = ref<HTMLInputElement>();
   const postInputHTMLRef: Ref<HTMLSpanElement | undefined> = ref<HTMLSpanElement>();
+  const textMeasureHelperRef: Ref<HTMLInputElement | undefined> = ref<HTMLInputElement>();
   const inputShadowRef: Ref<HTMLInputElement | undefined> = ref<HTMLInputElement>();
 
-  const updateInputRefSize = () => {
+  const updateInputRefSize = (clearInput: boolean = false) => {
     if (inputRef.value) {
-      const inputRefSize = inputRef.value.value.length;
+      if (clearInput) {
+        inputRef.value.value = '';
+      }
 
-      inputRef.value.style.width = inputRefSize ? `${inputRefSize}ch` : '4px';
-      inputRef.value.style.marginLeft = inputRefSize ? `0px` : '0px';
-      inputRef.value.style.marginRight = inputRefSize ? `0px` : '-4px';
+      const text = inputRef.value.value;
+
+      if (!text || !textMeasureHelperRef.value) {
+        inputRef.value.style.width = '4px';
+        inputRef.value.style.marginLeft = '0px';
+        inputRef.value.style.marginRight = '-4px';
+        return;
+      }
+
+      const measureElement = textMeasureHelperRef.value;
+      const computedStyle = window.getComputedStyle(inputRef.value);
+
+      // Font-related properties
+      measureElement.style.minWidth = '0';
+      measureElement.style.fontFamily = computedStyle.fontFamily;
+      measureElement.style.fontSize = computedStyle.fontSize;
+      measureElement.style.fontWeight = computedStyle.fontWeight;
+      measureElement.style.fontStyle = computedStyle.fontStyle;
+      measureElement.style.fontVariant = computedStyle.fontVariant;
+      measureElement.style.fontStretch = computedStyle.fontStretch;
+      measureElement.style.lineHeight = computedStyle.lineHeight;
+
+      // Text spacing and transformation
+      measureElement.style.letterSpacing = computedStyle.letterSpacing;
+      measureElement.style.wordSpacing = computedStyle.wordSpacing;
+      measureElement.style.textTransform = computedStyle.textTransform;
+      measureElement.style.textIndent = computedStyle.textIndent;
+
+      // Text rendering properties
+      measureElement.style.textRendering = computedStyle.textRendering;
+      // measureElement.style.fontSmooth = computedStyle.fontSmooth;
+      // measureElement.style.webkitFontSmoothing = computedStyle.webkitFontSmoothing;
+      // measureElement.style.mozOsxFontSmoothing = computedStyle.mozOsxFontSmoothing;
+
+      // White space handling
+      measureElement.style.whiteSpace = computedStyle.whiteSpace;
+
+      // Writing mode and direction
+      measureElement.style.writingMode = computedStyle.writingMode;
+      measureElement.style.direction = computedStyle.direction;
+      measureElement.style.unicodeBidi = computedStyle.unicodeBidi;
+
+      // Feature settings that might affect rendering
+      measureElement.style.fontFeatureSettings = computedStyle.fontFeatureSettings;
+      measureElement.style.fontVariationSettings = computedStyle.fontVariationSettings;
+      measureElement.style.fontKerning = computedStyle.fontKerning;
+      measureElement.style.fontVariantLigatures = computedStyle.fontVariantLigatures;
+      measureElement.style.fontVariantNumeric = computedStyle.fontVariantNumeric;
+
+      // Set the text and measure
+      measureElement.value = text;
+
+      // Force layout calculation by accessing the `offsetWidth` property
+      const offsetWidth = measureElement.offsetWidth;
+
+      // Get the scroll width which represents the content width
+      const textWidth = measureElement.scrollWidth;
+
+      // Add small buffer
+      const totalWidth = textWidth + 4;
+
+      inputRef.value.style.width = `${totalWidth}px`;
+      inputRef.value.style.marginLeft = '0px';
+      inputRef.value.style.marginRight = '-4px';
     }
   };
 
@@ -108,12 +186,6 @@
     updateInputRefSize();
   };
 
-  const handleInput = (event: Event) => {
-    console.log('handleInput', event);
-
-    updateInputRefSize();
-  };
-
   function resetInputCursorAnimation() {
     if (inputRef.value) {
       const currentSelectionStart = inputRef.value.selectionStart;
@@ -136,9 +208,9 @@
   }
 
   const handleKeydown = (event: KeyboardEvent) => {
-    const patchOperations = determinePatchOperationFromKeyboardEvent('keydown', event, state.value, props.mask, lastDerivedState.value);
+    const patchOperations = determinePatchOperationFromKeydownEvent(event, state.value, props.mask, lastDerivedState.value);
 
-    console.log('handleKeydown', event.isComposing ? 'composing' : '', event, patchOperations);
+    // console.log('handleKeydown', event.key + (event.isComposing ? ' composing' : ' non-composing'), patchOperations, event);
 
     if (patchOperations !== undefined) {
       [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
@@ -147,12 +219,47 @@
 
       resetInputCursorAnimation();
     }
+
+    updateInputRefSize();
+  };
+
+  const handleBeforeInput = (event: InputEvent) => {
+    const patchOperations = determinePatchOperationFromBeforeInputEvent(event, state.value, props.mask, lastDerivedState.value);
+
+    // console.log('handleBeforeInput', event.data, patchOperations, event);
+
+    if (patchOperations !== undefined) {
+      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
+
+      event.preventDefault();
+
+      resetInputCursorAnimation();
+    }
+
+    updateInputRefSize(true);
+  };
+
+  const handleCompositionEnd = (event: CompositionEvent) => {
+    const patchOperations = determinePatchOperationFromCompositionEndEvent(event, state.value, props.mask, lastDerivedState.value);
+
+    // console.log('handleKeydown', event.key + (event.isComposing ? ' composing' : ' non-composing'), patchOperations, event);
+
+    if (patchOperations !== undefined) {
+      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
+
+      event.preventDefault();
+
+      resetInputCursorAnimation();
+    }
+
+    updateInputRefSize(true);
   };
 
   const handleKeyup = (event: KeyboardEvent) => {
-    const patchOperations = determinePatchOperationFromKeyboardEvent('keyup', event, state.value, props.mask, lastDerivedState.value);
+    const patchOperations = determinePatchOperationFromKeyupEvent(event, state.value, props.mask, lastDerivedState.value);
 
-    console.log('handleKeyup', event.isComposing ? 'composing' : '', event, patchOperations);
+    // console.log('handleKeyup', event.isComposing ? 'composing' : '', event.key);
+    // console.log('handleKeyup', event.key + (event.isComposing ? ' composing' : ' non-composing'), patchOperations, event);
 
     if (patchOperations !== undefined) {
       [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
@@ -161,14 +268,28 @@
 
       resetInputCursorAnimation();
     }
+
+    updateInputRefSize();
   };
 
-  const handleFocus = (event: FocusEvent) => {
-    // console.log('handleFocus', event);
+  const handleFocusin = (event: FocusEvent) => {
+    if (!hasFocus.value) {
+      console.log('handleFocusin', event);
+      // state.value = updateMaskStateCaretAndSelection(state.value, '0:0', '0:0');
+      hasFocus.value = true;
+    }
   };
 
-  const handleBlur = (event: FocusEvent) => {
-    // console.log('handleBlur', event);
+  const handleFocusout = (event: FocusEvent) => {
+    if (hasFocus.value) {
+      setTimeout(() => {
+        if (containerRef.value && !containerRef.value.contains(document.activeElement)) {
+          console.log('handleFocusout', event);
+          hasFocus.value = false;
+        }
+      }, 50);
+    }
+    // state.value = updateMaskStateCaretAndSelection(state.value, '0:0', '0:0');
   };
 
   const getClosestValueSpaceCoordinates = (event: MouseEvent) => {
@@ -240,6 +361,8 @@
         inputRef.value.focus();
       }
 
+      event.preventDefault();
+
       runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
     }
   };
@@ -270,13 +393,6 @@
       runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
     },
     { immediate: true },
-  );
-
-  watch(
-    () => inputRef,
-    (newValue) => {
-      console.log('inputRef', newValue);
-    },
   );
 </script>
 
@@ -324,7 +440,6 @@
     border: none;
     outline: none;
 
-    font-family: monospace;
     white-space: pre;
     pointer-events: none;
   }

@@ -1,11 +1,12 @@
 import {
-  type MaskSectionFixedDefinition,
-  type MaskDefinition,
   type MaskCharacter,
+  type MaskDefinition,
   MaskSectionFixed,
+  type MaskSectionFixedDefinition,
   MaskSectionInput,
   validationFnFromRegexString,
 } from './base/index.ts';
+import { splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
 
 export type NumericMaskProps = {
   decimalSeparator?: string;
@@ -24,7 +25,7 @@ export type NumericMaskProps = {
 
 const IntegerDigitsMaskFn = (minDigits: number, thousandSeparator?: string) => {
   return (sectionValue: string): MaskCharacter[] => {
-    const sectionValueCharacters = [...sectionValue];
+    const sectionValueCharacters = splitStringIntoGraphemes(sectionValue);
     const ret: MaskCharacter[] = [];
 
     for (let i = 0; i < Math.max(minDigits - sectionValueCharacters.length, 0); i++) {
@@ -51,7 +52,7 @@ const IntegerDigitsMaskFn = (minDigits: number, thousandSeparator?: string) => {
 
 const DecimalsDigitsMaskFn = (minDigits: number) => {
   return (sectionValue: string): MaskCharacter[] => {
-    const sectionValueCharacters = [...sectionValue];
+    const sectionValueCharacters = splitStringIntoGraphemes(sectionValue);
     const ret: MaskCharacter[] = [];
 
     for (let i = 0; i < sectionValueCharacters.length; i++) {

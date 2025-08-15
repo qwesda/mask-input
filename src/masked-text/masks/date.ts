@@ -1,4 +1,4 @@
-import { type MaskDefinition, type MaskCharacter, MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from './base/index.ts';
+import { type MaskCharacter, type MaskDefinition, MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from './base/index.ts';
 
 const sectionMaskFnYear = (sectionValue: string): MaskCharacter[] => {
   const ret: MaskCharacter[] = [];
@@ -45,7 +45,7 @@ const sectionMaskFnDay = (sectionValue: string): MaskCharacter[] => {
 const sectionSemanticValidationFnYear = (values: string[], sectionIndex: number): boolean => {
   const parsedIntValue = Number.parseInt(values[sectionIndex]);
 
-  if (Number.isNaN(parsedIntValue)) {
+  if (!Number.isNaN(parsedIntValue)) {
     if (parsedIntValue >= 1 && parsedIntValue <= 12) {
       return true;
     }
@@ -57,7 +57,7 @@ const sectionSemanticValidationFnYear = (values: string[], sectionIndex: number)
 const sectionSemanticValidationFnMonth = (values: string[], sectionIndex: number): boolean => {
   const parsedIntValue = Number.parseInt(values[sectionIndex]);
 
-  if (Number.isNaN(parsedIntValue)) {
+  if (!Number.isNaN(parsedIntValue)) {
     if (parsedIntValue >= 1 && parsedIntValue <= 12) {
       return true;
     }
@@ -71,7 +71,7 @@ const sectionSemanticValidationFnDay = (values: string[], sectionIndex: number):
   const parsedMonthIntValue = Number.parseInt(values[1]);
   const parsedDayIntValue = Number.parseInt(values[2]);
 
-  if (Number.isNaN(parsedDayIntValue)) {
+  if (!Number.isNaN(parsedDayIntValue)) {
     if (parsedDayIntValue >= 1 && parsedDayIntValue <= 31) {
       if (!Number.isNaN(parsedYearIntValue) && !Number.isNaN(parsedMonthIntValue)) {
         const daysInMonth = new Date(parsedYearIntValue, parsedMonthIntValue, 0).getDate();

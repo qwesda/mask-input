@@ -1,13 +1,13 @@
 <template>
   <div class="app">
     <div class="section">
-      <MaskedText :mask="dateMask" v-model="dateValue" />
-      <MaskedText :mask="ipv4Mask" v-model="ipv4Value" />
-      <MaskedText :mask="ipv6Mask" v-model="ipv6Value" />
+      <MaskedText v-model="dateValue" :mask="dateMask" />
+      <MaskedText v-model="ipv4Value" :mask="ipv4Mask" />
+      <MaskedText v-model="ipv6Value" :mask="ipv6Mask" />
 
       <div class="row">
         <div class="row-label">plain input</div>
-        <input type="text" value="779126479 23798467912364 9123864781234" style="flex-grow: 1" />
+        <input style="flex-grow: 1" type="text" value="779126479 23798467912364 9123864781234" />
       </div>
 
       <div class="row">
@@ -46,37 +46,36 @@
 
         <div class="slider-group">
           <label>minDigits: {{ minDigits }}</label>
-          <input type="range" v-model.number="minDigits" min="0" max="30" />
+          <input v-model.number="minDigits" max="30" min="0" type="range" />
         </div>
 
         <div class="slider-group">
           <label>maxDigits: {{ maxDigits }}</label>
-          <input type="range" v-model.number="maxDigits" min="1" max="30" />
+          <input v-model.number="maxDigits" max="30" min="1" type="range" />
         </div>
 
         <div class="slider-group">
           <label>minDecimals: {{ minDecimals }}</label>
-          <input type="range" v-model.number="minDecimals" min="0" max="15" />
+          <input v-model.number="minDecimals" max="15" min="0" type="range" />
         </div>
 
         <div class="slider-group">
           <label>maxDecimals: {{ maxDecimals }}</label>
-          <input type="range" v-model.number="maxDecimals" min="1" max="15" />
+          <input v-model.number="maxDecimals" max="15" min="1" type="range" />
         </div>
       </div>
 
-      <MaskedText :mask="numericMask" v-model="numericValue" />
+      <MaskedText v-model="numericValue" :mask="numericMask" />
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
   import { default as MaskedText } from '@/masked-text/masked-text.vue';
-  import { default as VarDump } from '@/helper/var-dump.vue';
-  import { type Ref, ref, computed } from 'vue';
+  import { computed, ref, type Ref } from 'vue';
   import { bindToLocalStorage } from '@/helper/bindToLocalStorage.ts';
-  import { NumericMask, IPv4Mask, IPv6Mask, DateMask } from '@/masked-text/masks';
-  import { type MaskSectionFixedDefinition, MaskSectionFixed } from '@/masked-text/masks/index.ts';
+  import { DateMask, IPv4Mask, IPv6Mask, NumericMask } from '@/masked-text/masks';
+  import { MaskSectionFixed, type MaskSectionFixedDefinition } from '@/masked-text/masks/index.ts';
 
   const dateValue = ref(['', '', ''] as string[]);
   const dateMask = DateMask();

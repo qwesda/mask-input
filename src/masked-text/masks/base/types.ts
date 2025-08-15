@@ -15,10 +15,10 @@ export interface MaskSectionInputDefinition {
   inputCharacterSubstitutionFn: ((inputCharacter: string) => string) | undefined;
 
   syntacticValidationFn: ((sectionValue: string) => boolean) | undefined;
-  semanticValidationFn: ((sectionValue: string) => boolean) | undefined;
+  semanticValidationFn: ((values: string[], sectionIndex: number) => boolean) | undefined;
 
-  spingUpFn: ((sectionValue: string) => string) | undefined;
-  spingDownFn: ((sectionValue: string) => string) | undefined;
+  spinUpFn: ((sectionValue: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string) | undefined;
+  spinDownFn: ((sectionValue: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string) | undefined;
 
   sectionCommitValueTransformation: ((sectionValue: string) => string) | undefined;
 
@@ -79,6 +79,13 @@ export type MaskDerivedState = {
 
   valueSpace: string[];
   displaySpace: string[];
+
+  caretValueSpaceIndex: number;
+  caretValueSpacePosition: number;
+
+  caretDisplaySpaceIndex: number;
+  caretDisplaySpacePosition: number;
+
   valueSpaceToDisplaySpaceMap: Map<string, string>;
   displaySpaceToValueSpaceMap: Map<string, string>;
 
@@ -98,14 +105,19 @@ export type PatchOperationMoveCursor = {
   keepSelectionEnd: boolean;
 };
 
+export type PatchOperationSelectNextSection = {
+  op: 'select-next-section';
+  direction: 'left' | 'right';
+};
+
 export type PatchOperationSetCursorPosition = {
   op: 'set-cursor-position';
   keepSelectionEnd: boolean;
 };
 
-export type PatchOperationInsert = {
+export type PatchOperationInsertCharacter = {
   op: 'insert-character';
-  value: string;
+  character: string;
 };
 
 export type PatchOperationDeleteBackwards = {
@@ -118,12 +130,26 @@ export type PatchOperationDeleteForwards = {
 
 export type PatchOperationClearSelection = {
   op: 'clear-selection';
+  direction: 'left' | 'right';
 };
 
 export type PatchOperationDeleteSelection = {
   op: 'delete-selection';
 };
 
-export type PatchOperationMovement = PatchOperationMoveCursor | PatchOperationSetCursorPosition;
-export type PatchOperationEdit = PatchOperationInsert | PatchOperationDeleteBackwards | PatchOperationDeleteForwards | PatchOperationDeleteSelection;
+export type PatchOperationSpin = {
+  op: 'spin';
+  direction: 'up' | 'down';
+  metaPressed: boolean;
+  shiftPressed: boolean;
+  altPressed: boolean;
+};
+
+export type PatchOperationMovement = PatchOperationMoveCursor | PatchOperationSetCursorPosition | PatchOperationSelectNextSection;
+export type PatchOperationEdit =
+  | PatchOperationInsertCharacter
+  | PatchOperationDeleteBackwards
+  | PatchOperationDeleteForwards
+  | PatchOperationDeleteSelection
+  | PatchOperationSpin;
 export type PatchOperation = PatchOperationClearSelection | PatchOperationMovement | PatchOperationEdit;
