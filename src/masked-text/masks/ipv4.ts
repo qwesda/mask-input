@@ -13,11 +13,11 @@ const ipv4BlockMaskFn = (sectionValue: string): MaskCharacter[] => {
 export const IPv4Mask = (): MaskDefinition => {
   const inputBlockSection = MaskSectionInput(ipv4BlockMaskFn, {
     alignment: 'right',
-    syntacticValidationFn: validationFnFromRegexString(`^([0-9a-f]{0,6})$`),
+    syntacticValidationFn: validationFnFromRegexString(`^([0-9]{0,3})$`),
     maxLength: 3,
   });
 
-  const separatorSection = MaskSectionFixed(':');
+  const separatorSection = MaskSectionFixed('.');
 
   return {
     sections: [inputBlockSection, separatorSection, inputBlockSection, separatorSection, inputBlockSection, separatorSection, inputBlockSection],
