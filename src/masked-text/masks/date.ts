@@ -89,7 +89,8 @@ const sectionSemanticValidationFnDay = (values: string[], sectionIndex: number):
 };
 
 export const DateMask = (): MaskDefinition => {
-  const sectionYear = MaskSectionInput(sectionMaskFnYear, {
+  const sectionYear = MaskSectionInput('year', {
+    maskingFn: sectionMaskFnYear,
     alignment: 'right',
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,4}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
@@ -97,7 +98,8 @@ export const DateMask = (): MaskDefinition => {
     maxLength: 4,
   });
 
-  const sectionMonth = MaskSectionInput(sectionMaskFnMonth, {
+  const sectionMonth = MaskSectionInput('month', {
+    maskingFn: sectionMaskFnMonth,
     alignment: 'right',
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,2}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
@@ -105,7 +107,8 @@ export const DateMask = (): MaskDefinition => {
     maxLength: 2,
   });
 
-  const sectionDay = MaskSectionInput(sectionMaskFnDay, {
+  const sectionDay = MaskSectionInput('day', {
+    maskingFn: sectionMaskFnDay,
     alignment: 'right',
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,2}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),

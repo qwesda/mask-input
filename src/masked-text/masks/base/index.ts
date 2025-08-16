@@ -39,8 +39,10 @@ export const MaskSectionFixed = (mask: string, skipKeys?: string[]): MaskSection
 });
 
 export const MaskSectionInput = (
-  maskingFn: (sectionValue: string) => MaskCharacter[],
+  slug: string,
   options: {
+    maskingFn: (sectionValue: string) => MaskCharacter[];
+
     inputBehavior?: 'replace' | 'insert';
     alignment?: 'left' | 'right';
 
@@ -59,7 +61,8 @@ export const MaskSectionInput = (
   },
 ): MaskSectionInputDefinition => ({
   type: 'input',
-  maskingFn,
+  slug,
+  maskingFn: options.maskingFn,
 
   inputBehavior: options.inputBehavior ?? 'insert',
   alignment: options.alignment ?? 'left',

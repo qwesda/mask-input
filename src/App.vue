@@ -77,13 +77,16 @@
   import { DateMask, IPv4Mask, IPv6Mask, NumericMask } from '@/masked-text/masks';
   import { MaskSectionFixed, type MaskSectionFixedDefinition } from '@/masked-text/masks/index.ts';
 
-  const dateValue = ref(['', '', ''] as string[]);
+  const dateValue = ref({ year: '', month: '', day: '' } as Record<string, string>);
   const dateMask = DateMask();
 
-  const ipv4Value = ref(['127', '0', '0', '1'] as string[]);
+  const ipv4Value = ref({ block1: '127', block2: '0', block3: '0', block4: '1' } as Record<string, string>);
   const ipv4Mask = IPv4Mask();
 
-  const ipv6Value = ref(['2025', '', '', '', '', '', '', '1'] as string[]);
+  const ipv6Value = ref({ block1: '2025', block2: '', block3: '', block4: '', block5: '', block6: '', block7: '', block8: '1' } as Record<
+    string,
+    string
+  >);
   const ipv6Mask = IPv6Mask();
 
   bindToLocalStorage(ipv4Value, 'ipv4-input/ipv4Value');

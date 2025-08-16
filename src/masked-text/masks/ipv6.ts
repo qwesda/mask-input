@@ -11,32 +11,78 @@ const ipv6BlockMaskFn = (sectionValue: string): MaskCharacter[] => {
   });
 };
 
+const ipv6BlockSemanticValidationFn = (values: string[], sectionIndex: number): boolean => {
+  const value = values[sectionIndex];
+
+  if (!value) {
+    return true;
+  }
+
+  const hexRegex = /^[0-9a-fA-F]+$/;
+
+  return hexRegex.test(value) && value.length <= 4;
+};
+
+const ipv6BlockSpinUpFn = (sectionValue: string): string => {
+  const hexValue = sectionValue || '0';
+  const parsedIntValue = parseInt(hexValue, 16);
+
+  if (!isNaN(parsedIntValue)) {
+    if (parsedIntValue >= 0 && parsedIntValue <= 0xfffe) {
+      return (parsedIntValue + 1).toString(16);
+    }
+  }
+
+  return '0';
+};
+
+const ipv6BlockSpinDownFn = (sectionValue: string): string => {
+  const hexValue = sectionValue || '0';
+  const parsedIntValue = parseInt(hexValue, 16);
+
+  if (!isNaN(parsedIntValue)) {
+    if (parsedIntValue >= 1 && parsedIntValue <= 0xffff) {
+      return (parsedIntValue - 1).toString(16);
+    }
+  }
+
+  return 'ffff';
+};
+
 export const IPv6Mask = (): MaskDefinition => {
-  const inputBlockSection = MaskSectionInput(ipv6BlockMaskFn, {
-    alignment: 'right',
-    syntacticValidationFn: validationFnFromRegexString(`^([0-9a-f]{0,6})$`),
+  const ipv6BlockOptions = {
+    maskingFn: ipv6BlockMaskFn,
     maxLength: 4,
-  });
+    alignment: 'right' as const,
+
+    syntacticValidationFn: validationFnFromRegexString(`^([0-9a-fA-F]{0,4})$`),
+    semanticValidationFn: ipv6BlockSemanticValidationFn,
+
+    inputCharacterFilterFn: validationFnFromRegexString(`^[0-9a-fA-F]$`),
+
+    spinUpFn: ipv6BlockSpinUpFn,
+    spinDownFn: ipv6BlockSpinDownFn,
+  };
 
   const separatorSection = MaskSectionFixed(':');
 
   return {
     sections: [
-      inputBlockSection,
+      MaskSectionInput('block1', ipv6BlockOptions),
       separatorSection,
-      inputBlockSection,
+      MaskSectionInput('block2', ipv6BlockOptions),
       separatorSection,
-      inputBlockSection,
+      MaskSectionInput('block3', ipv6BlockOptions),
       separatorSection,
-      inputBlockSection,
+      MaskSectionInput('block4', ipv6BlockOptions),
       separatorSection,
-      inputBlockSection,
+      MaskSectionInput('block5', ipv6BlockOptions),
       separatorSection,
-      inputBlockSection,
+      MaskSectionInput('block6', ipv6BlockOptions),
       separatorSection,
-      inputBlockSection,
+      MaskSectionInput('block7', ipv6BlockOptions),
       separatorSection,
-      inputBlockSection,
+      MaskSectionInput('block8', ipv6BlockOptions),
     ],
   };
 };

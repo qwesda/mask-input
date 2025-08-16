@@ -47,9 +47,10 @@ const ipv4BlockSpinDownFn = (sectionValue: string): string => {
 };
 
 export const IPv4Mask = (): MaskDefinition => {
-  const inputBlockSection = MaskSectionInput(ipv4BlockMaskFn, {
-    alignment: 'right',
+  const ipv4BlockOptions = {
+    maskingFn: ipv4BlockMaskFn,
     maxLength: 3,
+    alignment: 'right' as const,
 
     syntacticValidationFn: validationFnFromRegexString(`^([0-9]{0,3})$`),
     semanticValidationFn: ipv4BlockSemanticValidationFn,
@@ -58,11 +59,19 @@ export const IPv4Mask = (): MaskDefinition => {
 
     spinUpFn: ipv4BlockSpinUpFn,
     spinDownFn: ipv4BlockSpinDownFn,
-  });
+  };
 
   const separatorSection = MaskSectionFixed('.');
 
   return {
-    sections: [inputBlockSection, separatorSection, inputBlockSection, separatorSection, inputBlockSection, separatorSection, inputBlockSection],
+    sections: [
+      MaskSectionInput('block1', ipv4BlockOptions),
+      separatorSection,
+      MaskSectionInput('block2', ipv4BlockOptions),
+      separatorSection,
+      MaskSectionInput('block3', ipv4BlockOptions),
+      separatorSection,
+      MaskSectionInput('block4', ipv4BlockOptions),
+    ],
   };
 };

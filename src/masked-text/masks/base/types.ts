@@ -6,6 +6,7 @@ export interface MaskSectionFixedDefinition {
 
 export interface MaskSectionInputDefinition {
   type: 'input';
+  slug: string;
   maskingFn: (sectionValue: string) => MaskCharacter[];
 
   inputBehavior: 'replace' | 'insert';
@@ -47,6 +48,7 @@ export type MaskSectionInputDerivedState = {
   type: 'input';
   alignment: 'left' | 'right';
   index: number;
+  slug: string;
   value: string;
   valueIndex: number;
 
