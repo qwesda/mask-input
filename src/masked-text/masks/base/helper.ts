@@ -6,6 +6,24 @@ export const splitStringIntoGraphemes = function (value: string | undefined | nu
   return Array.from(segmenter.segment(value || ''), (segment) => segment.segment);
 };
 
+export const modelValuesEqual = (valuesA: Record<string, string>, valuesB: Record<string, string>): boolean => {
+  const keysASet = new Set(Object.keys(valuesA));
+  const keysBSet = new Set(Object.keys(valuesB));
+  const allKeys = new Set([...keysASet, ...keysBSet]);
+
+  if (allKeys.size !== keysBSet.size) {
+    return false;
+  }
+
+  for (const key of allKeys) {
+    if (valuesA[key] !== valuesB[key]) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 export const compareSpaceCoordinates = (a: string | undefined, b: string | undefined): number | undefined => {
   if (a === undefined || b === undefined) {
     return undefined;

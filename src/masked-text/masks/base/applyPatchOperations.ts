@@ -260,9 +260,9 @@ export const applyPatchOperationSpin = (
     return currentState;
   }
 
-  if (sectionDefinition.syntacticValidationFn && !sectionDefinition.syntacticValidationFn(newSectionValue)) {
-    return currentState;
-  }
+  // if (sectionDefinition.syntacticValidationFn && !sectionDefinition.syntacticValidationFn(newSectionValue)) {
+  //   return currentState;
+  // }
 
   const newValues = { ...currentState.values };
   newValues[sectionDefinition.slug] = newSectionValue;
@@ -425,9 +425,9 @@ export const applyPatchOperationInsert = (
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
   }
 
-  if (sectionDefinition.syntacticValidationFn && !sectionDefinition.syntacticValidationFn(newSectionValue)) {
-    return currentState;
-  }
+  // if (sectionDefinition.syntacticValidationFn && !sectionDefinition.syntacticValidationFn(newSectionValue)) {
+  //   return currentState;
+  // }
 
   const newValues = { ...currentState.values };
 

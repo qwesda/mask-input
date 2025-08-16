@@ -1,9 +1,71 @@
 <template>
   <div class="app">
     <div class="section">
-      <MaskedText v-model="dateValue" :mask="dateMask" />
-      <MaskedText v-model="ipv4Value" :mask="ipv4Mask" />
-      <MaskedText v-model="ipv6Value" :mask="ipv6Mask" />
+      <MaskedText
+        :mask="dateMaskISO"
+        v-model="dateValue"
+        @update:validatedValue="updatedDateValidatedValue"
+        @update:semantic-validation-message="updateDateSemanticValidationMessage"
+      />
+      <MaskedText
+        :mask="dateMaskDE"
+        v-model="dateValue"
+        @update:validatedValue="updatedDateValidatedValue"
+        @update:semantic-validation-message="updateDateSemanticValidationMessage"
+      />
+      <MaskedText
+        :mask="dateMaskEN"
+        v-model="dateValue"
+        @update:validatedValue="updatedDateValidatedValue"
+        @update:semantic-validation-message="updateDateSemanticValidationMessage"
+      />
+      <MaskedText
+        :mask="dateMaskUS"
+        v-model="dateValue"
+        @update:validatedValue="updatedDateValidatedValue"
+        @update:semantic-validation-message="updateDateSemanticValidationMessage"
+      />
+      <MaskedText
+        :mask="dateMaskJP"
+        v-model="dateValue"
+        @update:validatedValue="updatedDateValidatedValue"
+        @update:semantic-validation-message="updateDateSemanticValidationMessage"
+      />
+      <MaskedText
+        :mask="dateMaskKR"
+        v-model="dateValue"
+        @update:validatedValue="updatedDateValidatedValue"
+        @update:semantic-validation-message="updateDateSemanticValidationMessage"
+      />
+
+      <div>
+        rawDateValues: {{ dateValue }}<br />dateValidatedValue: {{ dateValidatedValue }}<br />semanticValidationMessage:
+        {{ dateSemanticValidationMessage }}
+      </div>
+
+      <MaskedText
+        :mask="ipv4Mask"
+        v-model="ipv4Value"
+        @update:validatedValue="updatedIpv4ValidatedValue"
+        @update:semantic-validation-message="updateIpv4SemanticValidationMessage"
+      />
+
+      <div>
+        rawIpv4Values: {{ ipv4Value }}<br />ipv4ValidatedValue: {{ ipv4ValidatedValue }}<br />semanticValidationMessage:
+        {{ ipv4SemanticValidationMessage }}
+      </div>
+
+      <MaskedText
+        :mask="ipv6Mask"
+        v-model="ipv6Value"
+        @update:validatedValue="updatedIpv6ValidatedValue"
+        @update:semantic-validation-message="updateIpv6SemanticValidationMessage"
+      />
+
+      <div>
+        rawIpv6Values: {{ ipv6Value }}<br />ipv6ValidatedValue: {{ ipv6ValidatedValue }}<br />semanticValidationMessage:
+        {{ ipv6SemanticValidationMessage }}
+      </div>
 
       <div class="row">
         <div class="row-label">plain input</div>
@@ -78,16 +140,49 @@
   import { MaskSectionFixed, type MaskSectionFixedDefinition } from '@/masked-text/masks/index.ts';
 
   const dateValue = ref({ year: '', month: '', day: '' } as Record<string, string>);
-  const dateMask = DateMask();
+  const dateValidatedValue: Ref<string | undefined> = ref(undefined);
+  const dateSemanticValidationMessage: Ref<string | undefined> = ref(undefined);
+
+  const dateMaskISO = DateMask('iso');
+  const dateMaskDE = DateMask('de');
+  const dateMaskEN = DateMask('en');
+  const dateMaskUS = DateMask('us');
+  const dateMaskJP = DateMask('jp');
+  const dateMaskKR = DateMask('kr');
+
+  const updatedDateValidatedValue = (value: string | undefined) => {
+    dateValidatedValue.value = value;
+  };
+  const updateDateSemanticValidationMessage = (value: string | undefined) => {
+    dateSemanticValidationMessage.value = value;
+  };
 
   const ipv4Value = ref({ block1: '127', block2: '0', block3: '0', block4: '1' } as Record<string, string>);
   const ipv4Mask = IPv4Mask();
+  const ipv4ValidatedValue: Ref<string | undefined> = ref(undefined);
+  const ipv4SemanticValidationMessage: Ref<string | undefined> = ref(undefined);
+
+  const updatedIpv4ValidatedValue = (value: string | undefined) => {
+    ipv4ValidatedValue.value = value;
+  };
+  const updateIpv4SemanticValidationMessage = (value: string | undefined) => {
+    ipv4SemanticValidationMessage.value = value;
+  };
 
   const ipv6Value = ref({ block1: '2025', block2: '', block3: '', block4: '', block5: '', block6: '', block7: '', block8: '1' } as Record<
     string,
     string
   >);
   const ipv6Mask = IPv6Mask();
+  const ipv6ValidatedValue: Ref<string | undefined> = ref(undefined);
+  const ipv6SemanticValidationMessage: Ref<string | undefined> = ref(undefined);
+
+  const updatedIpv6ValidatedValue = (value: string | undefined) => {
+    ipv6ValidatedValue.value = value;
+  };
+  const updateIpv6SemanticValidationMessage = (value: string | undefined) => {
+    ipv6SemanticValidationMessage.value = value;
+  };
 
   bindToLocalStorage(ipv4Value, 'ipv4-input/ipv4Value');
 
@@ -123,18 +218,19 @@
     countDigits = countDigits ?? Math.floor(Math.random() * 20);
     countDecimals = countDecimals ?? Math.floor(Math.random() * 8);
 
-    const digits = Array.from({ length: countDigits }, () => Math.floor(Math.random() * 10));
+    const integers = Array.from({ length: countDigits }, () => Math.floor(Math.random() * 10));
     const decimals = Array.from({ length: countDecimals }, () => Math.floor(Math.random() * 10));
 
-    while (digits.length > 1 && digits[0] === 0) {
-      digits.sort(() => Math.random() - 0.5);
+    while (integers.length > 1 && integers[0] === 0) {
+      integers.sort(() => Math.random() - 0.5);
     }
 
-    numericValue.value = [digits.join(''), decimals.join('')];
+    numericValue.value = { integers: integers.join(''), decimals: decimals.join('') };
   };
 
   const getRandomPrefixes = (count?: number): MaskSectionFixedDefinition[] => {
     count = count ?? Math.floor(Math.random() * 3);
+
     const prefixPool = ['(USD)', '(EUR)'];
     const prefixes: MaskSectionFixedDefinition[] = [];
 
@@ -148,8 +244,10 @@
 
     return prefixes;
   };
+
   const getRandomSuffixes = (count?: number): MaskSectionFixedDefinition[] => {
     count = count ?? Math.floor(Math.random() * 3);
+
     const suffixPool = ['(per annum)', '(per mile)', '(per kilo)', '(per se)'];
     const suffixes: MaskSectionFixedDefinition[] = [];
 
@@ -163,8 +261,10 @@
 
     return suffixes;
   };
+
   const getRandomInfixes = (count?: number): MaskSectionFixedDefinition[] => {
     count = count ?? Math.floor(Math.random() * 3);
+
     const infixPool = ['.', ',', ' '];
     const infixes: MaskSectionFixedDefinition[] = [];
 
@@ -184,15 +284,19 @@
     numericMaskSuffixes.value = [];
     numericMaskInfixes.value = [];
   };
+
   const setRandomPrefixes = () => {
     numericMaskPrefixes.value = getRandomPrefixes();
   };
+
   const setRandomSuffixes = () => {
     numericMaskSuffixes.value = getRandomSuffixes();
   };
+
   const setRandomInfixes = () => {
     numericMaskInfixes.value = getRandomInfixes();
   };
+
   const setSeparators = (newDecimalSeparator: string, newThousandSeparator?: string) => {
     decimalSeparator.value = newDecimalSeparator;
     thousandSeparator.value = newThousandSeparator ?? '';

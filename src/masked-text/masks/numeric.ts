@@ -69,6 +69,13 @@ const DecimalsDigitsMaskFn = (minDigits: number) => {
   };
 };
 
+const numericEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
+  const integersValue = (values['integers'] || '0').padStart(values['integers']?.length ?? 0, '0') || '0';
+  const decimalsValue = (values['decimals'] || '0').padEnd(values['decimals']?.length ?? 0, '0') || '0';
+
+  return `${integersValue}.${decimalsValue}`;
+};
+
 export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
   const decimalSeparator = props.decimalSeparator ?? '.';
   const thousandSeparator = props.thousandSeparator ?? '';
@@ -87,24 +94,27 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
   }
 
   const integersDigitsMaskFn = IntegerDigitsMaskFn(minIntegerDigits, thousandSeparator);
-  const integersSyntacticValidationFn = validationFnFromRegexString(`^([0-9]|[1-9][0-9]{0,${minIntegerDigits - 1})$`);
+  const integersSyntacticValidationFn = validationFnFromRegexString(`^(|[0-9]|[1-9][0-9]*)$`);
   const integersInputSection = MaskSectionInput('integers', {
     maskingFn: integersDigitsMaskFn,
+    // inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     alignment: 'right',
     syntacticValidationFn: integersSyntacticValidationFn,
-    maxLength: maxIntegerDigits,
+    // maxLength: maxIntegerDigits,
   });
 
   const decimalsDigitsMaskFn = DecimalsDigitsMaskFn(minDecimalDigits);
-  const decimalsSyntacticValidationFn = validationFnFromRegexString(`^([0-9]{0,${maxDecimalDigits}})$`);
+  const decimalsSyntacticValidationFn = validationFnFromRegexString(`^([0-9]*)$`);
   const decimalsInputSection = MaskSectionInput('decimals', {
     maskingFn: decimalsDigitsMaskFn,
+    // inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     alignment: 'left',
     syntacticValidationFn: decimalsSyntacticValidationFn,
-    maxLength: maxDecimalDigits,
+    // maxLength: maxDecimalDigits,
   });
 
   return {
+    encodeValidatedValue: numericEncodeValidatedValue,
     sections: [...prefixes, integersInputSection, ...infixes, decimalsInputSection, ...suffixes],
   };
 };

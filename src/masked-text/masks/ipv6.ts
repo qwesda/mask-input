@@ -51,6 +51,64 @@ const ipv6BlockSpinDownFn = (values: Record<string, string>, sectionSlug: string
   return 'ffff';
 };
 
+const ipv6EncodeValidatedValue = (values: Record<string, string>): string | undefined => {
+  const blocks = [
+    values['block1'] || '0',
+    values['block2'] || '0',
+    values['block3'] || '0',
+    values['block4'] || '0',
+    values['block5'] || '0',
+    values['block6'] || '0',
+    values['block7'] || '0',
+    values['block8'] || '0',
+  ];
+
+  let longestZeroStart = -1;
+  let longestZeroLength = 0;
+  let currentZeroStart = -1;
+  let currentZeroLength = 0;
+
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i] === '0') {
+      if (currentZeroStart === -1) {
+        currentZeroStart = i;
+        currentZeroLength = 1;
+      } else {
+        currentZeroLength++;
+      }
+    } else {
+      if (currentZeroLength > longestZeroLength) {
+        longestZeroStart = currentZeroStart;
+        longestZeroLength = currentZeroLength;
+      }
+      currentZeroStart = -1;
+      currentZeroLength = 0;
+    }
+  }
+
+  if (currentZeroLength > longestZeroLength) {
+    longestZeroStart = currentZeroStart;
+    longestZeroLength = currentZeroLength;
+  }
+
+  if (longestZeroLength >= 2) {
+    const beforeCompression = blocks.slice(0, longestZeroStart);
+    const afterCompression = blocks.slice(longestZeroStart + longestZeroLength);
+
+    if (beforeCompression.length === 0 && afterCompression.length === 0) {
+      return '::';
+    } else if (beforeCompression.length === 0) {
+      return '::' + afterCompression.join(':');
+    } else if (afterCompression.length === 0) {
+      return beforeCompression.join(':') + '::';
+    } else {
+      return beforeCompression.join(':') + '::' + afterCompression.join(':');
+    }
+  }
+
+  return blocks.join(':');
+};
+
 export const IPv6Mask = (): MaskDefinition => {
   const ipv6BlockOptions = {
     maskingFn: ipv6BlockMaskFn,
@@ -69,6 +127,7 @@ export const IPv6Mask = (): MaskDefinition => {
   const separatorSection = MaskSectionFixed(':');
 
   return {
+    encodeValidatedValue: ipv6EncodeValidatedValue,
     sections: [
       MaskSectionInput('block1', ipv6BlockOptions),
       separatorSection,

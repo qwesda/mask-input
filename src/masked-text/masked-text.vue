@@ -52,7 +52,7 @@
   } from './masks/base/index.ts';
 
   import VarDump from '@/helper/var-dump.vue';
-  import { findClosestValidValueSpaceCoordinates, splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
+  import { modelValuesEqual, findClosestValidValueSpaceCoordinates, splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
   import { applyPatchOperations } from '@/masked-text/masks/base/applyPatchOperations.ts';
   import {
     determinePatchOperationFromBeforeInputEvent,
@@ -60,6 +60,7 @@
     determinePatchOperationFromKeydownEvent,
     determinePatchOperationFromKeyupEvent,
   } from '@/masked-text/masks/base/determinePatchOperations.ts';
+  import type { PatchOperation } from '@/masked-text/masks/base/types.ts';
 
   const showDebugState = ref(true);
   const showDebugLastDerivedState = ref(false);
@@ -73,8 +74,10 @@
     modelValue: () => ({}),
   });
 
-  defineEmits<{
+  const emits = defineEmits<{
     'update:modelValue': [value: Record<string, string>];
+    'update:validatedValue': [value: string | undefined];
+    'update:semanticValidationMessage': [value: string | undefined];
   }>();
 
   const state: Ref<MaskState> = ref(getInitialMaskState(props.modelValue));
@@ -162,12 +165,49 @@
     }
   };
 
-  const runComponentUpdateLoop = (
+  const runComponentInternalUpdateLoop = (event: Event | undefined, patchOperations: PatchOperation[] | undefined) => {
+    const initialStateModelValue = { ...state.value.values };
+    const initialValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
+    const initialSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
+
+    if (patchOperations !== undefined) {
+      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
+
+      if (event) {
+        event.preventDefault();
+      }
+
+      resetInputCursorAnimation();
+    }
+
+    updateInputRefSize();
+
+    const finalStateModelValue = { ...state.value.values };
+    const finalValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
+    const finalSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
+
+    if (!modelValuesEqual(initialStateModelValue, finalStateModelValue)) {
+      emits('update:modelValue', finalStateModelValue);
+    }
+
+    if (initialValidatedValue !== finalValidatedValue) {
+      emits('update:validatedValue', finalValidatedValue);
+    }
+
+    if (initialSemanticValidationMessage !== finalSemanticValidationMessage) {
+      emits('update:semanticValidationMessage', finalSemanticValidationMessage);
+    }
+  };
+
+  const runComponentExternalUpdateLoop = (
     modelValue: Record<string, string>,
     maskDefinition: MaskDefinition,
     state: Ref<MaskState>,
     lastDerivedState: Ref<MaskDerivedState>,
   ) => {
+    const initialValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
+    const initialSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
+
     let _state = updateMaskStateValues(state.value, { ...modelValue });
     let _lastDerivedState = getDerivedState(_state, maskDefinition);
 
@@ -183,7 +223,16 @@
     state.value = _state;
     lastDerivedState.value = _lastDerivedState;
 
-    updateInputRefSize();
+    const finalValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
+    const finalSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
+    console.log('runComponentExternalUpdateLoop', initialValidatedValue, finalValidatedValue);
+    if (initialValidatedValue !== finalValidatedValue) {
+      emits('update:validatedValue', finalValidatedValue);
+    }
+
+    if (initialSemanticValidationMessage !== finalSemanticValidationMessage) {
+      emits('update:semanticValidationMessage', finalSemanticValidationMessage);
+    }
   };
 
   function resetInputCursorAnimation() {
@@ -210,66 +259,25 @@
   const handleKeydown = (event: KeyboardEvent) => {
     const patchOperations = determinePatchOperationFromKeydownEvent(event, state.value, props.mask, lastDerivedState.value);
 
-    // console.log('handleKeydown', event.key + (event.isComposing ? ' composing' : ' non-composing'), patchOperations, event);
-
-    if (patchOperations !== undefined) {
-      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
-
-      event.preventDefault();
-
-      resetInputCursorAnimation();
-    }
-
-    updateInputRefSize();
+    runComponentInternalUpdateLoop(event, patchOperations);
   };
 
   const handleBeforeInput = (event: InputEvent) => {
     const patchOperations = determinePatchOperationFromBeforeInputEvent(event, state.value, props.mask, lastDerivedState.value);
 
-    // console.log('handleBeforeInput', event.data, patchOperations, event);
-
-    if (patchOperations !== undefined) {
-      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
-
-      event.preventDefault();
-
-      resetInputCursorAnimation();
-    }
-
-    updateInputRefSize(true);
+    runComponentInternalUpdateLoop(event, patchOperations);
   };
 
   const handleCompositionEnd = (event: CompositionEvent) => {
     const patchOperations = determinePatchOperationFromCompositionEndEvent(event, state.value, props.mask, lastDerivedState.value);
 
-    // console.log('handleKeydown', event.key + (event.isComposing ? ' composing' : ' non-composing'), patchOperations, event);
-
-    if (patchOperations !== undefined) {
-      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
-
-      event.preventDefault();
-
-      resetInputCursorAnimation();
-    }
-
-    updateInputRefSize(true);
+    runComponentInternalUpdateLoop(event, patchOperations);
   };
 
   const handleKeyup = (event: KeyboardEvent) => {
     const patchOperations = determinePatchOperationFromKeyupEvent(event, state.value, props.mask, lastDerivedState.value);
 
-    // console.log('handleKeyup', event.isComposing ? 'composing' : '', event.key);
-    // console.log('handleKeyup', event.key + (event.isComposing ? ' composing' : ' non-composing'), patchOperations, event);
-
-    if (patchOperations !== undefined) {
-      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
-
-      event.preventDefault();
-
-      resetInputCursorAnimation();
-    }
-
-    updateInputRefSize();
+    runComponentInternalUpdateLoop(event, patchOperations);
   };
 
   const handleFocusin = (event: FocusEvent) => {
@@ -363,7 +371,7 @@
 
       event.preventDefault();
 
-      runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+      runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
     }
   };
 
@@ -377,7 +385,7 @@
         inputRef.value.focus();
       }
 
-      runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+      runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
     }
   };
 
@@ -390,7 +398,7 @@
   watch(
     () => [props.mask, props.modelValue],
     () => {
-      runComponentUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+      runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
     },
     { immediate: true },
   );
@@ -401,6 +409,7 @@
     display: flex;
     flex-direction: row;
     position: relative;
+    font-family: monospace;
   }
 
   .masked-text-input {
@@ -468,5 +477,17 @@
   }
   .text-overlay :deep(.fixed-mask) {
     color: oklch(71.5% 0.143 215.221);
+  }
+  .text-overlay :deep(.semantic-error),
+  .text-overlay :deep(.semantic-error.section-input),
+  .text-overlay :deep(.semantic-error.section-input.active) {
+    background-color: rgba(200, 200, 0, 0.2);
+    border-bottom: 1px solid rgba(222, 180, 143, 0.5);
+  }
+  .text-overlay :deep(.syntax-error),
+  .text-overlay :deep(.syntax-error.section-input),
+  .text-overlay :deep(.syntax-error.section-input.active) {
+    background-color: rgba(255, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 0, 0, 0.5);
   }
 </style>

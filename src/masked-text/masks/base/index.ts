@@ -50,7 +50,7 @@ export const MaskSectionInput = (
     inputCharacterSubstitutionFn?: (inputCharacter: string) => string;
 
     syntacticValidationFn?: (sectionValue: string) => boolean;
-    semanticValidationFn?: (values: Record<string, string>, sectionSlug: string) => boolean;
+    semanticValidationFn?: (values: Record<string, string>, sectionSlug: string) => boolean | string;
 
     spinUpFn?: (values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string;
     spinDownFn?: (values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string;
@@ -71,7 +71,6 @@ export const MaskSectionInput = (
   inputCharacterSubstitutionFn: options.inputCharacterSubstitutionFn,
 
   syntacticValidationFn: options.syntacticValidationFn,
-  semanticValidationFn: options.semanticValidationFn,
 
   spinUpFn: options.spinUpFn,
   spinDownFn: options.spinDownFn,
@@ -121,6 +120,7 @@ const getFixedSectionHTMLStrings = (
   maskState: MaskState,
   maskSection: MaskSectionFixedDerivedState,
   valueSpaceToDisplaySpaceMap: Map<string, string>,
+  semanticValidationStatus: boolean | undefined,
 ): [string, string] => {
   const caretPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace);
   const selectionEndPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.selectionEndPositionInValueSpace);
@@ -131,7 +131,17 @@ const getFixedSectionHTMLStrings = (
   const isBeforeCursor: boolean = caretRelativePosition < 0;
   const isBeforeSelectionEnd: boolean = selectionEndRelativePosition < 0;
 
-  const htmlString: string = `<div class="fixed-mask ${isBeforeCursor !== isBeforeSelectionEnd ? 'selected' : ''}">${maskSection.textInputDisplayString}</div>`;
+  const classes: string[] = ['fixed-mask-input'];
+
+  if (semanticValidationStatus === false) {
+    classes.push('semantic-error');
+  }
+
+  if (isBeforeCursor !== isBeforeSelectionEnd) {
+    classes.push('selected');
+  }
+
+  const htmlString: string = `<div class="${classes.join(' ')}">${maskSection.textInputDisplayString}</div>`;
 
   return [isBeforeCursor ? htmlString : '', !isBeforeCursor ? htmlString : ''];
 };
@@ -148,6 +158,7 @@ const getInputSectionDerivedState = (
   const valueSpaceToDisplaySpaceMap: Map<string, string> = new Map();
   const displaySpaceToValueSpaceMap: Map<string, string> = new Map();
   const value = maskState.values[sectionDefinition.slug] || '';
+  const syntacticValidationStatus = sectionDefinition.syntacticValidationFn ? sectionDefinition.syntacticValidationFn(value) : undefined;
 
   const maskCharacters: MaskCharacter[] = sectionDefinition.maskingFn(value);
 
@@ -194,6 +205,7 @@ const getInputSectionDerivedState = (
     slug: sectionDefinition.slug,
     valueIndex,
     value,
+    syntacticValidationStatus,
 
     maskCharacters,
     textInputDisplayString: maskCharacters.map((maskChar: MaskCharacter) => maskChar.char).join(''),
@@ -224,9 +236,11 @@ const getInputSectionHTMLStrings = (
   maskSection: MaskSectionInputDerivedState,
   valueSpaceToDisplaySpaceMap: Map<string, string>,
   displaySpaceToValueSpaceMap: Map<string, string>,
-): [string, string] => {
+  semanticValidationStatus: boolean | undefined,
+): [string, string, string[]] => {
   const preInputHTMLStringParts: InputHTMLStringPart[] = [];
   const postInputHTMLStringParts: InputHTMLStringPart[] = [];
+  const inputFieldClasses: string[] = [];
 
   const caretPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace);
   const selectionEndPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.selectionEndPositionInValueSpace);
@@ -275,16 +289,35 @@ const getInputSectionHTMLStrings = (
     .map((x) => Number.parseInt(x));
 
   const isActiveSection = caretPositionInDisplayStateSectionIndex === maskSection.index;
+
+  const classes: string[] = ['section-input'];
+
+  if (isActiveSection) {
+    classes.push('active');
+    inputFieldClasses.push('active');
+  }
+
+  if (semanticValidationStatus === false) {
+    classes.push('semantic-error');
+    inputFieldClasses.push('semantic-error');
+  }
+
+  if (maskSection.syntacticValidationStatus === false) {
+    classes.push('syntax-error');
+    inputFieldClasses.push('syntax-error');
+  }
+
   const preInputHTMLString =
     preInputHTMLStringParts.length > 0
-      ? `<div class="section-input ${isActiveSection ? 'active' : ''}">${preInputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</div>`
-      : '';
-  const postInputHTMLString =
-    postInputHTMLStringParts.length > 0
-      ? `<div class="section-input ${isActiveSection ? 'active' : ''}">${postInputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</div>`
+      ? `<div class="${classes.join(' ')}">${preInputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</div>`
       : '';
 
-  return [preInputHTMLString, postInputHTMLString];
+  const postInputHTMLString =
+    postInputHTMLStringParts.length > 0
+      ? `<div class="${classes.join(' ')}"">${postInputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</div>`
+      : '';
+
+  return [preInputHTMLString, postInputHTMLString, inputFieldClasses];
 };
 
 export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefinition): MaskDerivedState => {
@@ -298,6 +331,7 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
   const displaySpace: string[] = [];
   const valueSpaceToDisplaySpaceMap: Map<string, string> = new Map();
   const displaySpaceToValueSpaceMap: Map<string, string> = new Map();
+  const syntacticValidationStatus: Record<string, boolean | undefined> = {};
 
   for (const sectionDefinition of maskDefinition.sections) {
     if (sectionDefinition.type === 'fixed') {
@@ -313,6 +347,8 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
       const sectionInputDerivedState = getInputSectionDerivedState(maskState, sectionInputDefinition, sectionsDeriveState.length, valueIndex);
       sectionsDeriveState.push(sectionInputDerivedState);
 
+      syntacticValidationStatus[sectionDefinition.slug] = sectionInputDerivedState.syntacticValidationStatus;
+
       valueSpace.push(...sectionInputDerivedState.valueSpace);
       displaySpace.push(...sectionInputDerivedState.displaySpace);
 
@@ -326,11 +362,23 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     }
   }
 
+  const inputFieldClasses: Set<string> = new Set();
+  const [semanticValidationStatus, semanticValidationMessage] = maskDefinition.semanticValidationFn
+    ? maskDefinition.semanticValidationFn(maskState.values)
+    : [undefined, ''];
+
+  const validatedStringEncodedValue = maskDefinition.encodeValidatedValue(maskState.values);
+
   for (const sectionDeriveState of sectionsDeriveState) {
     if (sectionDeriveState.type === 'fixed') {
       const sectionFixedDerivedState = sectionDeriveState as MaskSectionFixedDerivedState;
 
-      const [preInputHTMLString, postInputHTMLString] = getFixedSectionHTMLStrings(maskState, sectionFixedDerivedState, valueSpaceToDisplaySpaceMap);
+      const [preInputHTMLString, postInputHTMLString] = getFixedSectionHTMLStrings(
+        maskState,
+        sectionFixedDerivedState,
+        valueSpaceToDisplaySpaceMap,
+        semanticValidationStatus,
+      );
 
       preInputHTMLStringParts.push(preInputHTMLString);
       postInputHTMLStringParts.push(postInputHTMLString);
@@ -339,15 +387,17 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
 
       const sectionInputDerivedState = sectionDeriveState as MaskSectionInputDerivedState;
 
-      const [preInputHTMLString, postInputHTMLString] = getInputSectionHTMLStrings(
+      const [sectionPreInputHTMLString, sectionPostInputHTMLString, sectionInputFieldClasses] = getInputSectionHTMLStrings(
         maskState,
         sectionInputDerivedState,
         valueSpaceToDisplaySpaceMap,
         displaySpaceToValueSpaceMap,
+        semanticValidationStatus,
       );
 
-      preInputHTMLStringParts.push(preInputHTMLString);
-      postInputHTMLStringParts.push(postInputHTMLString);
+      preInputHTMLStringParts.push(sectionPreInputHTMLString);
+      postInputHTMLStringParts.push(sectionPostInputHTMLString);
+      sectionInputFieldClasses.forEach((inputFieldClass) => inputFieldClasses.add(inputFieldClass));
     }
   }
 
@@ -365,6 +415,11 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     textInputDisplayString,
     textInputDisplayStringWithSelection,
 
+    inputFieldClasses: [...inputFieldClasses.values()],
+    syntacticValidationStatus,
+    semanticValidationStatus,
+    semanticValidationMessage,
+
     valueSpace,
     displaySpace,
     valueSpaceToDisplaySpaceMap,
@@ -380,6 +435,8 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     postInputHTMLString: postInputHTMLStringParts.join(''),
 
     sections: sectionsDeriveState,
+
+    validatedStringEncodedValue,
   };
 };
 

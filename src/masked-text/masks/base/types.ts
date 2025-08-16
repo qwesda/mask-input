@@ -16,7 +16,6 @@ export interface MaskSectionInputDefinition {
   inputCharacterSubstitutionFn: ((inputCharacter: string) => string) | undefined;
 
   syntacticValidationFn: ((sectionValue: string) => boolean) | undefined;
-  semanticValidationFn: ((values: Record<string, string>, sectionSlug: string) => boolean) | undefined;
 
   spinUpFn:
     | ((values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string)
@@ -62,6 +61,8 @@ export type MaskSectionInputDerivedState = {
   valueSpace: string[];
   displaySpace: string[];
 
+  syntacticValidationStatus: boolean | undefined;
+
   valueSpaceToDisplaySpaceMap: Map<string, string>;
   displaySpaceToValueSpaceMap: Map<string, string>;
 };
@@ -70,6 +71,8 @@ export type MaskSectionDefinition = MaskSectionFixedDefinition | MaskSectionInpu
 export type MaskSectionDerivedState = MaskSectionFixedDerivedState | MaskSectionInputDerivedState;
 
 export type MaskDefinition = {
+  encodeValidatedValue: (values: Record<string, string>) => string | undefined;
+  semanticValidationFn?: (values: Record<string, string>) => [boolean, string];
   sections: MaskSectionDefinition[];
 };
 
@@ -102,6 +105,15 @@ export type MaskDerivedState = {
   postInputHTMLString: string;
 
   sections: MaskSectionDerivedState[];
+
+  inputFieldClasses: string[];
+
+  semanticValidationStatus: boolean | undefined;
+  semanticValidationMessage: string;
+
+  syntacticValidationStatus: Record<string, boolean | undefined>;
+
+  validatedStringEncodedValue: string | undefined;
 };
 
 export type PatchOperationMoveCursor = {
