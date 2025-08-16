@@ -91,7 +91,7 @@
 
   bindToLocalStorage(ipv4Value, 'ipv4-input/ipv4Value');
 
-  const numericValue = ref(['', ''] as string[]);
+  const numericValue = ref({ digits: '', decimals: '' } as Record<string, string>);
 
   const decimalSeparator = ref('.');
   const thousandSeparator = ref(',');

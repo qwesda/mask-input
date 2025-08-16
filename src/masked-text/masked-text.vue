@@ -66,15 +66,15 @@
 
   interface Props {
     mask: MaskDefinition;
-    modelValue?: string[];
+    modelValue?: Record<string, string>;
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    modelValue: () => [],
+    modelValue: () => ({}),
   });
 
   defineEmits<{
-    'update:modelValue': [value: string[]];
+    'update:modelValue': [value: Record<string, string>];
   }>();
 
   const state: Ref<MaskState> = ref(getInitialMaskState(props.modelValue));
@@ -163,12 +163,12 @@
   };
 
   const runComponentUpdateLoop = (
-    modelValue: string[],
+    modelValue: Record<string, string>,
     maskDefinition: MaskDefinition,
     state: Ref<MaskState>,
     lastDerivedState: Ref<MaskDerivedState>,
   ) => {
-    let _state = updateMaskStateValues(state.value, [...modelValue]);
+    let _state = updateMaskStateValues(state.value, { ...modelValue });
     let _lastDerivedState = getDerivedState(_state, maskDefinition);
 
     if (!_lastDerivedState.valueSpace.includes(_state.caretPositionInValueSpace)) {

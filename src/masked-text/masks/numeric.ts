@@ -88,7 +88,8 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
 
   const integersDigitsMaskFn = IntegerDigitsMaskFn(minIntegerDigits, thousandSeparator);
   const integersSyntacticValidationFn = validationFnFromRegexString(`^([0-9]|[1-9][0-9]{0,${minIntegerDigits - 1})$`);
-  const integersInputSection = MaskSectionInput('integers', integersDigitsMaskFn, {
+  const integersInputSection = MaskSectionInput('integers', {
+    maskingFn: integersDigitsMaskFn,
     alignment: 'right',
     syntacticValidationFn: integersSyntacticValidationFn,
     maxLength: maxIntegerDigits,
@@ -96,7 +97,8 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
 
   const decimalsDigitsMaskFn = DecimalsDigitsMaskFn(minDecimalDigits);
   const decimalsSyntacticValidationFn = validationFnFromRegexString(`^([0-9]{0,${maxDecimalDigits}})$`);
-  const decimalsInputSection = MaskSectionInput('decimals', decimalsDigitsMaskFn, {
+  const decimalsInputSection = MaskSectionInput('decimals', {
+    maskingFn: decimalsDigitsMaskFn,
     alignment: 'left',
     syntacticValidationFn: decimalsSyntacticValidationFn,
     maxLength: maxDecimalDigits,

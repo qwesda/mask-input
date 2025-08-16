@@ -11,8 +11,8 @@ const ipv6BlockMaskFn = (sectionValue: string): MaskCharacter[] => {
   });
 };
 
-const ipv6BlockSemanticValidationFn = (values: string[], sectionIndex: number): boolean => {
-  const value = values[sectionIndex];
+const ipv6BlockSemanticValidationFn = (values: Record<string, string>, sectionSlug: string): boolean => {
+  const value = values[sectionSlug];
 
   if (!value) {
     return true;
@@ -23,7 +23,8 @@ const ipv6BlockSemanticValidationFn = (values: string[], sectionIndex: number): 
   return hexRegex.test(value) && value.length <= 4;
 };
 
-const ipv6BlockSpinUpFn = (sectionValue: string): string => {
+const ipv6BlockSpinUpFn = (values: Record<string, string>, sectionSlug: string): string => {
+  const sectionValue = values[sectionSlug];
   const hexValue = sectionValue || '0';
   const parsedIntValue = parseInt(hexValue, 16);
 
@@ -36,7 +37,8 @@ const ipv6BlockSpinUpFn = (sectionValue: string): string => {
   return '0';
 };
 
-const ipv6BlockSpinDownFn = (sectionValue: string): string => {
+const ipv6BlockSpinDownFn = (values: Record<string, string>, sectionSlug: string): string => {
+  const sectionValue = values[sectionSlug];
   const hexValue = sectionValue || '0';
   const parsedIntValue = parseInt(hexValue, 16);
 

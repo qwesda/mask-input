@@ -50,10 +50,10 @@ export const MaskSectionInput = (
     inputCharacterSubstitutionFn?: (inputCharacter: string) => string;
 
     syntacticValidationFn?: (sectionValue: string) => boolean;
-    semanticValidationFn?: (values: string[], sectionIndex: number) => boolean;
+    semanticValidationFn?: (values: Record<string, string>, sectionSlug: string) => boolean;
 
-    spinUpFn?: (sectionValue: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string;
-    spinDownFn?: (sectionValue: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string;
+    spinUpFn?: (values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string;
+    spinDownFn?: (values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string;
 
     sectionCommitValueTransformation?: (sectionValue: string) => string;
 
@@ -81,7 +81,7 @@ export const MaskSectionInput = (
   maxLength: options.maxLength,
 });
 
-export const getInitialMaskState = (values: string[]): MaskState => {
+export const getInitialMaskState = (values: Record<string, string>): MaskState => {
   return {
     values,
 
@@ -147,7 +147,7 @@ const getInputSectionDerivedState = (
 
   const valueSpaceToDisplaySpaceMap: Map<string, string> = new Map();
   const displaySpaceToValueSpaceMap: Map<string, string> = new Map();
-  const value = maskState.values[valueIndex];
+  const value = maskState.values[sectionDefinition.slug] || '';
 
   const maskCharacters: MaskCharacter[] = sectionDefinition.maskingFn(value);
 
@@ -191,6 +191,7 @@ const getInputSectionDerivedState = (
     type: 'input',
     alignment: sectionDefinition.alignment,
     index,
+    slug: sectionDefinition.slug,
     valueIndex,
     value,
 
@@ -350,7 +351,7 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     }
   }
 
-  const encodedState = encodeState(maskState);
+  const encodedState = encodeState(maskState, maskDefinition);
   const textInputDisplayString = sectionsDeriveState.map((section) => section.textInputDisplayString).join('');
   const textInputDisplayStringWithSelection = getTextInputDisplayStringWithSelection(maskState, sectionsDeriveState, valueSpaceToDisplaySpaceMap);
 
@@ -396,7 +397,7 @@ const setMaskStateCaretAndSelection = (maskState: MaskState, caretPosition: stri
   };
 };
 
-export const updateMaskStateValues = (lastState: MaskState, values: string[]): MaskState => {
+export const updateMaskStateValues = (lastState: MaskState, values: Record<string, string>): MaskState => {
   return setMaskStateCaretAndSelection(getInitialMaskState(values), lastState.caretPositionInValueSpace, lastState.selectionEndPositionInValueSpace);
 };
 
@@ -404,13 +405,19 @@ export const updateMaskStateCaretAndSelection = (lastState: MaskState, caretPosi
   return setMaskStateCaretAndSelection(lastState, caretPosition, selectionEndPosition);
 };
 
-export function encodeState(state: MaskState): string {
+export function encodeState(state: MaskState, maskDefinition: MaskDefinition): string {
   const encodedStateParts: string[] = [];
 
   const [caretSectionIndex, caretPosition] = state.caretPositionInValueSpace.split(':').map((x) => Number.parseInt(x));
   const [selectionEndSectionIndex, selectionEndPosition] = state.selectionEndPositionInValueSpace.split(':').map((x) => Number.parseInt(x));
 
-  for (const [i, value] of state.values.entries()) {
+  for (const [i, section] of maskDefinition.sections.entries()) {
+    if (section.type !== 'input') {
+      continue;
+    }
+
+    const value = state.values[section.slug] || '';
+
     if (i !== caretSectionIndex && i !== selectionEndSectionIndex) {
       encodedStateParts.push(value);
     } else if (i === caretSectionIndex && i !== selectionEndSectionIndex) {

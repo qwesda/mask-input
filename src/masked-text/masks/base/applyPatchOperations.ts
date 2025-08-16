@@ -192,30 +192,35 @@ export const applyPatchOperationDeleteSelection = (
 
   const [lowerSelectionIndex, lowerSelectionPosition] = lowerSelectionCoordinates.split(':').map((x) => parseInt(x));
   const [upperSelectionIndex, upperSelectionPosition] = upperSelectionCoordinates.split(':').map((x) => parseInt(x));
+
   let newCaretPosition = '0:0';
 
-  const newValues = [...currentState.values];
+  const newValues = { ...currentState.values };
 
-  for (let i = lowerSelectionIndex; i <= upperSelectionIndex; i++) {
-    const oldSectionValue = newValues[i];
+  for (const [i, sectionDefinition] of maskDefinition.sections.filter((x) => x.type === 'input').entries()) {
+    if (i < lowerSelectionIndex || i > upperSelectionIndex) {
+      continue;
+    }
+
+    const oldSectionValue = newValues[sectionDefinition.slug];
 
     if (i === lowerSelectionIndex && i === upperSelectionIndex) {
-      newValues[i] = oldSectionValue.substring(0, lowerSelectionPosition) + oldSectionValue.substring(upperSelectionPosition);
+      newValues[sectionDefinition.slug] = oldSectionValue.substring(0, lowerSelectionPosition) + oldSectionValue.substring(upperSelectionPosition);
       newCaretPosition = `${i}:${lowerSelectionPosition}`;
     } else if (i === lowerSelectionIndex && i !== upperSelectionIndex) {
-      newValues[i] = oldSectionValue.substring(0, lowerSelectionPosition);
+      newValues[sectionDefinition.slug] = oldSectionValue.substring(0, lowerSelectionPosition);
 
       if (lowerSelectionCoordinates === currentState.caretPositionInValueSpace) {
         newCaretPosition = `${i}:${lowerSelectionPosition}`;
       }
     } else if (i !== lowerSelectionIndex && i === upperSelectionIndex) {
-      newValues[i] = oldSectionValue.substring(upperSelectionPosition);
+      newValues[sectionDefinition.slug] = oldSectionValue.substring(upperSelectionPosition);
 
       if (upperSelectionCoordinates === currentState.caretPositionInValueSpace) {
         newCaretPosition = `${i}:0`;
       }
     } else if (i !== lowerSelectionIndex && i !== upperSelectionIndex) {
-      newValues[i] = '';
+      newValues[sectionDefinition.slug] = '';
     }
   }
 
@@ -242,8 +247,14 @@ export const applyPatchOperationSpin = (
     return currentState;
   }
 
-  const currentSectionValue = currentState.values[currentDerivedState.caretValueSpaceIndex];
-  const newSectionValue = spinFn(currentSectionValue, patchOperation.metaPressed, patchOperation.shiftPressed, patchOperation.altPressed);
+  const currentSectionValue = currentState.values[sectionDefinition.slug];
+  const newSectionValue = spinFn(
+    currentState.values,
+    sectionDefinition.slug,
+    patchOperation.metaPressed,
+    patchOperation.shiftPressed,
+    patchOperation.altPressed,
+  );
 
   if (newSectionValue === undefined || newSectionValue === null || newSectionValue === currentSectionValue) {
     return currentState;
@@ -253,8 +264,8 @@ export const applyPatchOperationSpin = (
     return currentState;
   }
 
-  const newValues = [...currentState.values];
-  newValues[currentDerivedState.caretValueSpaceIndex] = newSectionValue;
+  const newValues = { ...currentState.values };
+  newValues[sectionDefinition.slug] = newSectionValue;
 
   const newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${[...newSectionValue].length}`;
   const newSelectionEndPosition = `${currentDerivedState.caretValueSpaceIndex}:0`;
@@ -279,13 +290,14 @@ export const applyPatchOperationDeleteBackwards = (
     return currentState;
   }
 
-  const newValues = [...currentState.values];
+  const sectionDefinition = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
+  const newValues = { ...currentState.values };
   let newCaretPosition: string;
 
   if (currentDerivedState.caretValueSpacePosition > 0) {
-    const currentSectionValue = newValues[currentDerivedState.caretValueSpaceIndex];
+    const currentSectionValue = newValues[sectionDefinition.slug];
 
-    newValues[currentDerivedState.caretValueSpaceIndex] =
+    newValues[sectionDefinition.slug] =
       currentSectionValue.substring(0, currentDerivedState.caretValueSpacePosition - 1) +
       currentSectionValue.substring(currentDerivedState.caretValueSpacePosition);
 
@@ -299,10 +311,10 @@ export const applyPatchOperationDeleteBackwards = (
     }) as MaskSectionInputDerivedState | undefined;
 
     if (targetSection) {
-      const targetSectionValue = newValues[targetSection.valueIndex];
+      const targetSectionValue = newValues[targetSection.slug];
 
       if (targetSectionValue.length > 0) {
-        newValues[targetSection.valueIndex] = targetSectionValue.substring(0, targetSectionValue.length - 1);
+        newValues[targetSection.slug] = targetSectionValue.substring(0, targetSectionValue.length - 1);
         newCaretPosition = `${targetSection.valueIndex}:${targetSectionValue.length - 1}`;
       } else {
         newCaretPosition = `${targetSection.valueIndex}:0`;
@@ -328,13 +340,14 @@ export const applyPatchOperationDeleteForwards = (
   currentDerivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): MaskState => {
-  const currentSectionValue = currentState.values[currentDerivedState.caretValueSpaceIndex];
+  const sectionDefinition = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
+  const currentSectionValue = currentState.values[sectionDefinition.slug];
 
-  const newValues = [...currentState.values];
+  const newValues = { ...currentState.values };
   let newCaretPosition: string;
 
   if (currentDerivedState.caretValueSpacePosition < currentSectionValue.length) {
-    newValues[currentDerivedState.caretValueSpaceIndex] =
+    newValues[sectionDefinition.slug] =
       currentSectionValue.substring(0, currentDerivedState.caretValueSpacePosition) +
       currentSectionValue.substring(currentDerivedState.caretValueSpacePosition + 1);
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition}`;
@@ -347,10 +360,10 @@ export const applyPatchOperationDeleteForwards = (
     }) as MaskSectionInputDerivedState | undefined;
 
     if (targetSection) {
-      const targetSectionValue = newValues[targetSection.valueIndex];
+      const targetSectionValue = newValues[targetSection.slug];
 
       if (targetSectionValue.length > 0) {
-        newValues[targetSection.valueIndex] = targetSectionValue.substring(1);
+        newValues[targetSection.slug] = targetSectionValue.substring(1);
       }
 
       newCaretPosition = `${targetSection.valueIndex}:0`;
@@ -385,7 +398,7 @@ export const applyPatchOperationInsert = (
     ? sectionDefinition.inputCharacterSubstitutionFn(patchOperation.character)
     : patchOperation.character;
 
-  const currentSectionValue = currentState.values[currentDerivedState.caretValueSpaceIndex];
+  const currentSectionValue = currentState.values[sectionDefinition.slug];
   let newSectionValue: string;
   let newCaretPosition: string;
 
@@ -416,9 +429,9 @@ export const applyPatchOperationInsert = (
     return currentState;
   }
 
-  const newValues = [...currentState.values];
+  const newValues = { ...currentState.values };
 
-  newValues[currentDerivedState.caretValueSpaceIndex] = newSectionValue;
+  newValues[sectionDefinition.slug] = newSectionValue;
 
   if (sectionDefinition.maxLength && currentDerivedState.caretValueSpacePosition + 1 >= sectionDefinition.maxLength) {
     const nextInputSection = findSection(currentDerivedState, {
@@ -477,9 +490,6 @@ export const applyPatchOperations = (
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'spin') {
       currentState = applyPatchOperationSpin(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
-    } else if (patchOperation.op === 'select-next-section') {
-      currentState = applyPatchOperationSelectNextSection(patchOperation, currentState, currentDerivedState, maskDefinition);
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'select-next-section') {
       currentState = applyPatchOperationSelectNextSection(patchOperation, currentState, currentDerivedState, maskDefinition);

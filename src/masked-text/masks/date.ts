@@ -42,8 +42,8 @@ const sectionMaskFnDay = (sectionValue: string): MaskCharacter[] => {
   return ret;
 };
 
-const sectionSemanticValidationFnYear = (values: string[], sectionIndex: number): boolean => {
-  const parsedIntValue = Number.parseInt(values[sectionIndex]);
+const sectionSemanticValidationFnYear = (values: Record<string, string>, sectionSlug: string): boolean => {
+  const parsedIntValue = Number.parseInt(values[sectionSlug]);
 
   if (!Number.isNaN(parsedIntValue)) {
     if (parsedIntValue >= 1 && parsedIntValue <= 12) {
@@ -54,8 +54,8 @@ const sectionSemanticValidationFnYear = (values: string[], sectionIndex: number)
   return false;
 };
 
-const sectionSemanticValidationFnMonth = (values: string[], sectionIndex: number): boolean => {
-  const parsedIntValue = Number.parseInt(values[sectionIndex]);
+const sectionSemanticValidationFnMonth = (values: Record<string, string>, sectionSlug: string): boolean => {
+  const parsedIntValue = Number.parseInt(values[sectionSlug]);
 
   if (!Number.isNaN(parsedIntValue)) {
     if (parsedIntValue >= 1 && parsedIntValue <= 12) {
@@ -66,10 +66,10 @@ const sectionSemanticValidationFnMonth = (values: string[], sectionIndex: number
   return false;
 };
 
-const sectionSemanticValidationFnDay = (values: string[], sectionIndex: number): boolean => {
-  const parsedYearIntValue = Number.parseInt(values[0]);
-  const parsedMonthIntValue = Number.parseInt(values[1]);
-  const parsedDayIntValue = Number.parseInt(values[2]);
+const sectionSemanticValidationFnDay = (values: Record<string, string>, sectionSlug: string): boolean => {
+  const parsedYearIntValue = Number.parseInt(values['year']);
+  const parsedMonthIntValue = Number.parseInt(values['month']);
+  const parsedDayIntValue = Number.parseInt(values['day']);
 
   if (!Number.isNaN(parsedDayIntValue)) {
     if (parsedDayIntValue >= 1 && parsedDayIntValue <= 31) {

@@ -11,8 +11,8 @@ const ipv4BlockMaskFn = (sectionValue: string): MaskCharacter[] => {
   });
 };
 
-const ipv4BlockSemanticValidationFn = (values: string[], sectionIndex: number): boolean => {
-  const parsedIntValue = Number.parseInt(values[sectionIndex]);
+const ipv4BlockSemanticValidationFn = (values: Record<string, string>, sectionSlug: string): boolean => {
+  const parsedIntValue = Number.parseInt(values[sectionSlug]);
 
   if (!Number.isNaN(parsedIntValue)) {
     if (parsedIntValue >= 0 && parsedIntValue <= 255) {
@@ -23,7 +23,8 @@ const ipv4BlockSemanticValidationFn = (values: string[], sectionIndex: number): 
   return false;
 };
 
-const ipv4BlockSpinUpFn = (sectionValue: string): string => {
+const ipv4BlockSpinUpFn = (values: Record<string, string>, sectionSlug: string): string => {
+  const sectionValue = values[sectionSlug];
   const parsedIntValue = Number.parseInt(sectionValue);
 
   if (!Number.isNaN(parsedIntValue)) {
@@ -34,7 +35,8 @@ const ipv4BlockSpinUpFn = (sectionValue: string): string => {
 
   return '0';
 };
-const ipv4BlockSpinDownFn = (sectionValue: string): string => {
+const ipv4BlockSpinDownFn = (values: Record<string, string>, sectionSlug: string): string => {
+  const sectionValue = values[sectionSlug];
   const parsedIntValue = Number.parseInt(sectionValue);
 
   if (!Number.isNaN(parsedIntValue)) {

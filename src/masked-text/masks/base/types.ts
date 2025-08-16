@@ -16,10 +16,14 @@ export interface MaskSectionInputDefinition {
   inputCharacterSubstitutionFn: ((inputCharacter: string) => string) | undefined;
 
   syntacticValidationFn: ((sectionValue: string) => boolean) | undefined;
-  semanticValidationFn: ((values: string[], sectionIndex: number) => boolean) | undefined;
+  semanticValidationFn: ((values: Record<string, string>, sectionSlug: string) => boolean) | undefined;
 
-  spinUpFn: ((sectionValue: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string) | undefined;
-  spinDownFn: ((sectionValue: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string) | undefined;
+  spinUpFn:
+    | ((values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string)
+    | undefined;
+  spinDownFn:
+    | ((values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string)
+    | undefined;
 
   sectionCommitValueTransformation: ((sectionValue: string) => string) | undefined;
 
@@ -70,7 +74,7 @@ export type MaskDefinition = {
 };
 
 export type MaskState = {
-  values: string[];
+  values: Record<string, string>;
 
   caretPositionInValueSpace: string;
   selectionEndPositionInValueSpace: string;
