@@ -32,7 +32,7 @@
   import type { MaskDefinition, MaskDerivedState, MaskState } from './base/types';
   import { getDerivedState, getInitialMaskState, updateMaskStateCaretAndSelection, updateMaskStateValues } from './base/index';
 
-  import { modelValuesEqual, findClosestValidValueSpaceCoordinates, splitStringIntoGraphemes } from './base/helper';
+  import { modelValuesEqual, findClosestValidValueSpaceCoordinates } from './base/helper';
   import { applyPatchOperations } from './base/applyPatchOperations';
   import {
     determinePatchOperationFromBeforeInputEvent,
@@ -275,7 +275,6 @@
 
   const handleFocusin = (event: FocusEvent) => {
     if (!hasFocus.value) {
-      console.log('handleFocusin', event);
       hasFocus.value = true;
 
       emits('focus');
@@ -288,7 +287,6 @@
     if (hasFocus.value) {
       setTimeout(() => {
         if (containerRef.value && !containerRef.value.contains(document.activeElement)) {
-          console.log('handleFocusout', event);
           hasFocus.value = false;
 
           emits('blur');
