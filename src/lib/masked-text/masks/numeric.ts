@@ -1,11 +1,5 @@
-import {
-  type MaskCharacter,
-  type MaskDefinition,
-  MaskSectionFixed,
-  type MaskSectionFixedDefinition,
-  MaskSectionInput,
-  validationFnFromRegexString,
-} from '../base/index';
+import type { MaskCharacter, MaskDefinition, MaskSectionFixedDefinition } from '../base/types';
+import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
 import { splitStringIntoGraphemes } from '../base/helper';
 
 export type NumericMaskProps = {

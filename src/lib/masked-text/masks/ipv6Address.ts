@@ -1,4 +1,5 @@
-import { type MaskCharacter, type MaskDefinition, MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
+import type { MaskCharacter, MaskDefinition } from '../base/types';
+import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
 import { splitStringIntoGraphemes } from '../base/helper';
 
 const ipv6AddressEncodeValidatedValue = (values: Record<string, string>): string | undefined => {

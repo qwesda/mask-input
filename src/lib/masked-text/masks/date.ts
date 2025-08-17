@@ -1,11 +1,5 @@
-import {
-  type MaskCharacter,
-  type MaskDefinition,
-  type MaskSectionDefinition,
-  MaskSectionFixed,
-  MaskSectionInput,
-  validationFnFromRegexString,
-} from '../base/index';
+import type { MaskCharacter, MaskDefinition, MaskSectionDefinition } from '../base/types';
+import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
 
 const dateEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
   if (!values['year'] || !values['month'] || !values['day']) {
