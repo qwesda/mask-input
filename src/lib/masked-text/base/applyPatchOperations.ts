@@ -390,13 +390,13 @@ export const applyPatchOperationInsert = (
 ): MaskState => {
   const sectionDefinition = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
 
+  const character = sectionDefinition.inputCharacterSubstitutionFn
+    ? sectionDefinition.inputCharacterSubstitutionFn(patchOperation.character)
+    : patchOperation.character;
+
   if (sectionDefinition.inputCharacterFilterFn && !sectionDefinition.inputCharacterFilterFn(patchOperation.character)) {
     return currentState;
   }
-
-  const finalValue = sectionDefinition.inputCharacterSubstitutionFn
-    ? sectionDefinition.inputCharacterSubstitutionFn(patchOperation.character)
-    : patchOperation.character;
 
   const currentSectionValue = currentState.values[sectionDefinition.slug];
   let newSectionValue: string;
@@ -406,10 +406,10 @@ export const applyPatchOperationInsert = (
     if (currentDerivedState.caretValueSpacePosition < currentSectionValue.length) {
       newSectionValue =
         currentSectionValue.substring(0, currentDerivedState.caretValueSpacePosition) +
-        finalValue +
+        character +
         currentSectionValue.substring(currentDerivedState.caretValueSpacePosition + 1);
     } else {
-      newSectionValue = currentSectionValue + finalValue;
+      newSectionValue = currentSectionValue + character;
     }
 
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
@@ -420,7 +420,7 @@ export const applyPatchOperationInsert = (
 
     newSectionValue =
       currentSectionValue.substring(0, currentDerivedState.caretValueSpacePosition) +
-      finalValue +
+      character +
       currentSectionValue.substring(currentDerivedState.caretValueSpacePosition);
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
   }

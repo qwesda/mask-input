@@ -3,7 +3,7 @@
 ## base
 
 - [x] ~~emit `update:state', `update:derivedState` events~~
-- [ ] add support for `characterInputSubstitutionFn`
+- [x] ~~add support for `characterInputSubstitutionFn`~~
 - [ ] fix missing `data-value-pos-right`/ `data-value-pos-left` attributes for mask characters
 - [ ] use `splitIntoGraphemes` where appropriate
 - [ ] maybe store value characters as `string[]` pre-split by `splitIntoGraphemes`

@@ -77,7 +77,7 @@ const ipv6AddressBlockSemanticValidationFn = (values: Record<string, string>, se
     return true;
   }
 
-  const hexRegex = /^[0-9a-fA-F]+$/;
+  const hexRegex = /^[0-9a-f]+$/;
 
   return hexRegex.test(value) && value.length <= 4;
 };
@@ -110,6 +110,14 @@ const ipv6AddressBlockSpinDownFn = (values: Record<string, string>, sectionSlug:
   return 'ffff';
 };
 
+const ipv6InputCharacterSubstitutionFn = (character: string): string => {
+  if (/^[A-F]$/.test(character)) {
+    return character.toLowerCase();
+  } else {
+    return character;
+  }
+};
+
 export const IPv6AddressMask = (): MaskDefinition => {
   const ipv6BlockOptions = {
     maskingFn: ipv6AddressBlockMaskFn,
@@ -119,6 +127,7 @@ export const IPv6AddressMask = (): MaskDefinition => {
     syntacticValidationFn: validationFnFromRegexString(`^([0-9a-fA-F]{0,4})$`),
     semanticValidationFn: ipv6AddressBlockSemanticValidationFn,
 
+    inputCharacterSubstitutionFn: ipv6InputCharacterSubstitutionFn,
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9a-fA-F]$`),
 
     spinUpFn: ipv6AddressBlockSpinUpFn,
