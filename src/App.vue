@@ -136,7 +136,7 @@
   import { default as MaskedText } from '@/masked-text/masked-text.vue';
   import { computed, ref, type Ref } from 'vue';
   import { bindToLocalStorage } from '@/helper/bindToLocalStorage.ts';
-  import { DateMask, IPv4Mask, IPv6Mask, NumericMask } from '@/masked-text/masks';
+  import { DateMask, IPv4AddressMask, IPv6AddressMask, NumericMask } from '@/masked-text/masks';
   import { MaskSectionFixed, type MaskSectionFixedDefinition } from '@/masked-text/masks/index.ts';
 
   const dateValue = ref({ year: '', month: '', day: '' } as Record<string, string>);
@@ -158,7 +158,7 @@
   };
 
   const ipv4Value = ref({ block1: '127', block2: '0', block3: '0', block4: '1' } as Record<string, string>);
-  const ipv4Mask = IPv4Mask();
+  const ipv4Mask = IPv4AddressMask();
   const ipv4ValidatedValue: Ref<string | undefined> = ref(undefined);
   const ipv4SemanticValidationMessage: Ref<string | undefined> = ref(undefined);
 
@@ -173,7 +173,7 @@
     string,
     string
   >);
-  const ipv6Mask = IPv6Mask();
+  const ipv6Mask = IPv6AddressMask();
   const ipv6ValidatedValue: Ref<string | undefined> = ref(undefined);
   const ipv6SemanticValidationMessage: Ref<string | undefined> = ref(undefined);
 

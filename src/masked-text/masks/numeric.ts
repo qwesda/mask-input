@@ -23,7 +23,14 @@ export type NumericMaskProps = {
   maxDecimalDigits?: number;
 };
 
-const IntegerDigitsMaskFn = (minDigits: number, thousandSeparator?: string) => {
+const numericEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
+  const integersValue = (values['integers'] || '0').padStart(values['integers']?.length ?? 0, '0') || '0';
+  const decimalsValue = (values['decimals'] || '0').padEnd(values['decimals']?.length ?? 0, '0') || '0';
+
+  return `${integersValue}.${decimalsValue}`;
+};
+
+const numericIntegerMaskFn = (minDigits: number, thousandSeparator?: string) => {
   return (sectionValue: string): MaskCharacter[] => {
     const sectionValueCharacters = splitStringIntoGraphemes(sectionValue);
     const ret: MaskCharacter[] = [];
@@ -50,7 +57,7 @@ const IntegerDigitsMaskFn = (minDigits: number, thousandSeparator?: string) => {
   };
 };
 
-const DecimalsDigitsMaskFn = (minDigits: number) => {
+const numericDecimalsMaskFn = (minDigits: number) => {
   return (sectionValue: string): MaskCharacter[] => {
     const sectionValueCharacters = splitStringIntoGraphemes(sectionValue);
     const ret: MaskCharacter[] = [];
@@ -67,13 +74,6 @@ const DecimalsDigitsMaskFn = (minDigits: number) => {
 
     return ret;
   };
-};
-
-const numericEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
-  const integersValue = (values['integers'] || '0').padStart(values['integers']?.length ?? 0, '0') || '0';
-  const decimalsValue = (values['decimals'] || '0').padEnd(values['decimals']?.length ?? 0, '0') || '0';
-
-  return `${integersValue}.${decimalsValue}`;
 };
 
 export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
@@ -93,24 +93,20 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
     infixes.push(MaskSectionFixed(decimalSeparator, decimalSeparator.length === 1 ? [decimalSeparator] : undefined));
   }
 
-  const integersDigitsMaskFn = IntegerDigitsMaskFn(minIntegerDigits, thousandSeparator);
-  const integersSyntacticValidationFn = validationFnFromRegexString(`^(|[0-9]|[1-9][0-9]*)$`);
   const integersInputSection = MaskSectionInput('integers', {
-    maskingFn: integersDigitsMaskFn,
-    // inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
+    maskingFn: numericIntegerMaskFn(minIntegerDigits, thousandSeparator),
+    inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     alignment: 'right',
-    syntacticValidationFn: integersSyntacticValidationFn,
-    // maxLength: maxIntegerDigits,
+    syntacticValidationFn: validationFnFromRegexString(`^(|[0-9]|[1-9][0-9]*)$`),
+    maxLength: maxIntegerDigits,
   });
 
-  const decimalsDigitsMaskFn = DecimalsDigitsMaskFn(minDecimalDigits);
-  const decimalsSyntacticValidationFn = validationFnFromRegexString(`^([0-9]*)$`);
   const decimalsInputSection = MaskSectionInput('decimals', {
-    maskingFn: decimalsDigitsMaskFn,
-    // inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
+    maskingFn: numericDecimalsMaskFn(maxDecimalDigits),
+    inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     alignment: 'left',
-    syntacticValidationFn: decimalsSyntacticValidationFn,
-    // maxLength: maxDecimalDigits,
+    syntacticValidationFn: validationFnFromRegexString(`^([0-9]*)$`),
+    maxLength: maxDecimalDigits,
   });
 
   return {

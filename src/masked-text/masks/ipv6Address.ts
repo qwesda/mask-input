@@ -1,57 +1,7 @@
 import { type MaskCharacter, type MaskDefinition, MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from './base/index.ts';
 import { splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
 
-const ipv6BlockMaskFn = (sectionValue: string): MaskCharacter[] => {
-  if (sectionValue === '') {
-    return [{ char: '0', type: 'mask' as const }];
-  }
-
-  return splitStringIntoGraphemes(sectionValue).map((c) => {
-    return { char: c, type: 'value' as const };
-  });
-};
-
-const ipv6BlockSemanticValidationFn = (values: Record<string, string>, sectionSlug: string): boolean => {
-  const value = values[sectionSlug];
-
-  if (!value) {
-    return true;
-  }
-
-  const hexRegex = /^[0-9a-fA-F]+$/;
-
-  return hexRegex.test(value) && value.length <= 4;
-};
-
-const ipv6BlockSpinUpFn = (values: Record<string, string>, sectionSlug: string): string => {
-  const sectionValue = values[sectionSlug];
-  const hexValue = sectionValue || '0';
-  const parsedIntValue = parseInt(hexValue, 16);
-
-  if (!isNaN(parsedIntValue)) {
-    if (parsedIntValue >= 0 && parsedIntValue <= 0xfffe) {
-      return (parsedIntValue + 1).toString(16);
-    }
-  }
-
-  return '0';
-};
-
-const ipv6BlockSpinDownFn = (values: Record<string, string>, sectionSlug: string): string => {
-  const sectionValue = values[sectionSlug];
-  const hexValue = sectionValue || '0';
-  const parsedIntValue = parseInt(hexValue, 16);
-
-  if (!isNaN(parsedIntValue)) {
-    if (parsedIntValue >= 1 && parsedIntValue <= 0xffff) {
-      return (parsedIntValue - 1).toString(16);
-    }
-  }
-
-  return 'ffff';
-};
-
-const ipv6EncodeValidatedValue = (values: Record<string, string>): string | undefined => {
+const ipv6AddressEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
   const blocks = [
     values['block1'] || '0',
     values['block2'] || '0',
@@ -109,25 +59,75 @@ const ipv6EncodeValidatedValue = (values: Record<string, string>): string | unde
   return blocks.join(':');
 };
 
-export const IPv6Mask = (): MaskDefinition => {
+const ipv6AddressBlockMaskFn = (sectionValue: string): MaskCharacter[] => {
+  if (sectionValue === '') {
+    return [{ char: '0', type: 'mask' as const }];
+  }
+
+  return splitStringIntoGraphemes(sectionValue).map((c) => {
+    return { char: c, type: 'value' as const };
+  });
+};
+
+const ipv6AddressBlockSemanticValidationFn = (values: Record<string, string>, sectionSlug: string): boolean => {
+  const value = values[sectionSlug];
+
+  if (!value) {
+    return true;
+  }
+
+  const hexRegex = /^[0-9a-fA-F]+$/;
+
+  return hexRegex.test(value) && value.length <= 4;
+};
+
+const ipv6AddressBlockSpinUpFn = (values: Record<string, string>, sectionSlug: string): string => {
+  const sectionValue = values[sectionSlug];
+  const hexValue = sectionValue || '0';
+  const parsedIntValue = parseInt(hexValue, 16);
+
+  if (!isNaN(parsedIntValue)) {
+    if (parsedIntValue >= 0 && parsedIntValue <= 0xfffe) {
+      return (parsedIntValue + 1).toString(16);
+    }
+  }
+
+  return '0';
+};
+
+const ipv6AddressBlockSpinDownFn = (values: Record<string, string>, sectionSlug: string): string => {
+  const sectionValue = values[sectionSlug];
+  const hexValue = sectionValue || '0';
+  const parsedIntValue = parseInt(hexValue, 16);
+
+  if (!isNaN(parsedIntValue)) {
+    if (parsedIntValue >= 1 && parsedIntValue <= 0xffff) {
+      return (parsedIntValue - 1).toString(16);
+    }
+  }
+
+  return 'ffff';
+};
+
+export const IPv6AddressMask = (): MaskDefinition => {
   const ipv6BlockOptions = {
-    maskingFn: ipv6BlockMaskFn,
+    maskingFn: ipv6AddressBlockMaskFn,
     maxLength: 4,
     alignment: 'right' as const,
 
     syntacticValidationFn: validationFnFromRegexString(`^([0-9a-fA-F]{0,4})$`),
-    semanticValidationFn: ipv6BlockSemanticValidationFn,
+    semanticValidationFn: ipv6AddressBlockSemanticValidationFn,
 
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9a-fA-F]$`),
 
-    spinUpFn: ipv6BlockSpinUpFn,
-    spinDownFn: ipv6BlockSpinDownFn,
+    spinUpFn: ipv6AddressBlockSpinUpFn,
+    spinDownFn: ipv6AddressBlockSpinDownFn,
   };
 
   const separatorSection = MaskSectionFixed(':');
 
   return {
-    encodeValidatedValue: ipv6EncodeValidatedValue,
+    encodeValidatedValue: ipv6AddressEncodeValidatedValue,
     sections: [
       MaskSectionInput('block1', ipv6BlockOptions),
       separatorSection,

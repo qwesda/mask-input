@@ -7,7 +7,7 @@ import {
   validationFnFromRegexString,
 } from './base/index.ts';
 
-const encodeValidatedValue = (values: Record<string, string>): string | undefined => {
+const dateEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
   if (!values['year'] || !values['month'] || !values['day']) {
     return undefined;
   }
@@ -15,7 +15,7 @@ const encodeValidatedValue = (values: Record<string, string>): string | undefine
   return (values['year'] || '') + '-' + (values['month'] || '').padStart(2, '0') + '-' + (values['day'] || '').padStart(2, '0');
 };
 
-const sectionMaskFnYear = (sectionValue: string): MaskCharacter[] => {
+const dateYearMaskFn = (sectionValue: string): MaskCharacter[] => {
   const ret: MaskCharacter[] = [];
 
   if (sectionValue === '') {
@@ -38,7 +38,7 @@ const sectionMaskFnYear = (sectionValue: string): MaskCharacter[] => {
   return ret;
 };
 
-const sectionMaskFnMonth = (sectionValue: string): MaskCharacter[] => {
+const dateMonthMaskFn = (sectionValue: string): MaskCharacter[] => {
   const ret: MaskCharacter[] = [];
 
   if (sectionValue === '') {
@@ -59,7 +59,7 @@ const sectionMaskFnMonth = (sectionValue: string): MaskCharacter[] => {
   return ret;
 };
 
-const sectionMaskFnDay = (sectionValue: string): MaskCharacter[] => {
+const dateDayMaskFn = (sectionValue: string): MaskCharacter[] => {
   const ret: MaskCharacter[] = [];
 
   if (sectionValue === '') {
@@ -80,7 +80,7 @@ const sectionMaskFnDay = (sectionValue: string): MaskCharacter[] => {
   return ret;
 };
 
-const semanticValidationFnDate = (minDateISOString: string, maxDateISOString: string) => {
+const dateSemanticValidationFn = (minDateISOString: string, maxDateISOString: string) => {
   const minDate = new Date(`${minDateISOString}T00:00:00.000Z`);
   const maxDate = new Date(`${maxDateISOString}T00:00:00.000Z`);
 
@@ -123,7 +123,7 @@ const semanticValidationFnDate = (minDateISOString: string, maxDateISOString: st
 
 export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDate?: Date, maxDate?: Date): MaskDefinition => {
   const sectionYear = MaskSectionInput('year', {
-    maskingFn: sectionMaskFnYear,
+    maskingFn: dateYearMaskFn,
     alignment: 'right',
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,4}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
@@ -131,7 +131,7 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
   });
 
   const sectionMonth = MaskSectionInput('month', {
-    maskingFn: sectionMaskFnMonth,
+    maskingFn: dateMonthMaskFn,
     alignment: 'right',
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,2}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
@@ -139,14 +139,14 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
   });
 
   const sectionDay = MaskSectionInput('day', {
-    maskingFn: sectionMaskFnDay,
+    maskingFn: dateDayMaskFn,
     alignment: 'right',
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,2}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     maxLength: 2,
   });
 
-  const semanticValidationFn = semanticValidationFnDate(minDate?.toISOString() ?? '1900-01-01', maxDate?.toISOString() ?? '2100-12-31');
+  const semanticValidationFn = dateSemanticValidationFn(minDate?.toISOString() ?? '1900-01-01', maxDate?.toISOString() ?? '2100-12-31');
   let sections: MaskSectionDefinition[];
 
   if (style === 'en') {
@@ -164,7 +164,7 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
   }
 
   return {
-    encodeValidatedValue,
+    encodeValidatedValue: dateEncodeValidatedValue,
     semanticValidationFn,
     sections,
   };
