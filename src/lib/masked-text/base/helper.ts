@@ -1,4 +1,4 @@
-import type { MaskDerivedState, MaskSectionDerivedState } from '@/masked-text/masks/base/types.ts';
+import type { MaskDerivedState, MaskSectionDerivedState } from './types';
 
 export const splitStringIntoGraphemes = function (value: string | undefined | null): string[] {
   const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' });

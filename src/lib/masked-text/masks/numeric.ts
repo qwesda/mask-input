@@ -5,8 +5,8 @@ import {
   type MaskSectionFixedDefinition,
   MaskSectionInput,
   validationFnFromRegexString,
-} from './base/index.ts';
-import { splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
+} from '../base/index';
+import { splitStringIntoGraphemes } from '../base/helper';
 
 export type NumericMaskProps = {
   decimalSeparator?: string;

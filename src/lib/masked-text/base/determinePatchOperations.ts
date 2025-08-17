@@ -1,13 +1,6 @@
-import type {
-  MaskDefinition,
-  MaskDerivedState,
-  MaskSectionInputDefinition,
-  MaskState,
-  PatchOperation,
-  PatchOperationInsertCharacter,
-} from '@/masked-text/masks/base/types.ts';
-import { splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
-import { getDerivedState } from '@/masked-text/masks/base/index.ts';
+import type { MaskDefinition, MaskDerivedState, MaskSectionInputDefinition, MaskState, PatchOperation, PatchOperationInsertCharacter } from './types';
+import { splitStringIntoGraphemes } from './helper';
+import { getDerivedState } from './index';
 
 export const determinePatchOperationFromKeyupEvent = (
   event: KeyboardEvent,

@@ -14,9 +14,9 @@ import type {
   PatchOperationSelectNextSection,
   PatchOperationSetCursorPosition,
   PatchOperationSpin,
-} from '@/masked-text/masks/base/types.ts';
-import { compareSpaceCoordinates, findSection } from '@/masked-text/masks/base/helper.ts';
-import { getDerivedState } from '@/masked-text/masks/base/index.ts';
+} from './types';
+import { compareSpaceCoordinates, findSection } from './helper';
+import { getDerivedState } from './index';
 
 export const applyPatchOperationMoveCursor = (
   patchOperation: PatchOperationMoveCursor,

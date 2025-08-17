@@ -41,26 +41,19 @@
 
 <script lang="ts" setup>
   import { ref, type Ref, watch } from 'vue';
-  import {
-    getDerivedState,
-    getInitialMaskState,
-    type MaskDefinition,
-    type MaskDerivedState,
-    type MaskState,
-    updateMaskStateCaretAndSelection,
-    updateMaskStateValues,
-  } from './masks/base/index.ts';
+  import type { MaskDefinition, MaskDerivedState, MaskState } from './base/types';
+  import { getDerivedState, getInitialMaskState, updateMaskStateCaretAndSelection, updateMaskStateValues } from './base/index';
 
   import VarDump from '@/helper/var-dump.vue';
-  import { modelValuesEqual, findClosestValidValueSpaceCoordinates, splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
-  import { applyPatchOperations } from '@/masked-text/masks/base/applyPatchOperations.ts';
+  import { modelValuesEqual, findClosestValidValueSpaceCoordinates, splitStringIntoGraphemes } from './base/helper';
+  import { applyPatchOperations } from './base/applyPatchOperations';
   import {
     determinePatchOperationFromBeforeInputEvent,
     determinePatchOperationFromCompositionEndEvent,
     determinePatchOperationFromKeydownEvent,
     determinePatchOperationFromKeyupEvent,
-  } from '@/masked-text/masks/base/determinePatchOperations.ts';
-  import type { PatchOperation } from '@/masked-text/masks/base/types.ts';
+  } from './base/determinePatchOperations';
+  import type { PatchOperation } from './base/types';
 
   const showDebugState = ref(true);
   const showDebugLastDerivedState = ref(false);

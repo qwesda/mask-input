@@ -133,11 +133,11 @@
 </template>
 
 <script lang="ts" setup>
-  import { default as MaskedText } from '@/masked-text/masked-text.vue';
   import { computed, ref, type Ref } from 'vue';
   import { bindToLocalStorage } from '@/helper/bindToLocalStorage.ts';
-  import { DateMask, IPv4AddressMask, IPv6AddressMask, NumericMask } from '@/masked-text/masks';
-  import { MaskSectionFixed, type MaskSectionFixedDefinition } from '@/masked-text/masks/index.ts';
+
+  import { MaskedText, MaskSectionFixed, type MaskSectionFixedDefinition } from '@/lib/masked-text';
+  import { DateMask, IPv4AddressMask, IPv6AddressMask, NumericMask } from '@/lib/masked-text/masks';
 
   const dateValue = ref({ year: '', month: '', day: '' } as Record<string, string>);
   const dateValidatedValue: Ref<string | undefined> = ref(undefined);
@@ -173,6 +173,7 @@
     string,
     string
   >);
+
   const ipv6Mask = IPv6AddressMask();
   const ipv6ValidatedValue: Ref<string | undefined> = ref(undefined);
   const ipv6SemanticValidationMessage: Ref<string | undefined> = ref(undefined);

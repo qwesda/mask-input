@@ -5,7 +5,7 @@ import {
   MaskSectionFixed,
   MaskSectionInput,
   validationFnFromRegexString,
-} from './base/index.ts';
+} from '../base/index';
 
 const dateEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
   if (!values['year'] || !values['month'] || !values['day']) {

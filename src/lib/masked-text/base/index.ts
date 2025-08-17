@@ -2,7 +2,6 @@ import type {
   MaskCharacter,
   MaskDefinition,
   MaskDerivedState,
-  MaskSectionDefinition,
   MaskSectionDerivedState,
   MaskSectionFixedDefinition,
   MaskSectionFixedDerivedState,
@@ -10,20 +9,8 @@ import type {
   MaskSectionInputDerivedState,
   MaskState,
 } from './types';
-import { compareSpaceCoordinates, splitStringIntoGraphemes } from '@/masked-text/masks/base/helper.ts';
 
-export type {
-  MaskSectionFixedDefinition,
-  MaskSectionInputDefinition,
-  MaskCharacter,
-  MaskSectionFixedDerivedState,
-  MaskSectionInputDerivedState,
-  MaskSectionDefinition,
-  MaskSectionDerivedState,
-  MaskDefinition,
-  MaskState,
-  MaskDerivedState,
-};
+import { compareSpaceCoordinates, splitStringIntoGraphemes } from './helper';
 
 // local types
 type InputHTMLStringPart = {
