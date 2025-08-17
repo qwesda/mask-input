@@ -234,6 +234,10 @@ const getInputSectionHTMLStrings = (
 
   let posDisplaySpace = 0;
 
+  const firstValueSpaceCoordinates: string | undefined = maskSection.valueSpace.length > 0 ? maskSection.valueSpace[0] : undefined;
+  const lastValueSpaceCoordinates: string | undefined =
+    maskSection.valueSpace.length > 0 ? maskSection.valueSpace[maskSection.valueSpace.length - 1] : undefined;
+
   for (const [i, maskChar] of maskSection.maskCharacters.entries()) {
     const currentDisplaySpaceCoordinatesLeft = `${maskSection.index}:${posDisplaySpace}`;
     const currentValueSpaceCoordinatesLeft = displaySpaceToValueSpaceMap.get(currentDisplaySpaceCoordinatesLeft);
@@ -257,10 +261,14 @@ const getInputSectionHTMLStrings = (
 
     if (currentValueSpaceCoordinatesLeft) {
       dataAttrs['value-pos-left'] = currentValueSpaceCoordinatesLeft;
+    } else if (i === 0 && firstValueSpaceCoordinates) {
+      dataAttrs['value-pos-left'] = firstValueSpaceCoordinates;
     }
 
     if (currentValueSpaceCoordinatesRight) {
       dataAttrs['value-pos-right'] = currentValueSpaceCoordinatesRight;
+    } else if (i === maskSection.maskCharacters.length - 1 && lastValueSpaceCoordinates) {
+      dataAttrs['value-pos-right'] = lastValueSpaceCoordinates;
     }
 
     htmlStringParts.push({

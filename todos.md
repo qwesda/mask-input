@@ -4,7 +4,7 @@
 
 - [x] ~~emit `update:state', `update:derivedState` events~~
 - [x] ~~add support for `characterInputSubstitutionFn`~~
-- [ ] fix missing `data-value-pos-right`/ `data-value-pos-left` attributes for mask characters
+- [x] ~~fix missing `data-value-pos-right`/ `data-value-pos-left` attributes for mask characters~~
 - [ ] use `splitIntoGraphemes` where appropriate
 - [ ] maybe store value characters as `string[]` pre-split by `splitIntoGraphemes`
 - [ ] update mouse event handling similar to keyboard event handling
