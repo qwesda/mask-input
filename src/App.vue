@@ -68,11 +68,6 @@
       </div>
 
       <div class="row">
-        <div class="row-label">plain input</div>
-        <input style="flex-grow: 1" type="text" value="779126479 23798467912364 9123864781234" />
-      </div>
-
-      <div class="row">
         <div class="row-label">value</div>
 
         <button @click="setRandomNumericValue()">n.n</button>
@@ -322,39 +317,39 @@
 </script>
 
 <style scoped>
-  .app {
-    margin-top: 100px;
-    font-size: 12px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  }
   .row {
     display: flex;
     flex-direction: row;
     gap: 10px;
   }
+
   .row-label {
     width: 100px;
     text-align: right;
     padding-right: 10px;
     font-weight: bold;
   }
+
   .section {
     display: flex;
     flex-direction: column;
     gap: 10px;
   }
+
   .sliders-row {
     display: flex;
     flex-direction: row;
     gap: 20px;
     flex-wrap: wrap;
   }
+
   .slider-group {
     display: flex;
     flex-direction: column;
     gap: 5px;
     min-width: 150px;
   }
+
   .slider-group input[type='range'] {
     width: 100%;
   }
