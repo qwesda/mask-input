@@ -2,7 +2,7 @@
 
 ## base
 
-- [ ] emit `update:state', `update:derivedState` events
+- [x] ~~emit `update:state', `update:derivedState` events~~
 - [ ] add support for `characterInputSubstitutionFn`
 - [ ] fix missing `data-value-pos-right`/ `data-value-pos-left` attributes for mask characters
 - [ ] use `splitIntoGraphemes` where appropriate
