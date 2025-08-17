@@ -1,7 +1,7 @@
 <template>
   <div ref="containerRef">
     <div
-      class="masked-text-container"
+      :class="['masked-text-container', { 'has-focus': hasFocus }]"
       @mousedown.capture="handleMousedown"
       @mouseup.capture="handleMouseup"
       @focusin="handleFocusin"
@@ -24,18 +24,6 @@
 
       <input ref="textMeasureHelperRef" style="visibility: hidden" type="text" />
     </div>
-
-    <template v-if="hasFocus">
-      <div style="display: flex; flex-direction: row; gap: 1em">
-        <label style="display: flex; flex-direction: row; align-items: center"> <input v-model="showDebugState" type="checkbox" /> state </label>
-        <label style="display: flex; flex-direction: row; align-items: center">
-          <input v-model="showDebugLastDerivedState" type="checkbox" /> lastDerivedState
-        </label>
-      </div>
-
-      <var-dump v-if="showDebugState" :data="state" />
-      <var-dump v-if="showDebugLastDerivedState" :data="lastDerivedState" />
-    </template>
   </div>
 </template>
 
@@ -44,7 +32,6 @@
   import type { MaskDefinition, MaskDerivedState, MaskState } from './base/types';
   import { getDerivedState, getInitialMaskState, updateMaskStateCaretAndSelection, updateMaskStateValues } from './base/index';
 
-  import VarDump from '@/helper/var-dump.vue';
   import { modelValuesEqual, findClosestValidValueSpaceCoordinates, splitStringIntoGraphemes } from './base/helper';
   import { applyPatchOperations } from './base/applyPatchOperations';
   import {
@@ -54,9 +41,6 @@
     determinePatchOperationFromKeyupEvent,
   } from './base/determinePatchOperations';
   import type { PatchOperation } from './base/types';
-
-  const showDebugState = ref(true);
-  const showDebugLastDerivedState = ref(false);
 
   interface Props {
     mask: MaskDefinition;
@@ -71,6 +55,12 @@
     'update:modelValue': [value: Record<string, string>];
     'update:validatedValue': [value: string | undefined];
     'update:semanticValidationMessage': [value: string | undefined];
+
+    focus: [];
+    blur: [];
+
+    // TODO: remove this ... only for debugging purposes
+    'update:debugInfo': [state: MaskState, lastDerivedState: MaskDerivedState];
   }>();
 
   const state: Ref<MaskState> = ref(getInitialMaskState(props.modelValue));
@@ -190,6 +180,11 @@
     if (initialSemanticValidationMessage !== finalSemanticValidationMessage) {
       emits('update:semanticValidationMessage', finalSemanticValidationMessage);
     }
+
+    // TODO: remove this ... only for debugging purposes
+    if (hasFocus.value) {
+      emits('update:debugInfo', state.value, lastDerivedState.value);
+    }
   };
 
   const runComponentExternalUpdateLoop = (
@@ -218,13 +213,18 @@
 
     const finalValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
     const finalSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
-    console.log('runComponentExternalUpdateLoop', initialValidatedValue, finalValidatedValue);
+
     if (initialValidatedValue !== finalValidatedValue) {
       emits('update:validatedValue', finalValidatedValue);
     }
 
     if (initialSemanticValidationMessage !== finalSemanticValidationMessage) {
       emits('update:semanticValidationMessage', finalSemanticValidationMessage);
+    }
+
+    // TODO: remove this ... only for debugging purposes
+    if (hasFocus.value) {
+      emits('update:debugInfo', state.value, lastDerivedState.value);
     }
   };
 
@@ -276,8 +276,11 @@
   const handleFocusin = (event: FocusEvent) => {
     if (!hasFocus.value) {
       console.log('handleFocusin', event);
-      // state.value = updateMaskStateCaretAndSelection(state.value, '0:0', '0:0');
       hasFocus.value = true;
+
+      emits('focus');
+
+      runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
     }
   };
 
@@ -287,6 +290,8 @@
         if (containerRef.value && !containerRef.value.contains(document.activeElement)) {
           console.log('handleFocusout', event);
           hasFocus.value = false;
+
+          emits('blur');
         }
       }, 50);
     }
@@ -382,12 +387,6 @@
     }
   };
 
-  const setFocus = (event: MouseEvent) => {
-    if (inputRef.value) {
-      inputRef.value.focus();
-    }
-  };
-
   watch(
     () => [props.mask, props.modelValue],
     () => {
@@ -454,7 +453,7 @@
     display: inline-block;
   }
 
-  .text-overlay :deep(.section-input.active) {
+  .masked-text-container.has-focus .text-overlay :deep(.section-input.active) {
     background-color: rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   }
@@ -462,15 +461,17 @@
   .text-overlay :deep(.mask-char-input) {
     color: rgba(0, 0, 0, 1);
   }
-  .text-overlay :deep(.mask-char-mask) {
-    color: rgba(0, 0, 0, 0.2);
+
+  .text-overlay :deep(.fixed-mask-input) {
+    color: rgba(0, 0, 0, 1);
   }
-  .text-overlay :deep(.selected) {
+  .text-overlay :deep(.mask-char-mask) {
+    color: rgba(0, 0, 0, 0.4);
+  }
+  .masked-text-container.has-focus .text-overlay :deep(.selected) {
     background-color: rgba(0, 0, 0, 0.2);
   }
-  .text-overlay :deep(.fixed-mask) {
-    color: oklch(71.5% 0.143 215.221);
-  }
+
   .text-overlay :deep(.semantic-error),
   .text-overlay :deep(.semantic-error.section-input),
   .text-overlay :deep(.semantic-error.section-input.active) {

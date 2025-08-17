@@ -16,6 +16,7 @@
 - [ ] maybe add highlighting of problematic sections for semantic validation
 - [ ] maybe de-vueify the component
 - [ ] maybe dynamic section hiding based on cursor position and values
+- [ ] replace fake selection highlight with native browser selection highlight
 
 ## masks 
 

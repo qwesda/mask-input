@@ -1,7 +1,5 @@
 <template>
-  <div class="var-dump">
-    <pre class="var-dump-content">{{ formattedOutput }}</pre>
-  </div>
+  <pre class="var-dump-content">{{ formattedOutput }}</pre>
 </template>
 
 <script lang="ts" setup>
@@ -110,26 +108,10 @@
 </script>
 
 <style scoped>
-  .var-dump {
-    font-family: 'Courier New', Consolas, monospace;
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 12px;
-    margin: 8px 0;
-    overflow-x: auto;
-  }
-
   .var-dump-content {
+    font-family: monospace;
+    border: none;
+    padding: 0;
     margin: 0;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    font-size: 14px;
-    line-height: 1.4;
-    color: #333;
-  }
-
-  .var-dump:hover {
-    border-color: #bbb;
   }
 </style>

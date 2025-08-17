@@ -1,5 +1,5 @@
 import type { MaskDefinition, MaskDerivedState, MaskSectionInputDefinition, MaskState, PatchOperation, PatchOperationInsertCharacter } from './types';
-import { splitStringIntoGraphemes } from './helper';
+import { findSection, splitStringIntoGraphemes } from './helper';
 import { getDerivedState } from './index';
 
 export const determinePatchOperationFromKeyupEvent = (
@@ -93,11 +93,27 @@ export const determinePatchOperationFromKeydownEvent = (
 
   if (event.key === 'Tab') {
     if (!event.shiftKey) {
-      if (currentDerivedState.caretDisplaySpaceIndex < currentDerivedState.sections.length - 1) {
+      const nextInputSection = findSection(currentDerivedState, {
+        direction: 'right',
+        type: 'input',
+        startIndex: currentDerivedState.caretDisplaySpaceIndex,
+        includeStartIndex: false,
+      });
+
+      if (nextInputSection) {
         return [{ op: 'select-next-section', direction: 'right' }];
       }
     } else {
-      if (currentDerivedState.caretDisplaySpaceIndex > 0) return [{ op: 'select-next-section', direction: 'left' }];
+      const previousInputSection = findSection(currentDerivedState, {
+        direction: 'left',
+        type: 'input',
+        startIndex: currentDerivedState.caretDisplaySpaceIndex,
+        includeStartIndex: false,
+      });
+
+      if (previousInputSection) {
+        return [{ op: 'select-next-section', direction: 'left' }];
+      }
     }
   }
 

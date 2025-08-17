@@ -1,5 +1,12 @@
-import type { MaskSectionFixedDefinition, MaskSectionInputDefinition, MaskSectionDefinition, MaskDefinition } from './base/types';
-export type { MaskSectionFixedDefinition, MaskSectionInputDefinition, MaskSectionDefinition, MaskDefinition };
+import type {
+  MaskSectionFixedDefinition,
+  MaskSectionInputDefinition,
+  MaskSectionDefinition,
+  MaskDefinition,
+  MaskState,
+  MaskDerivedState,
+} from './base/types';
+export type { MaskSectionFixedDefinition, MaskSectionInputDefinition, MaskSectionDefinition, MaskDefinition, MaskState, MaskDerivedState };
 
 import { MaskSectionFixed, MaskSectionInput } from './base/index';
 export { MaskSectionFixed, MaskSectionInput };
