@@ -424,11 +424,19 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     .map((x) => Number.parseInt(x));
 
   return {
+    validatedStringEncodedValue,
     encodedState,
     textInputDisplayString,
     textInputDisplayStringWithSelection,
 
+    caretValueSpaceIndex,
+    caretValueSpacePosition,
+
+    caretDisplaySpaceIndex,
+    caretDisplaySpacePosition,
+
     inputFieldClasses: [...inputFieldClasses.values()],
+
     syntacticValidationStatus,
     semanticValidationStatus,
     semanticValidationMessage,
@@ -438,18 +446,10 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     valueSpaceToDisplaySpaceMap,
     displaySpaceToValueSpaceMap,
 
-    caretValueSpaceIndex,
-    caretValueSpacePosition,
-
-    caretDisplaySpaceIndex,
-    caretDisplaySpacePosition,
-
     preInputHTMLString: preInputHTMLStringParts.join(''),
     postInputHTMLString: postInputHTMLStringParts.join(''),
 
     sections: sectionsDeriveState,
-
-    validatedStringEncodedValue,
   };
 };
 
