@@ -3,8 +3,9 @@
     <div class="menu-buttons">
       <button @click="$emit('update:modelValue', 'date')" :class="{ active: modelValue === 'date' }">Date</button>
       <button @click="$emit('update:modelValue', 'numeric')" :class="{ active: modelValue === 'numeric' }">Numeric</button>
-      <button @click="$emit('update:modelValue', 'ip-addresses')" :class="{ active: modelValue === 'ip' }">IP Addr</button>
-      <button @click="$emit('update:modelValue', 'special')" :class="{ active: modelValue === 'ip' }">Special</button>
+      <button @click="$emit('update:modelValue', 'ip-addresses')" :class="{ active: modelValue === 'ip-addresses' }">IP Addr</button>
+      <button @click="$emit('update:modelValue', 'special')" :class="{ active: modelValue === 'special' }">Special</button>
+      <button @click="$emit('update:modelValue', 'uuid')" :class="{ active: modelValue === 'uuid' }">UUID</button>
     </div>
   </nav>
 </template>

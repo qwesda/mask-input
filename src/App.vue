@@ -17,6 +17,10 @@
     <PlaygroundSection v-else-if="activeSection === 'special'">
       <SpecialPlayground />
     </PlaygroundSection>
+
+    <PlaygroundSection v-else-if="activeSection === 'uuid'">
+      <UuidPlayground />
+    </PlaygroundSection>
   </div>
 </template>
 
@@ -31,8 +35,9 @@
   import NumericPlayground from '@/components/playground-sections/NumericPlayground.vue';
   import IpAddressesPlayground from '@/components/playground-sections/IpAddressesPlayground.vue';
   import SpecialPlayground from '@/components/playground-sections/SpecialPlayground.vue';
+  import UuidPlayground from '@/components/playground-sections/UuidPlayground.vue';
 
-  const activeSection: Ref<'date' | 'numeric' | 'ip-addresses'> = ref('date' as const);
+  const activeSection: Ref<'date' | 'numeric' | 'ip-addresses' | 'special' | 'uuid'> = ref('date' as const);
 
   bindToLocalStorage(activeSection, 'playground/activeSection');
 </script>

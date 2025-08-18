@@ -13,8 +13,11 @@
 - [ ] make spin functions return the whole values[]
 - [ ] handle section advance by using skip keys
 - [ ] add cmd+a/crtl+a support
+ 
 - [ ] update mouse event handling similar to keyboard event handling
 - [ ] add mouse drag support for selection
+- [ ] handle double click for section selection / triple click for whole selection 
+
 - [ ] add whole value copy/pase support
 - [ ] add partial (selection) copy/pase support
 - [ ] maybe add highlighting of problematic sections for semantic validation
@@ -31,7 +34,7 @@
 - [ ] ipv4 subnet mask
 - [ ] ipv6 subnet mask
 - [ ] barcode mask (ean13, upc, isbn)
-- [ ] uuid
+- [x] ~~uuid~~
 
 ## test app
 
