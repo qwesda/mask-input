@@ -10,6 +10,7 @@
 - [x] ~~composition input is currently broken~~
 - [x] ~~input element size measurement is currently broken~~ 
 - [ ] ensure all section values are initialized
+- [ ] handle section advance by using skip keys
 - [ ] update mouse event handling similar to keyboard event handling
 - [ ] add mouse drag support for selection
 - [ ] make spin functions return the whole values[]
@@ -33,5 +34,5 @@
 
 ## test app
 
-- [ ] split out playground sections
-- [ ] better display of debug info
+- [x] ~~split out playground sections~~
+- [x] ~~better display of debug info~~
