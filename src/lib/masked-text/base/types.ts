@@ -137,6 +137,7 @@ export type PatchOperationSetCursorPosition = {
 export type PatchOperationInsertCharacter = {
   op: 'insert-character';
   character: string;
+  inputBehavior?: 'replace' | 'insert';
 };
 
 export type PatchOperationDeleteBackwards = {

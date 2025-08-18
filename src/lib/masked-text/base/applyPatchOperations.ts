@@ -391,6 +391,17 @@ export const applyPatchOperationInsert = (
   maskDefinition: MaskDefinition,
 ): MaskState => {
   const sectionDefinition = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
+  const currentSectionValue = currentState.values[sectionDefinition.slug] || [];
+  const inputBehavior = patchOperation.inputBehavior ?? sectionDefinition.inputBehavior;
+
+  const atSectionMaxLengthLimit =
+    sectionDefinition.maxLength &&
+    ((inputBehavior === 'insert' && currentSectionValue.length >= sectionDefinition.maxLength) ||
+      (inputBehavior === 'replace' && currentDerivedState.caretValueSpacePosition >= sectionDefinition.maxLength));
+
+  if (atSectionMaxLengthLimit) {
+    return currentState;
+  }
 
   const character = sectionDefinition.inputCharacterSubstitutionFn
     ? sectionDefinition.inputCharacterSubstitutionFn(patchOperation.character)
@@ -400,11 +411,10 @@ export const applyPatchOperationInsert = (
     return currentState;
   }
 
-  const currentSectionValue = currentState.values[sectionDefinition.slug] || [];
   let newSectionValue: string[];
   let newCaretPosition: string;
 
-  if (sectionDefinition.inputBehavior === 'replace') {
+  if (inputBehavior === 'replace') {
     if (currentDerivedState.caretValueSpacePosition < currentSectionValue.length) {
       newSectionValue = [
         ...currentSectionValue.slice(0, currentDerivedState.caretValueSpacePosition),

@@ -31,6 +31,7 @@ export const determinePatchOperationFromBeforeInputEvent = (
     return {
       op: 'insert-character',
       character: value,
+      inputBehavior: selectionIsPresent ? 'insert' : undefined,
     };
   });
 
@@ -57,17 +58,6 @@ export const determinePatchOperationFromCompositionEndEvent = (
   if (selectionIsPresent) {
     return [{ op: 'delete-selection' }, { op: 'insert-character', character: event.data }];
   } else {
-    // const isAtInputSectionMaxCharLimit: boolean =
-    //   currentSection.maxLength !== undefined && currentSection.maxLength <= currentDerivedState.caretValueSpaceIndex;
-    // if (isAtInputSectionMaxCharLimit) {
-    //   return [
-    //     { op: 'move-cursor', direction: 'right', level: 'character', keepSelectionEnd: false },
-    //     { op: 'insert-character', character: event.data },
-    //   ];
-    // } else {
-    //   return [{ op: 'insert-character', character: event.data }];
-    // }
-
     return [{ op: 'insert-character', character: event.data }];
   }
 };
