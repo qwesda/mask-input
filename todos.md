@@ -13,6 +13,7 @@
 - [ ] make spin functions return the whole values[]
 - [ ] handle section advance by using skip keys
 - [ ] add cmd+a/crtl+a support
+- [ ] holding key should repeat last key
  
 - [ ] update mouse event handling similar to keyboard event handling
 - [ ] add mouse drag support for selection
