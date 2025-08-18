@@ -1,18 +1,22 @@
 import type { MaskCharacter, MaskDefinition, MaskSectionDefinition } from '../base/types';
 import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
 
-const dateEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
-  if (!values['year'] || !values['month'] || !values['day']) {
+const dateEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
+  const year = (values['year'] || []).join('');
+  const month = (values['month'] || []).join('');
+  const day = (values['day'] || []).join('');
+
+  if (!year || !month || !day) {
     return undefined;
   }
 
-  return (values['year'] || '') + '-' + (values['month'] || '').padStart(2, '0') + '-' + (values['day'] || '').padStart(2, '0');
+  return year + '-' + month.padStart(2, '0') + '-' + day.padStart(2, '0');
 };
 
-const dateYearMaskFn = (sectionValue: string): MaskCharacter[] => {
+const dateYearMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   const ret: MaskCharacter[] = [];
 
-  if (sectionValue === '') {
+  if (sectionValue.length === 0) {
     return [
       { char: 'Y', type: 'mask' as const },
       { char: 'Y', type: 'mask' as const },
@@ -32,10 +36,10 @@ const dateYearMaskFn = (sectionValue: string): MaskCharacter[] => {
   return ret;
 };
 
-const dateMonthMaskFn = (sectionValue: string): MaskCharacter[] => {
+const dateMonthMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   const ret: MaskCharacter[] = [];
 
-  if (sectionValue === '') {
+  if (sectionValue.length === 0) {
     return [
       { char: 'M', type: 'mask' as const },
       { char: 'M', type: 'mask' as const },
@@ -53,10 +57,10 @@ const dateMonthMaskFn = (sectionValue: string): MaskCharacter[] => {
   return ret;
 };
 
-const dateDayMaskFn = (sectionValue: string): MaskCharacter[] => {
+const dateDayMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   const ret: MaskCharacter[] = [];
 
-  if (sectionValue === '') {
+  if (sectionValue.length === 0) {
     return [
       { char: 'D', type: 'mask' as const },
       { char: 'D', type: 'mask' as const },
@@ -78,14 +82,18 @@ const dateSemanticValidationFn = (minDateISOString: string, maxDateISOString: st
   const minDate = new Date(`${minDateISOString}T00:00:00.000Z`);
   const maxDate = new Date(`${maxDateISOString}T00:00:00.000Z`);
 
-  return (values: Record<string, string>): [boolean, string] => {
-    if (!values['year'] || !values['month'] || !values['day']) {
+  return (values: Record<string, string[]>): [boolean, string] => {
+    const yearStr = (values['year'] || []).join('');
+    const monthStr = (values['month'] || []).join('');
+    const dayStr = (values['day'] || []).join('');
+
+    if (!yearStr || !monthStr || !dayStr) {
       return [true, ''];
     }
 
-    const year = parseInt(values['year'], 10);
-    const month = parseInt(values['month'], 10);
-    const day = parseInt(values['day'], 10);
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
 
     if (isNaN(year) || isNaN(month) || isNaN(day) || month < 1 || month > 12 || day < 1) {
       return [false, 'invalid date'];

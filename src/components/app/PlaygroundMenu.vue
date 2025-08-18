@@ -4,6 +4,7 @@
       <button @click="$emit('update:modelValue', 'date')" :class="{ active: modelValue === 'date' }">Date</button>
       <button @click="$emit('update:modelValue', 'numeric')" :class="{ active: modelValue === 'numeric' }">Numeric</button>
       <button @click="$emit('update:modelValue', 'ip-addresses')" :class="{ active: modelValue === 'ip' }">IP Addr</button>
+      <button @click="$emit('update:modelValue', 'special')" :class="{ active: modelValue === 'ip' }">Special</button>
     </div>
   </nav>
 </template>

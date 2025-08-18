@@ -29,45 +29,35 @@
     decimalSeparator: '.',
     thousandSeparator: '',
     minIntegerDigits: 1,
-    maxIntegerDigits: 10,
-    minDecimalDigits: 0,
-    maxDecimalDigits: 2,
+    minDecimalDigits: 2,
   });
 
   const numericMaskCommaSeparator = NumericMask({
     decimalSeparator: '.',
     thousandSeparator: ',',
     minIntegerDigits: 1,
-    maxIntegerDigits: 10,
-    minDecimalDigits: 0,
-    maxDecimalDigits: 2,
+    minDecimalDigits: 2,
   });
 
   const numericMaskSpaceSeparator = NumericMask({
     decimalSeparator: '.',
     thousandSeparator: ' ',
     minIntegerDigits: 1,
-    maxIntegerDigits: 10,
-    minDecimalDigits: 0,
-    maxDecimalDigits: 2,
+    minDecimalDigits: 2,
   });
 
   const numericMaskEuropean = NumericMask({
     decimalSeparator: ',',
     thousandSeparator: '.',
     minIntegerDigits: 1,
-    maxIntegerDigits: 10,
-    minDecimalDigits: 0,
-    maxDecimalDigits: 2,
+    minDecimalDigits: 2,
   });
 
   const numericMaskWithSuffix = NumericMask({
     decimalSeparator: '.',
     thousandSeparator: ',',
     minIntegerDigits: 1,
-    maxIntegerDigits: 10,
-    minDecimalDigits: 0,
-    maxDecimalDigits: 2,
+    minDecimalDigits: 2,
     suffixes: [MaskSectionFixed('£')],
   });
 
@@ -75,9 +65,7 @@
     decimalSeparator: '.',
     thousandSeparator: ',',
     minIntegerDigits: 1,
-    maxIntegerDigits: 10,
-    minDecimalDigits: 0,
-    maxDecimalDigits: 2,
+    minDecimalDigits: 2,
     prefixes: [MaskSectionFixed('$')],
   });
 

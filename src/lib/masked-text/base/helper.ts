@@ -134,3 +134,23 @@ export const findClosestValidValueSpaceCoordinates = (derivedState: MaskDerivedS
 
   return undefined;
 };
+
+export const getExternalModelValueFromInternalModel = (internalModelValue: Record<string, string[]>): Record<string, string> => {
+  const externalModelValue: Record<string, string> = {};
+
+  for (const [key, value] of Object.entries(internalModelValue)) {
+    externalModelValue[key] = value.join('');
+  }
+
+  return externalModelValue;
+};
+
+export const getInternalModelValueExternalFromModel = (externalModelValue: Record<string, string>): Record<string, string[]> => {
+  const internalModelValue: Record<string, string[]> = {};
+
+  for (const [key, value] of Object.entries(externalModelValue)) {
+    internalModelValue[key] = splitStringIntoGraphemes(value);
+  }
+
+  return internalModelValue;
+};

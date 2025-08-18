@@ -1,6 +1,5 @@
 import type { MaskCharacter, MaskDefinition, MaskSectionFixedDefinition } from '../base/types';
 import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
-import { splitStringIntoGraphemes } from '../base/helper';
 
 export type NumericMaskProps = {
   decimalSeparator?: string;
@@ -17,24 +16,25 @@ export type NumericMaskProps = {
   maxDecimalDigits?: number;
 };
 
-const numericEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
-  const integersValue = (values['integers'] || '0').padStart(values['integers']?.length ?? 0, '0') || '0';
-  const decimalsValue = (values['decimals'] || '0').padEnd(values['decimals']?.length ?? 0, '0') || '0';
+const numericEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
+  const integersStr = (values['integers'] || []).join('') || '0';
+  const decimalsStr = (values['decimals'] || []).join('') || '0';
+  const integersValue = integersStr.padStart(integersStr.length, '0');
+  const decimalsValue = decimalsStr.padEnd(decimalsStr.length, '0');
 
   return `${integersValue}.${decimalsValue}`;
 };
 
 const numericIntegerMaskFn = (minDigits: number, thousandSeparator?: string) => {
-  return (sectionValue: string): MaskCharacter[] => {
-    const sectionValueCharacters = splitStringIntoGraphemes(sectionValue);
+  return (sectionValue: string[]): MaskCharacter[] => {
     const ret: MaskCharacter[] = [];
 
-    for (let i = 0; i < Math.max(minDigits - sectionValueCharacters.length, 0); i++) {
+    for (let i = 0; i < Math.max(minDigits - sectionValue.length, 0); i++) {
       ret.push({ char: '0', type: 'mask' as const });
     }
 
-    for (let i = 0; i < sectionValueCharacters.length; i++) {
-      const char = sectionValueCharacters[i];
+    for (let i = 0; i < sectionValue.length; i++) {
+      const char = sectionValue[i];
 
       ret.push({ char, type: 'value' as const });
 
@@ -51,18 +51,17 @@ const numericIntegerMaskFn = (minDigits: number, thousandSeparator?: string) => 
   };
 };
 
-const numericDecimalsMaskFn = (minDigits: number) => {
-  return (sectionValue: string): MaskCharacter[] => {
-    const sectionValueCharacters = splitStringIntoGraphemes(sectionValue);
+const numericDecimalsMaskFn = (minDigits: number | undefined) => {
+  return (sectionValue: string[]): MaskCharacter[] => {
     const ret: MaskCharacter[] = [];
 
-    for (let i = 0; i < sectionValueCharacters.length; i++) {
-      const char = sectionValueCharacters[i];
+    for (let i = 0; i < sectionValue.length; i++) {
+      const char = sectionValue[i];
 
       ret.push({ char, type: 'value' as const });
     }
 
-    for (let i = 0; i < Math.max(minDigits - sectionValueCharacters.length, 0); i++) {
+    for (let i = 0; i < Math.max((minDigits ?? 0) - sectionValue.length, 0); i++) {
       ret.push({ char: '0', type: 'mask' as const });
     }
 
@@ -79,9 +78,9 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
   const suffixes = props.suffixes ?? [];
 
   const minIntegerDigits = props.minIntegerDigits ?? 1;
-  const maxIntegerDigits = Math.max(props.maxIntegerDigits ?? 20, minIntegerDigits);
+  const maxIntegerDigits = props.maxIntegerDigits;
   const minDecimalDigits = props.minDecimalDigits ?? 1;
-  const maxDecimalDigits = Math.max(props.maxDecimalDigits ?? 8, minDecimalDigits);
+  const maxDecimalDigits = props.maxDecimalDigits;
 
   if (infixes.length === 0) {
     infixes.push(MaskSectionFixed(decimalSeparator, decimalSeparator.length === 1 ? [decimalSeparator] : undefined));
@@ -96,7 +95,7 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
   });
 
   const decimalsInputSection = MaskSectionInput('decimals', {
-    maskingFn: numericDecimalsMaskFn(maxDecimalDigits),
+    maskingFn: numericDecimalsMaskFn(minDecimalDigits),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     alignment: 'left',
     syntacticValidationFn: validationFnFromRegexString(`^([0-9]*)$`),

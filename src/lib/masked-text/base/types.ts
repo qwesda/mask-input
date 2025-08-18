@@ -7,7 +7,7 @@ export interface MaskSectionFixedDefinition {
 export interface MaskSectionInputDefinition {
   type: 'input';
   slug: string;
-  maskingFn: (sectionValue: string) => MaskCharacter[];
+  maskingFn: (sectionValue: string[]) => MaskCharacter[];
 
   inputBehavior: 'replace' | 'insert';
   alignment: 'left' | 'right';
@@ -18,13 +18,13 @@ export interface MaskSectionInputDefinition {
   syntacticValidationFn: ((sectionValue: string) => boolean) | undefined;
 
   spinUpFn:
-    | ((values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string)
+    | ((values: Record<string, string[]>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string[])
     | undefined;
   spinDownFn:
-    | ((values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string)
+    | ((values: Record<string, string[]>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string[])
     | undefined;
 
-  sectionCommitValueTransformation: ((sectionValue: string) => string) | undefined;
+  sectionCommitValueTransformation: ((sectionValue: string[]) => string) | undefined;
 
   maxLength: number | undefined;
 }
@@ -52,7 +52,8 @@ export type MaskSectionInputDerivedState = {
   alignment: 'left' | 'right';
   index: number;
   slug: string;
-  value: string;
+  value: string[];
+  valueString: string;
   valueIndex: number;
 
   maskCharacters: MaskCharacter[];
@@ -71,13 +72,13 @@ export type MaskSectionDefinition = MaskSectionFixedDefinition | MaskSectionInpu
 export type MaskSectionDerivedState = MaskSectionFixedDerivedState | MaskSectionInputDerivedState;
 
 export type MaskDefinition = {
-  encodeValidatedValue: (values: Record<string, string>) => string | undefined;
-  semanticValidationFn?: (values: Record<string, string>) => [boolean, string];
+  encodeValidatedValue: (values: Record<string, string[]>) => string | undefined;
+  semanticValidationFn?: (values: Record<string, string[]>) => [boolean, string];
   sections: MaskSectionDefinition[];
 };
 
 export type MaskState = {
-  values: Record<string, string>;
+  values: Record<string, string[]>;
 
   caretPositionInValueSpace: string;
   selectionEndPositionInValueSpace: string;

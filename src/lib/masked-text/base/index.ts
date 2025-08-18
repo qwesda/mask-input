@@ -28,7 +28,7 @@ export const MaskSectionFixed = (mask: string, skipKeys?: string[]): MaskSection
 export const MaskSectionInput = (
   slug: string,
   options: {
-    maskingFn: (sectionValue: string) => MaskCharacter[];
+    maskingFn: (sectionValue: string[]) => MaskCharacter[];
 
     inputBehavior?: 'replace' | 'insert';
     alignment?: 'left' | 'right';
@@ -37,12 +37,18 @@ export const MaskSectionInput = (
     inputCharacterSubstitutionFn?: (inputCharacter: string) => string;
 
     syntacticValidationFn?: (sectionValue: string) => boolean;
-    semanticValidationFn?: (values: Record<string, string>, sectionSlug: string) => boolean | string;
+    semanticValidationFn?: (values: Record<string, string[]>, sectionSlug: string) => boolean | string;
 
-    spinUpFn?: (values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string;
-    spinDownFn?: (values: Record<string, string>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string;
+    spinUpFn?: (values: Record<string, string[]>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string[];
+    spinDownFn?: (
+      values: Record<string, string[]>,
+      sectionSlug: string,
+      metaPressed: boolean,
+      shiftPressed: boolean,
+      altPressed: boolean,
+    ) => string[];
 
-    sectionCommitValueTransformation?: (sectionValue: string) => string;
+    sectionCommitValueTransformation?: (sectionValue: string[]) => string;
 
     maxLength?: number;
   },
@@ -67,9 +73,19 @@ export const MaskSectionInput = (
   maxLength: options.maxLength,
 });
 
-export const getInitialMaskState = (values: Record<string, string>): MaskState => {
+export const getInitialMaskState = (values: Record<string, string[]> | Record<string, string>): MaskState => {
+  const convertedValues: Record<string, string[]> = {};
+
+  for (const [key, value] of Object.entries(values)) {
+    if (Array.isArray(value)) {
+      convertedValues[key] = value;
+    } else {
+      convertedValues[key] = splitStringIntoGraphemes(value);
+    }
+  }
+
   return {
-    values,
+    values: convertedValues,
 
     caretPositionInValueSpace: '0:0',
     selectionEndPositionInValueSpace: '0:0',
@@ -144,8 +160,9 @@ const getInputSectionDerivedState = (
 
   const valueSpaceToDisplaySpaceMap: Map<string, string> = new Map();
   const displaySpaceToValueSpaceMap: Map<string, string> = new Map();
-  const value = maskState.values[sectionDefinition.slug] || '';
-  const syntacticValidationStatus = sectionDefinition.syntacticValidationFn ? sectionDefinition.syntacticValidationFn(value) : undefined;
+  const value = maskState.values[sectionDefinition.slug] || [];
+  const valueString = value.join('');
+  const syntacticValidationStatus = sectionDefinition.syntacticValidationFn ? sectionDefinition.syntacticValidationFn(valueString) : undefined;
 
   const maskCharacters: MaskCharacter[] = sectionDefinition.maskingFn(value);
 
@@ -165,7 +182,7 @@ const getInputSectionDerivedState = (
         displaySpaceToValueSpaceMap.set(displaySpace[displaySpace.length - 2], `${valueIndex}:0`);
       }
 
-      posValueSpace += maskChar.char.length;
+      posValueSpace += 1;
 
       const currentValueSpaceCoordinates = `${valueIndex}:${posValueSpace}`;
 
@@ -175,7 +192,7 @@ const getInputSectionDerivedState = (
     }
   }
 
-  if (value === '') {
+  if (value.length === 0) {
     if (sectionDefinition.alignment === 'left') {
       valueSpaceToDisplaySpaceMap.set(valueSpace[0], displaySpace[0]);
       displaySpaceToValueSpaceMap.set(displaySpace[0], valueSpace[0]);
@@ -192,6 +209,7 @@ const getInputSectionDerivedState = (
     slug: sectionDefinition.slug,
     valueIndex,
     value,
+    valueString,
     syntacticValidationStatus,
 
     maskCharacters,
@@ -449,7 +467,7 @@ const setMaskStateCaretAndSelection = (maskState: MaskState, caretPosition: stri
   };
 };
 
-export const updateMaskStateValues = (lastState: MaskState, values: Record<string, string>): MaskState => {
+export const updateMaskStateValues = (lastState: MaskState, values: Record<string, string[]>): MaskState => {
   return setMaskStateCaretAndSelection(getInitialMaskState(values), lastState.caretPositionInValueSpace, lastState.selectionEndPositionInValueSpace);
 };
 
@@ -468,7 +486,7 @@ export function encodeState(state: MaskState, maskDefinition: MaskDefinition): s
       continue;
     }
 
-    const value = state.values[section.slug] || '';
+    const value = (state.values[section.slug] || []).join('');
 
     if (i !== caretSectionIndex && i !== selectionEndSectionIndex) {
       encodedStateParts.push(value);

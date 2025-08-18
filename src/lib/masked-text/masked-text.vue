@@ -32,7 +32,12 @@
   import type { MaskDefinition, MaskDerivedState, MaskState } from './base/types';
   import { getDerivedState, getInitialMaskState, updateMaskStateCaretAndSelection, updateMaskStateValues } from './base/index';
 
-  import { modelValuesEqual, findClosestValidValueSpaceCoordinates } from './base/helper';
+  import {
+    modelValuesEqual,
+    findClosestValidValueSpaceCoordinates,
+    getExternalModelValueFromInternalModel,
+    getInternalModelValueExternalFromModel,
+  } from './base/helper';
   import { applyPatchOperations } from './base/applyPatchOperations';
   import {
     determinePatchOperationFromBeforeInputEvent,
@@ -149,7 +154,7 @@
   };
 
   const runComponentInternalUpdateLoop = (event: Event | undefined, patchOperations: PatchOperation[] | undefined) => {
-    const initialStateModelValue = { ...state.value.values };
+    const initialStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
     const initialValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
     const initialSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
 
@@ -165,7 +170,7 @@
 
     updateInputRefSize();
 
-    const finalStateModelValue = { ...state.value.values };
+    const finalStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
     const finalValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
     const finalSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
 
@@ -196,7 +201,7 @@
     const initialValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
     const initialSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
 
-    let _state = updateMaskStateValues(state.value, { ...modelValue });
+    let _state = updateMaskStateValues(state.value, getInternalModelValueExternalFromModel(modelValue));
     let _lastDerivedState = getDerivedState(_state, maskDefinition);
 
     if (!_lastDerivedState.valueSpace.includes(_state.caretPositionInValueSpace)) {
@@ -399,15 +404,15 @@
     display: flex;
     flex-direction: row;
     position: relative;
-    font-family: monospace;
+    line-height: 1;
   }
 
   .masked-text-input {
-    font-family: monospace;
     white-space: pre;
     padding: 0;
     margin: 0;
-    font-size: 1rem;
+    line-height: 1;
+    height: 1em;
 
     border: none;
     outline: none;
@@ -416,11 +421,10 @@
   }
 
   .masked-text-shadow-input {
-    font-family: monospace;
     white-space: pre;
     padding: 0;
     margin: 0;
-    font-size: 1rem;
+    line-height: 1;
 
     border: none;
     outline: none;
@@ -433,9 +437,10 @@
 
   .text-overlay {
     display: inline-block;
-    font-size: 1rem;
+    line-height: 1;
 
     padding: 0;
+    margin: 0;
     border: none;
     outline: none;
 

@@ -13,6 +13,10 @@
     <PlaygroundSection v-else-if="activeSection === 'ip-addresses'">
       <IpAddressesPlayground />
     </PlaygroundSection>
+
+    <PlaygroundSection v-else-if="activeSection === 'special'">
+      <SpecialPlayground />
+    </PlaygroundSection>
   </div>
 </template>
 
@@ -26,6 +30,7 @@
   import DatePlayground from '@/components/playground-sections/DatePlayground.vue';
   import NumericPlayground from '@/components/playground-sections/NumericPlayground.vue';
   import IpAddressesPlayground from '@/components/playground-sections/IpAddressesPlayground.vue';
+  import SpecialPlayground from '@/components/playground-sections/SpecialPlayground.vue';
 
   const activeSection: Ref<'date' | 'numeric' | 'ip-addresses'> = ref('date' as const);
 

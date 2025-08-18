@@ -202,25 +202,25 @@ export const applyPatchOperationDeleteSelection = (
       continue;
     }
 
-    const oldSectionValue = newValues[sectionDefinition.slug];
+    const oldSectionValue = newValues[sectionDefinition.slug] || [];
 
     if (i === lowerSelectionIndex && i === upperSelectionIndex) {
-      newValues[sectionDefinition.slug] = oldSectionValue.substring(0, lowerSelectionPosition) + oldSectionValue.substring(upperSelectionPosition);
+      newValues[sectionDefinition.slug] = [...oldSectionValue.slice(0, lowerSelectionPosition), ...oldSectionValue.slice(upperSelectionPosition)];
       newCaretPosition = `${i}:${lowerSelectionPosition}`;
     } else if (i === lowerSelectionIndex && i !== upperSelectionIndex) {
-      newValues[sectionDefinition.slug] = oldSectionValue.substring(0, lowerSelectionPosition);
+      newValues[sectionDefinition.slug] = oldSectionValue.slice(0, lowerSelectionPosition);
 
       if (lowerSelectionCoordinates === currentState.caretPositionInValueSpace) {
         newCaretPosition = `${i}:${lowerSelectionPosition}`;
       }
     } else if (i !== lowerSelectionIndex && i === upperSelectionIndex) {
-      newValues[sectionDefinition.slug] = oldSectionValue.substring(upperSelectionPosition);
+      newValues[sectionDefinition.slug] = oldSectionValue.slice(upperSelectionPosition);
 
       if (upperSelectionCoordinates === currentState.caretPositionInValueSpace) {
         newCaretPosition = `${i}:0`;
       }
     } else if (i !== lowerSelectionIndex && i !== upperSelectionIndex) {
-      newValues[sectionDefinition.slug] = '';
+      newValues[sectionDefinition.slug] = [''];
     }
   }
 
@@ -247,7 +247,7 @@ export const applyPatchOperationSpin = (
     return currentState;
   }
 
-  const currentSectionValue = currentState.values[sectionDefinition.slug];
+  const currentSectionValue = currentState.values[sectionDefinition.slug] || [];
   const newSectionValue = spinFn(
     currentState.values,
     sectionDefinition.slug,
@@ -295,11 +295,12 @@ export const applyPatchOperationDeleteBackwards = (
   let newCaretPosition: string;
 
   if (currentDerivedState.caretValueSpacePosition > 0) {
-    const currentSectionValue = newValues[sectionDefinition.slug];
+    const currentSectionValue = newValues[sectionDefinition.slug] || [];
 
-    newValues[sectionDefinition.slug] =
-      currentSectionValue.substring(0, currentDerivedState.caretValueSpacePosition - 1) +
-      currentSectionValue.substring(currentDerivedState.caretValueSpacePosition);
+    newValues[sectionDefinition.slug] = [
+      ...currentSectionValue.slice(0, currentDerivedState.caretValueSpacePosition - 1),
+      ...currentSectionValue.slice(currentDerivedState.caretValueSpacePosition),
+    ];
 
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition - 1}`;
   } else {
@@ -314,7 +315,7 @@ export const applyPatchOperationDeleteBackwards = (
       const targetSectionValue = newValues[targetSection.slug];
 
       if (targetSectionValue.length > 0) {
-        newValues[targetSection.slug] = targetSectionValue.substring(0, targetSectionValue.length - 1);
+        newValues[targetSection.slug] = targetSectionValue.slice(0, targetSectionValue.length - 1);
         newCaretPosition = `${targetSection.valueIndex}:${targetSectionValue.length - 1}`;
       } else {
         newCaretPosition = `${targetSection.valueIndex}:0`;
@@ -341,15 +342,16 @@ export const applyPatchOperationDeleteForwards = (
   maskDefinition: MaskDefinition,
 ): MaskState => {
   const sectionDefinition = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
-  const currentSectionValue = currentState.values[sectionDefinition.slug];
+  const currentSectionValue = currentState.values[sectionDefinition.slug] || [];
 
   const newValues = { ...currentState.values };
   let newCaretPosition: string;
 
   if (currentDerivedState.caretValueSpacePosition < currentSectionValue.length) {
-    newValues[sectionDefinition.slug] =
-      currentSectionValue.substring(0, currentDerivedState.caretValueSpacePosition) +
-      currentSectionValue.substring(currentDerivedState.caretValueSpacePosition + 1);
+    newValues[sectionDefinition.slug] = [
+      ...currentSectionValue.slice(0, currentDerivedState.caretValueSpacePosition),
+      ...currentSectionValue.slice(currentDerivedState.caretValueSpacePosition + 1),
+    ];
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition}`;
   } else {
     const targetSection = findSection(currentDerivedState, {
@@ -363,7 +365,7 @@ export const applyPatchOperationDeleteForwards = (
       const targetSectionValue = newValues[targetSection.slug];
 
       if (targetSectionValue.length > 0) {
-        newValues[targetSection.slug] = targetSectionValue.substring(1);
+        newValues[targetSection.slug] = targetSectionValue.slice(1);
       }
 
       newCaretPosition = `${targetSection.valueIndex}:0`;
@@ -398,18 +400,19 @@ export const applyPatchOperationInsert = (
     return currentState;
   }
 
-  const currentSectionValue = currentState.values[sectionDefinition.slug];
-  let newSectionValue: string;
+  const currentSectionValue = currentState.values[sectionDefinition.slug] || [];
+  let newSectionValue: string[];
   let newCaretPosition: string;
 
   if (sectionDefinition.inputBehavior === 'replace') {
     if (currentDerivedState.caretValueSpacePosition < currentSectionValue.length) {
-      newSectionValue =
-        currentSectionValue.substring(0, currentDerivedState.caretValueSpacePosition) +
-        character +
-        currentSectionValue.substring(currentDerivedState.caretValueSpacePosition + 1);
+      newSectionValue = [
+        ...currentSectionValue.slice(0, currentDerivedState.caretValueSpacePosition),
+        character,
+        ...currentSectionValue.slice(currentDerivedState.caretValueSpacePosition + 1),
+      ];
     } else {
-      newSectionValue = currentSectionValue + character;
+      newSectionValue = [...currentSectionValue, character];
     }
 
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
@@ -418,10 +421,11 @@ export const applyPatchOperationInsert = (
       return currentState;
     }
 
-    newSectionValue =
-      currentSectionValue.substring(0, currentDerivedState.caretValueSpacePosition) +
-      character +
-      currentSectionValue.substring(currentDerivedState.caretValueSpacePosition);
+    newSectionValue = [
+      ...currentSectionValue.slice(0, currentDerivedState.caretValueSpacePosition),
+      character,
+      ...currentSectionValue.slice(currentDerivedState.caretValueSpacePosition),
+    ];
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
   }
 

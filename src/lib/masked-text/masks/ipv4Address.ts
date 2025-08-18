@@ -2,11 +2,11 @@ import type { MaskCharacter, MaskDefinition } from '../base/types';
 import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
 import { splitStringIntoGraphemes } from '../base/helper';
 
-const ipv4AddressEncodeValidatedValue = (values: Record<string, string>): string | undefined => {
-  const block1 = Number.parseInt(values['block1']);
-  const block2 = Number.parseInt(values['block2']);
-  const block3 = Number.parseInt(values['block3']);
-  const block4 = Number.parseInt(values['block4']);
+const ipv4AddressEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
+  const block1 = Number.parseInt((values['block1'] || []).join(''));
+  const block2 = Number.parseInt((values['block2'] || []).join(''));
+  const block3 = Number.parseInt((values['block3'] || []).join(''));
+  const block4 = Number.parseInt((values['block4'] || []).join(''));
 
   if (Number.isNaN(block1) || Number.isNaN(block2) || Number.isNaN(block3) || Number.isNaN(block4)) {
     return undefined;
@@ -19,40 +19,40 @@ const ipv4AddressEncodeValidatedValue = (values: Record<string, string>): string
   return `${block1}.${block2}.${block3}.${block4}`;
 };
 
-const ipv4AddressBlockMaskFn = (sectionValue: string): MaskCharacter[] => {
-  if (sectionValue === '') {
+const ipv4AddressBlockMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+  if (sectionValue.length === 0) {
     return [{ char: '0', type: 'mask' as const }];
   }
 
-  return splitStringIntoGraphemes(sectionValue).map((c) => {
+  return sectionValue.map((c) => {
     return { char: c, type: 'value' as const };
   });
 };
 
-const ipv4AddressBlockSpinUpFn = (values: Record<string, string>, sectionSlug: string): string => {
-  const sectionValue = values[sectionSlug];
+const ipv4AddressBlockSpinUpFn = (values: Record<string, string[]>, sectionSlug: string): string[] => {
+  const sectionValue = (values[sectionSlug] || []).join('');
   const parsedIntValue = Number.parseInt(sectionValue);
 
   if (!Number.isNaN(parsedIntValue)) {
     if (parsedIntValue >= 0 && parsedIntValue <= 254) {
-      return (parsedIntValue + 1).toString();
+      return splitStringIntoGraphemes((parsedIntValue + 1).toString());
     }
   }
 
-  return '0';
+  return ['0'];
 };
 
-const ipv4AddressBlockSpinDownFn = (values: Record<string, string>, sectionSlug: string): string => {
-  const sectionValue = values[sectionSlug];
+const ipv4AddressBlockSpinDownFn = (values: Record<string, string[]>, sectionSlug: string): string[] => {
+  const sectionValue = (values[sectionSlug] || []).join('');
   const parsedIntValue = Number.parseInt(sectionValue);
 
   if (!Number.isNaN(parsedIntValue)) {
     if (parsedIntValue >= 1 && parsedIntValue <= 255) {
-      return (parsedIntValue - 1).toString();
+      return splitStringIntoGraphemes((parsedIntValue - 1).toString());
     }
   }
 
-  return '255';
+  return ['2', '5', '5'];
 };
 
 export const IPv4AddressMask = (): MaskDefinition => {
@@ -62,7 +62,6 @@ export const IPv4AddressMask = (): MaskDefinition => {
     alignment: 'right' as const,
 
     syntacticValidationFn: validationFnFromRegexString(`^([0-9]{0,3})$`),
-
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
 
     spinUpFn: ipv4AddressBlockSpinUpFn,
