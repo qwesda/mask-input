@@ -7,6 +7,9 @@
 - [x] ~~fix missing `data-value-pos-right`/ `data-value-pos-left` attributes for mask characters~~
 - [x] ~~use `splitIntoGraphemes` where appropriate~~
 - [x] ~~maybe store value characters as `string[]` pre-split by `splitIntoGraphemes`~~
+- [ ] ensure all section values are initialized
+- [ ] composition input is currently broken
+- [ ] input element size measurement is currently broken 
 - [ ] update mouse event handling similar to keyboard event handling
 - [ ] add mouse drag support for selection
 - [ ] make spin functions return the whole values[]
