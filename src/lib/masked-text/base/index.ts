@@ -481,26 +481,42 @@ export function encodeState(state: MaskState, maskDefinition: MaskDefinition): s
   const [caretSectionIndex, caretPosition] = state.caretPositionInValueSpace.split(':').map((x) => Number.parseInt(x));
   const [selectionEndSectionIndex, selectionEndPosition] = state.selectionEndPositionInValueSpace.split(':').map((x) => Number.parseInt(x));
 
-  for (const [i, section] of maskDefinition.sections.entries()) {
+  let i = -1;
+
+  for (const section of maskDefinition.sections.values()) {
     if (section.type !== 'input') {
       continue;
+    } else {
+      i += 1;
     }
 
-    const value = (state.values[section.slug] || []).join('');
+    const sectionCharacters = state.values[section.slug] || [];
 
     if (i !== caretSectionIndex && i !== selectionEndSectionIndex) {
-      encodedStateParts.push(value);
+      encodedStateParts.push(sectionCharacters.join(''));
     } else if (i === caretSectionIndex && i !== selectionEndSectionIndex) {
-      encodedStateParts.push(value.substring(0, caretPosition) + '[' + value.substring(caretPosition));
+      encodedStateParts.push([...sectionCharacters.slice(0, caretPosition), '[', ...sectionCharacters.slice(caretPosition)].join(''));
     } else if (i !== caretSectionIndex && i === selectionEndSectionIndex) {
-      encodedStateParts.push(value.substring(0, selectionEndPosition) + ']' + value.substring(selectionEndPosition));
+      encodedStateParts.push([...sectionCharacters.slice(0, selectionEndPosition), ']', ...sectionCharacters.slice(selectionEndPosition)].join(''));
     } else if (caretPosition <= selectionEndPosition) {
       encodedStateParts.push(
-        value.substring(0, caretPosition) + '[' + value.substring(caretPosition, selectionEndPosition) + ']' + value.substring(selectionEndPosition),
+        [
+          ...sectionCharacters.slice(0, caretPosition),
+          '[',
+          ...sectionCharacters.slice(caretPosition, selectionEndPosition),
+          ']',
+          ...sectionCharacters.slice(selectionEndPosition),
+        ].join(''),
       );
     } else if (caretPosition > selectionEndPosition) {
       encodedStateParts.push(
-        value.substring(0, selectionEndPosition) + ']' + value.substring(selectionEndPosition, caretPosition) + '[' + value.substring(caretPosition),
+        [
+          ...sectionCharacters.slice(0, selectionEndPosition),
+          ']',
+          ...sectionCharacters.slice(selectionEndPosition, caretPosition),
+          '[',
+          ...sectionCharacters.slice(caretPosition),
+        ].join(''),
       );
     }
   }
