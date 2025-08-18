@@ -124,7 +124,7 @@
     const initialValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
     const initialSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
 
-    let _state = updateMaskStateValues(state.value, getInternalModelValueExternalFromModel(modelValue));
+    let _state = updateMaskStateValues(state.value, getInternalModelValueExternalFromModel(modelValue, maskDefinition));
     let _lastDerivedState = getDerivedState(_state, maskDefinition);
 
     if (!_lastDerivedState.valueSpace.includes(_state.caretPositionInValueSpace)) {

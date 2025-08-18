@@ -1,4 +1,4 @@
-import type { MaskDerivedState, MaskSectionDerivedState } from './types';
+import type { MaskDefinition, MaskDerivedState, MaskSectionDerivedState } from './types';
 
 export const splitStringIntoGraphemes = function (value: string | undefined | null): string[] {
   const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' });
@@ -145,11 +145,22 @@ export const getExternalModelValueFromInternalModel = (internalModelValue: Recor
   return externalModelValue;
 };
 
-export const getInternalModelValueExternalFromModel = (externalModelValue: Record<string, string>): Record<string, string[]> => {
+export const getInternalModelValueExternalFromModel = (
+  externalModelValue: Record<string, string>,
+  maskDefinition: MaskDefinition,
+): Record<string, string[]> => {
   const internalModelValue: Record<string, string[]> = {};
 
   for (const [key, value] of Object.entries(externalModelValue)) {
     internalModelValue[key] = splitStringIntoGraphemes(value);
+  }
+
+  for (const section of maskDefinition.sections.values()) {
+    if (section.type === 'input') {
+      if (internalModelValue[section.slug] === undefined) {
+        internalModelValue[section.slug] = [];
+      }
+    }
   }
 
   return internalModelValue;

@@ -9,7 +9,7 @@
 - [x] ~~maybe store value characters as `string[]` pre-split by `splitIntoGraphemes`~~
 - [x] ~~composition input is currently broken~~
 - [x] ~~input element size measurement is currently broken~~ 
-- [ ] ensure all section values are initialized
+- [x] ~~ensure all section values are initialized~~
 - [ ] handle section advance by using skip keys
 - [ ] update mouse event handling similar to keyboard event handling
 - [ ] add mouse drag support for selection
