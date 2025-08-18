@@ -10,17 +10,17 @@
 - [x] ~~composition input is currently broken~~
 - [x] ~~input element size measurement is currently broken~~ 
 - [x] ~~ensure all section values are initialized~~
+- [ ] make spin functions return the whole values[]
 - [ ] handle section advance by using skip keys
+- [ ] add cmd+a/crtl+a support
 - [ ] update mouse event handling similar to keyboard event handling
 - [ ] add mouse drag support for selection
-- [ ] make spin functions return the whole values[]
 - [ ] add whole value copy/pase support
 - [ ] add partial (selection) copy/pase support
-- [ ] add cmd+a/crtl+a support
 - [ ] maybe add highlighting of problematic sections for semantic validation
-- [ ] maybe de-vueify the component
 - [ ] maybe dynamic section hiding based on cursor position and values
 - [ ] maybe replace fake selection highlight with native browser selection highlight
+- [ ] maybe de-vueify the component
 
 ## masks 
 
@@ -31,6 +31,7 @@
 - [ ] ipv4 subnet mask
 - [ ] ipv6 subnet mask
 - [ ] barcode mask (ean13, upc, isbn)
+- [ ] uuid
 
 ## test app
 
