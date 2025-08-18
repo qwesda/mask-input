@@ -9,9 +9,10 @@
     >
       <div ref="preInputHTMLRef" class="text-overlay" v-html="lastDerivedState.preInputHTMLString" />
 
-      <input
+      <div
         ref="inputRef"
         autofocus
+        contenteditable="plaintext-only"
         class="masked-text-input"
         style="width: 4px; margin-left: 0; margin-right: -4px; background: transparent"
         @keydown.capture="handleKeydown"
@@ -21,8 +22,6 @@
       />
 
       <div ref="postInputHTMLRef" class="text-overlay" v-html="lastDerivedState.postInputHTMLString" />
-
-      <input ref="textMeasureHelperRef" style="visibility: hidden" type="text" />
     </div>
   </div>
 </template>
@@ -74,84 +73,9 @@
   const hasFocus = ref(false);
 
   const containerRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
-  const preInputHTMLRef: Ref<HTMLInputElement | undefined> = ref<HTMLInputElement>();
-  const inputRef: Ref<HTMLInputElement | undefined> = ref<HTMLInputElement>();
+  const preInputHTMLRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
+  const inputRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
   const postInputHTMLRef: Ref<HTMLSpanElement | undefined> = ref<HTMLSpanElement>();
-  const textMeasureHelperRef: Ref<HTMLInputElement | undefined> = ref<HTMLInputElement>();
-  const inputShadowRef: Ref<HTMLInputElement | undefined> = ref<HTMLInputElement>();
-
-  const updateInputRefSize = (clearInput: boolean = false) => {
-    if (inputRef.value) {
-      if (clearInput) {
-        inputRef.value.value = '';
-      }
-
-      const text = inputRef.value.value;
-
-      if (!text || !textMeasureHelperRef.value) {
-        inputRef.value.style.width = '4px';
-        inputRef.value.style.marginLeft = '0px';
-        inputRef.value.style.marginRight = '-4px';
-        return;
-      }
-
-      const measureElement = textMeasureHelperRef.value;
-      const computedStyle = window.getComputedStyle(inputRef.value);
-
-      // Font-related properties
-      measureElement.style.minWidth = '0';
-      measureElement.style.fontFamily = computedStyle.fontFamily;
-      measureElement.style.fontSize = computedStyle.fontSize;
-      measureElement.style.fontWeight = computedStyle.fontWeight;
-      measureElement.style.fontStyle = computedStyle.fontStyle;
-      measureElement.style.fontVariant = computedStyle.fontVariant;
-      measureElement.style.fontStretch = computedStyle.fontStretch;
-      measureElement.style.lineHeight = computedStyle.lineHeight;
-
-      // Text spacing and transformation
-      measureElement.style.letterSpacing = computedStyle.letterSpacing;
-      measureElement.style.wordSpacing = computedStyle.wordSpacing;
-      measureElement.style.textTransform = computedStyle.textTransform;
-      measureElement.style.textIndent = computedStyle.textIndent;
-
-      // Text rendering properties
-      measureElement.style.textRendering = computedStyle.textRendering;
-      // measureElement.style.fontSmooth = computedStyle.fontSmooth;
-      // measureElement.style.webkitFontSmoothing = computedStyle.webkitFontSmoothing;
-      // measureElement.style.mozOsxFontSmoothing = computedStyle.mozOsxFontSmoothing;
-
-      // White space handling
-      measureElement.style.whiteSpace = computedStyle.whiteSpace;
-
-      // Writing mode and direction
-      measureElement.style.writingMode = computedStyle.writingMode;
-      measureElement.style.direction = computedStyle.direction;
-      measureElement.style.unicodeBidi = computedStyle.unicodeBidi;
-
-      // Feature settings that might affect rendering
-      measureElement.style.fontFeatureSettings = computedStyle.fontFeatureSettings;
-      measureElement.style.fontVariationSettings = computedStyle.fontVariationSettings;
-      measureElement.style.fontKerning = computedStyle.fontKerning;
-      measureElement.style.fontVariantLigatures = computedStyle.fontVariantLigatures;
-      measureElement.style.fontVariantNumeric = computedStyle.fontVariantNumeric;
-
-      // Set the text and measure
-      measureElement.value = text;
-
-      // Force layout calculation by accessing the `offsetWidth` property
-      const offsetWidth = measureElement.offsetWidth;
-
-      // Get the scroll width which represents the content width
-      const textWidth = measureElement.scrollWidth;
-
-      // Add small buffer
-      const totalWidth = textWidth + 4;
-
-      inputRef.value.style.width = `${totalWidth}px`;
-      inputRef.value.style.marginLeft = '0px';
-      inputRef.value.style.marginRight = '-4px';
-    }
-  };
 
   const runComponentInternalUpdateLoop = (event: Event | undefined, patchOperations: PatchOperation[] | undefined) => {
     const initialStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
@@ -165,10 +89,9 @@
         event.preventDefault();
       }
 
-      resetInputCursorAnimation();
+      const clearInputRefContent = patchOperations.some((patchOperation) => patchOperation.op === 'insert-character');
+      resetInputCursorAnimation(clearInputRefContent);
     }
-
-    updateInputRefSize();
 
     const finalStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
     const finalValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
@@ -233,10 +156,11 @@
     }
   };
 
-  function resetInputCursorAnimation() {
+  function resetInputCursorAnimation(clearContent: boolean = false) {
     if (inputRef.value) {
-      const currentSelectionStart = inputRef.value.selectionStart;
-      const currentSelectionEnd = inputRef.value.selectionEnd;
+      if (clearContent) {
+        inputRef.value.textContent = '';
+      }
 
       requestAnimationFrame(() => {
         if (inputRef.value) {
@@ -244,8 +168,6 @@
 
           requestAnimationFrame(() => {
             if (inputRef.value) {
-              inputRef.value.setSelectionRange(currentSelectionStart, currentSelectionEnd);
-
               inputRef.value.focus();
             }
           });
@@ -298,7 +220,6 @@
         }
       }, 50);
     }
-    // state.value = updateMaskStateCaretAndSelection(state.value, '0:0', '0:0');
   };
 
   const getClosestValueSpaceCoordinates = (event: MouseEvent) => {
@@ -446,6 +367,7 @@
 
     white-space: pre;
     pointer-events: none;
+    border-bottom: 1px solid transparent;
   }
 
   .text-overlay :deep(.section-input) {
