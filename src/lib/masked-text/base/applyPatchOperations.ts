@@ -10,7 +10,7 @@ import type {
   PatchOperationDeleteForwards,
   PatchOperationDeleteSelection,
   PatchOperationInsertCharacter,
-  PatchOperationMoveCursor,
+  PatchOperationMoveCursor, PatchOperationSelectAll,
   PatchOperationSelectNextSection,
   PatchOperationSetCursorPosition,
   PatchOperationSpin,
@@ -132,6 +132,24 @@ export const applyPatchOperationSelectNextSection = (
 
   const newCaretPositionInValueSpace = targetSection.valueSpace[targetSection.valueSpace.length - 1];
   const newSelectionEndPositionInValueSpace = targetSection.valueSpace[0];
+
+  const newState: MaskState = {
+    ...currentState,
+    caretPositionInValueSpace: newCaretPositionInValueSpace,
+    selectionEndPositionInValueSpace: newSelectionEndPositionInValueSpace,
+  };
+
+  return newState;
+};
+
+export const applyPatchOperationSelectAll = (
+  patchOperation: PatchOperationSelectAll,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+  maskDefinition: MaskDefinition,
+): MaskState => {
+  const newCaretPositionInValueSpace = currentDerivedState.valueSpace[currentDerivedState.valueSpace.length - 1];
+  const newSelectionEndPositionInValueSpace = currentDerivedState.valueSpace[0];
 
   const newState: MaskState = {
     ...currentState,
@@ -489,6 +507,9 @@ export const applyPatchOperations = (
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'select-next-section') {
       currentState = applyPatchOperationSelectNextSection(patchOperation, currentState, currentDerivedState, maskDefinition);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    } else if (patchOperation.op === 'select-all') {
+      currentState = applyPatchOperationSelectAll(patchOperation, currentState, currentDerivedState, maskDefinition);
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     }
   }

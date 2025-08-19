@@ -141,6 +141,10 @@ export type PatchOperationSelectNextSection = {
   direction: 'left' | 'right';
 };
 
+export type PatchOperationSelectAll = {
+  op: 'select-all';
+};
+
 export type PatchOperationSetCursorPosition = {
   op: 'set-cursor-position';
   keepSelectionEnd: boolean;
@@ -177,7 +181,11 @@ export type PatchOperationSpin = {
   altPressed: boolean;
 };
 
-export type PatchOperationMovement = PatchOperationMoveCursor | PatchOperationSetCursorPosition | PatchOperationSelectNextSection;
+export type PatchOperationMovement =
+  | PatchOperationMoveCursor
+  | PatchOperationSetCursorPosition
+  | PatchOperationSelectNextSection
+  | PatchOperationSelectAll;
 export type PatchOperationEdit =
   | PatchOperationInsertCharacter
   | PatchOperationDeleteBackwards

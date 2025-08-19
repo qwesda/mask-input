@@ -72,9 +72,10 @@ export const determinePatchOperationFromKeydownEvent = (
     currentDerivedState = getDerivedState(state, maskDefinition);
   }
 
+  const isMac = navigator.userAgent.includes('Mac');
   const maintainSelectionKeyPressed = event.shiftKey;
-  const skipSectionLevelKeyPressed = !navigator.userAgent.includes('Mac') ? event.ctrlKey : event.altKey;
-  const skipLineLevelKeyPressed = !navigator.userAgent.includes('Mac') ? false : event.metaKey;
+  const skipSectionLevelKeyPressed = !isMac ? event.ctrlKey : event.altKey;
+  const skipLineLevelKeyPressed = !isMac ? false : event.metaKey;
   const selectionIsPresent = state.selectionEndPositionInValueSpace !== state.caretPositionInValueSpace;
 
   if (event.isComposing) {
@@ -155,6 +156,18 @@ export const determinePatchOperationFromKeydownEvent = (
     } else {
       return [...clearOperations, { op: 'move-cursor', direction: 'right', level: 'character', keepSelectionEnd: maintainSelectionKeyPressed }];
     }
+  }
+
+  if (event.key === 'Home') {
+    return [{ op: 'move-cursor', direction: 'left', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
+  }
+
+  if (event.key === 'End') {
+    return [{ op: 'move-cursor', direction: 'right', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
+  }
+
+  if (event.key === 'a' && isMac ? event.metaKey : event.ctrlKey) {
+    return [{ op: 'select-all' }];
   }
 
   return undefined;
