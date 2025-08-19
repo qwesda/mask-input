@@ -18,10 +18,22 @@ export interface MaskSectionInputDefinition {
   syntacticValidationFn: ((sectionValue: string) => boolean) | undefined;
 
   spinUpFn:
-    | ((values: Record<string, string[]>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string[])
+    | ((
+        values: Record<string, string[]>,
+        sectionSlug: string,
+        metaPressed: boolean,
+        shiftPressed: boolean,
+        altPressed: boolean,
+      ) => Record<string, string[]>)
     | undefined;
   spinDownFn:
-    | ((values: Record<string, string[]>, sectionSlug: string, metaPressed: boolean, shiftPressed: boolean, altPressed: boolean) => string[])
+    | ((
+        values: Record<string, string[]>,
+        sectionSlug: string,
+        metaPressed: boolean,
+        shiftPressed: boolean,
+        altPressed: boolean,
+      ) => Record<string, string[]>)
     | undefined;
 
   sectionCommitValueTransformation: ((sectionValue: string[]) => string) | undefined;

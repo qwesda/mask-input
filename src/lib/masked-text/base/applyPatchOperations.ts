@@ -247,28 +247,16 @@ export const applyPatchOperationSpin = (
     return currentState;
   }
 
-  const currentSectionValue = currentState.values[sectionDefinition.slug] || [];
-  const newSectionValue = spinFn(
+  const newValues = spinFn(
     currentState.values,
     sectionDefinition.slug,
     patchOperation.metaPressed,
     patchOperation.shiftPressed,
     patchOperation.altPressed,
   );
-
-  if (newSectionValue === undefined || newSectionValue === null || newSectionValue === currentSectionValue) {
-    return currentState;
-  }
-
-  // if (sectionDefinition.syntacticValidationFn && !sectionDefinition.syntacticValidationFn(newSectionValue)) {
-  //   return currentState;
-  // }
-
-  const newValues = { ...currentState.values };
-  newValues[sectionDefinition.slug] = newSectionValue;
-
+  const newSectionValue = newValues[sectionDefinition.slug] || [];
   const newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${[...newSectionValue].length}`;
-  const newSelectionEndPosition = `${currentDerivedState.caretValueSpaceIndex}:0`;
+  const newSelectionEndPosition = newCaretPosition;
 
   const newState: MaskState = {
     ...currentState,

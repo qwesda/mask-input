@@ -10,10 +10,11 @@
 - [x] ~~composition input is currently broken~~
 - [x] ~~input element size measurement is currently broken~~ 
 - [x] ~~ensure all section values are initialized~~
-- [ ] make spin functions return the whole values[]
+- [x] ~~make spin functions return the whole values[]~~
 - [ ] handle section advance by using skip keys
 - [ ] add cmd+a/crtl+a support
 - [ ] holding key should repeat last key
+- [ ] don't blur/focus input element when on mobile
  
 - [ ] update mouse event handling similar to keyboard event handling
 - [ ] add mouse drag support for selection
