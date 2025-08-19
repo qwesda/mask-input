@@ -164,7 +164,7 @@ export const IPv4AddressMask = (): MaskDefinition => {
     spinDownFn: ipv4AddressBlockSpinDownFn,
   };
 
-  const separatorSection = MaskSectionFixed('.');
+  const separatorSection = MaskSectionFixed('.', ['.', ' ']);
 
   return {
     encodeValidatedValue: ipv4AddressEncodeValidatedValue,

@@ -121,7 +121,7 @@ export const UuidMask = (version: UuidVersion): MaskDefinition => {
     inputCharacterSubstitutionFn: uuidInputCharacterSubstitutionFn,
   };
 
-  const separatorSection = MaskSectionFixed('-');
+  const separatorSection = MaskSectionFixed('-', ['-']);
 
   return {
     encodeValidatedValue: (values) => uuidEncodeValidatedValue(values, version),

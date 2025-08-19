@@ -228,7 +228,7 @@ export const IPv6AddressMask = (): MaskDefinition => {
     spinDownFn: ipv6AddressBlockSpinDownFn,
   };
 
-  const separatorSection = MaskSectionFixed(':');
+  const separatorSection = MaskSectionFixed(':', [':', '.', ' ']);
 
   return {
     encodeValidatedValue: ipv6AddressEncodeValidatedValue,

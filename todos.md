@@ -13,7 +13,7 @@
 - [x] ~~make spin functions return the whole values[]~~
 - [x] ~~alt right/left should always switch to the next/prev section~~
 - [x] ~~add cmd+a/crtl+a support~~
-- [ ] handle section advance by using skip keys
+- [x] ~~handle section advance by using skip keys~~
 - [ ] holding key should repeat last key
 - [ ] don't blur/focus input element when on mobile
  

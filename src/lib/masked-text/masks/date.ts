@@ -125,15 +125,11 @@ const dateSemanticValidationFn = (minDateISOString: string, maxDateISOString: st
 };
 
 const dateSpinUpFn = (minDateISOString: string, maxDateISOString: string) => {
+  const maxDate = new Date(`${maxDateISOString}T00:00:00.000Z`);
   const minDate = new Date(`${minDateISOString}T00:00:00.000Z`);
   const minDateYearStr = minDate.getUTCFullYear().toString();
   const minDateMonthStr = (minDate.getUTCMonth() + 1).toString();
   const minDateDayStr = minDate.getUTCDate().toString();
-
-  const maxDate = new Date(`${maxDateISOString}T00:00:00.000Z`);
-  const maxDateYearStr = maxDate.getUTCFullYear().toString();
-  const maxDateMonthStr = (maxDate.getUTCMonth() + 1).toString();
-  const maxDateDayStr = maxDate.getUTCDate().toString();
 
   return (
     values: Record<string, string[]>,
@@ -232,10 +228,6 @@ const dateSpinUpFn = (minDateISOString: string, maxDateISOString: string) => {
 
 const dateSpinDownFn = (minDateISOString: string, maxDateISOString: string) => {
   const minDate = new Date(`${minDateISOString}T00:00:00.000Z`);
-  const minDateYearStr = minDate.getUTCFullYear().toString();
-  const minDateMonthStr = (minDate.getUTCMonth() + 1).toString();
-  const minDateDayStr = minDate.getUTCDate().toString();
-
   const maxDate = new Date(`${maxDateISOString}T00:00:00.000Z`);
   const maxDateYearStr = maxDate.getUTCFullYear().toString();
   const maxDateMonthStr = (maxDate.getUTCMonth() + 1).toString();
@@ -370,21 +362,22 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
     spinDownFn: dateSpinDownFn(minDateISOString, maxDateISOString),
   });
 
+  const skipKeys = ['/', '.', '-', ' '];
   const semanticValidationFn = dateSemanticValidationFn(minDateISOString, maxDateISOString);
   let sections: MaskSectionDefinition[];
 
   if (style === 'en') {
-    sections = [sectionDay, MaskSectionFixed('/'), sectionMonth, MaskSectionFixed('/'), sectionYear];
+    sections = [sectionDay, MaskSectionFixed('/', skipKeys), sectionMonth, MaskSectionFixed('/', skipKeys), sectionYear];
   } else if (style === 'us') {
-    sections = [sectionMonth, MaskSectionFixed('/'), sectionDay, MaskSectionFixed('/'), sectionYear];
+    sections = [sectionMonth, MaskSectionFixed('/', skipKeys), sectionDay, MaskSectionFixed('/', skipKeys), sectionYear];
   } else if (style === 'de') {
-    sections = [sectionDay, MaskSectionFixed('.'), sectionMonth, MaskSectionFixed('.'), sectionYear];
+    sections = [sectionDay, MaskSectionFixed('.', skipKeys), sectionMonth, MaskSectionFixed('.', skipKeys), sectionYear];
   } else if (style === 'jp') {
-    sections = [sectionYear, MaskSectionFixed('年'), sectionMonth, MaskSectionFixed('月'), sectionDay, MaskSectionFixed('日')];
+    sections = [sectionYear, MaskSectionFixed('年', skipKeys), sectionMonth, MaskSectionFixed('月', skipKeys), sectionDay, MaskSectionFixed('日')];
   } else if (style === 'kr') {
-    sections = [sectionYear, MaskSectionFixed('년'), sectionMonth, MaskSectionFixed('월'), sectionDay, MaskSectionFixed('일')];
+    sections = [sectionYear, MaskSectionFixed('년', skipKeys), sectionMonth, MaskSectionFixed('월', skipKeys), sectionDay, MaskSectionFixed('일')];
   } else {
-    sections = [sectionYear, MaskSectionFixed('-'), sectionMonth, MaskSectionFixed('-'), sectionDay];
+    sections = [sectionYear, MaskSectionFixed('-', skipKeys), sectionMonth, MaskSectionFixed('-', skipKeys), sectionDay];
   }
 
   return {
