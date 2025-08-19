@@ -24,80 +24,74 @@ export const applyPatchOperationMoveCursor = (
   currentDerivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): MaskState => {
-  // todo: AI generated - human validation pending
-  const { direction, level, keepSelectionEnd } = patchOperation;
-  const { valueSpace } = currentDerivedState;
+  const currentCaretPositionInValueSpace = currentState.caretPositionInValueSpace;
+  const currentIndexInValueSpace = currentDerivedState.valueSpace.indexOf(currentCaretPositionInValueSpace);
+  const currentSection = currentDerivedState.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDerivedState;
 
-  // Get current cursor position
-  const currentCaretPosition = currentState.caretPositionInValueSpace;
-  let newCaretPosition = currentCaretPosition;
+  let newCaretPosition = currentCaretPositionInValueSpace;
 
-  // Find current position index in valueSpace
-  const currentIndex = valueSpace.indexOf(currentCaretPosition);
-
-  if (currentIndex === -1) {
-    // If current position is not found, don't move
+  if (currentIndexInValueSpace === -1) {
     return currentState;
   }
 
-  // Calculate new position based on direction and level
-  if (level === 'character') {
-    // Move one character at a time
-    if (direction === 'left' && currentIndex > 0) {
-      newCaretPosition = valueSpace[currentIndex - 1];
-    } else if (direction === 'right' && currentIndex < valueSpace.length - 1) {
-      newCaretPosition = valueSpace[currentIndex + 1];
+  if (patchOperation.level === 'character') {
+    if (patchOperation.direction === 'left' && currentIndexInValueSpace > 0) {
+      newCaretPosition = currentDerivedState.valueSpace[currentIndexInValueSpace - 1];
+    } else if (patchOperation.direction === 'right' && currentIndexInValueSpace < currentDerivedState.valueSpace.length - 1) {
+      newCaretPosition = currentDerivedState.valueSpace[currentIndexInValueSpace + 1];
     }
-  } else if (level === 'section') {
-    // Move to beginning/end of current section or to adjacent section
-    const [currentSectionIndex, currentPosition] = currentCaretPosition.split(':').map((x) => parseInt(x));
+  } else if (patchOperation.level === 'section') {
+    if (patchOperation.direction === 'left') {
+      const isAtSectionStart = currentState.caretPositionInValueSpace === currentSection.valueSpace[0];
 
-    if (direction === 'left') {
-      // Find the first position of current section or move to previous section's end
-      const targetSectionIndex = currentPosition === 0 ? currentSectionIndex - 1 : currentSectionIndex;
-      const targetPosition = currentPosition === 0 ? undefined : 0;
-
-      if (targetSectionIndex >= 0) {
-        if (targetPosition !== undefined) {
-          newCaretPosition = `${currentSectionIndex}:${targetPosition}`;
-        } else {
-          // Find last position of previous section
-          const previousSectionPositions = valueSpace.filter((pos) => pos.startsWith(`${targetSectionIndex}:`));
-          if (previousSectionPositions.length > 0) {
-            newCaretPosition = previousSectionPositions[previousSectionPositions.length - 1];
-          }
-        }
-      }
-    } else if (direction === 'right') {
-      // Find the last position of current section or move to next section's beginning
-      const currentSectionPositions = valueSpace.filter((pos) => pos.startsWith(`${currentSectionIndex}:`));
-      const isAtSectionEnd = currentIndex === valueSpace.indexOf(currentSectionPositions[currentSectionPositions.length - 1]);
-
-      if (isAtSectionEnd) {
-        // Move to next section's beginning
-        const nextSectionPosition = valueSpace.find((pos) => pos.startsWith(`${currentSectionIndex + 1}:`));
-        if (nextSectionPosition) {
-          newCaretPosition = nextSectionPosition;
-        }
+      if (!isAtSectionStart && patchOperation.keepSelectionEnd) {
+        newCaretPosition = currentSection.valueSpace[0];
       } else {
-        // Move to current section's end
-        newCaretPosition = currentSectionPositions[currentSectionPositions.length - 1];
+        const prevSection = findSection(currentDerivedState, {
+          startIndex: currentDerivedState.caretDisplaySpaceIndex,
+          direction: 'left',
+          type: 'input',
+          includeStartIndex: false,
+        }) as MaskSectionInputDerivedState | undefined;
+
+        if (prevSection) {
+          newCaretPosition = prevSection.valueSpace[prevSection.valueSpace.length - 1];
+        } else {
+          newCaretPosition = currentSection.valueSpace[0];
+        }
+      }
+    } else if (patchOperation.direction === 'right') {
+      const isAtSectionEnd = currentState.caretPositionInValueSpace === currentSection.valueSpace[currentSection.valueSpace.length - 1];
+
+      if (!isAtSectionEnd && patchOperation.keepSelectionEnd) {
+        newCaretPosition = currentSection.valueSpace[currentSection.valueSpace.length - 1];
+      } else {
+        const nextSection = findSection(currentDerivedState, {
+          startIndex: currentDerivedState.caretDisplaySpaceIndex,
+          direction: 'right',
+          type: 'input',
+          includeStartIndex: false,
+        }) as MaskSectionInputDerivedState | undefined;
+
+        if (nextSection) {
+          newCaretPosition = nextSection.valueSpace[0];
+        } else {
+          newCaretPosition = currentSection.valueSpace[currentSection.valueSpace.length - 1];
+        }
       }
     }
-  } else if (level === 'line') {
-    // Move to beginning or end of entire line
-    if (direction === 'left') {
-      newCaretPosition = valueSpace[0];
-    } else if (direction === 'right') {
-      newCaretPosition = valueSpace[valueSpace.length - 1];
+  } else if (patchOperation.level === 'line') {
+    if (patchOperation.direction === 'left') {
+      newCaretPosition = currentDerivedState.valueSpace[0];
+    } else if (patchOperation.direction === 'right') {
+      newCaretPosition = currentDerivedState.valueSpace[currentDerivedState.valueSpace.length - 1];
     }
   }
 
-  // Create new state with updated cursor position
   const newState: MaskState = {
     ...currentState,
     caretPositionInValueSpace: newCaretPosition,
-    selectionEndPositionInValueSpace: keepSelectionEnd ? currentState.selectionEndPositionInValueSpace : newCaretPosition,
+    selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd ? currentState.selectionEndPositionInValueSpace : newCaretPosition,
   };
 
   return newState;

@@ -11,6 +11,7 @@
 - [x] ~~input element size measurement is currently broken~~ 
 - [x] ~~ensure all section values are initialized~~
 - [x] ~~make spin functions return the whole values[]~~
+- [x] ~~alt right/left should always switch to the next/prev section~~
 - [ ] handle section advance by using skip keys
 - [ ] add cmd+a/crtl+a support
 - [ ] holding key should repeat last key
