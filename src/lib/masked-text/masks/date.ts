@@ -184,42 +184,50 @@ const dateSpinUpFn = (minDateISOString: string, maxDateISOString: string) => {
         newValues[sectionSlug] = splitStringIntoGraphemes(newValue.toString());
       }
     } else {
-      const yearStr = newValues['year'].length > 0 ? newValues['year'].join('') : minDate ? minDateYearStr : '2000';
-      const monthStr = newValues['month'].length > 0 ? newValues['month'].join('') : minDate && minDateYearStr === yearStr ? minDateMonthStr : '1';
-      const dayStr =
-        newValues['day'].length > 0
-          ? newValues['day'].join('')
-          : minDate && minDateYearStr === yearStr && minDateMonthStr === monthStr
-            ? minDateDayStr
-            : '1';
+      const allSectionsEmpty = Object.values(newValues).every((section) => section.length === 0);
 
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10);
-      const day = parseInt(dayStr, 10);
-
-      let newDate: Date;
-      const currentDate = new Date(Date.UTC(year, month - 1, day));
-      const spinAmount = shiftPressed ? 10 : 1;
-
-      if (sectionSlug === 'year') {
-        newDate = new Date(Date.UTC(year + spinAmount, month, 0));
-        newDate.setUTCDate(Math.min(newDate.getUTCDate(), currentDate.getUTCDate()));
-      } else if (sectionSlug === 'month') {
-        newDate = new Date(Date.UTC(year, month + spinAmount, 0));
-        newDate.setUTCDate(Math.min(newDate.getUTCDate(), currentDate.getUTCDate()));
+      if (allSectionsEmpty) {
+        newValues['year'] = splitStringIntoGraphemes(todaysDateYearStr);
+        newValues['month'] = splitStringIntoGraphemes(todaysDateMonthStr);
+        newValues['day'] = splitStringIntoGraphemes(todaysDateDayStr);
       } else {
-        newDate = new Date(Date.UTC(year, month - 1, day + spinAmount));
-      }
+        const yearStr = newValues['year'].length > 0 ? newValues['year'].join('') : todaysDateYearStr;
+        const monthStr = newValues['month'].length > 0 ? newValues['month'].join('') : todaysDateYearStr === yearStr ? todaysDateMonthStr : '1';
+        const dayStr =
+          newValues['day'].length > 0
+            ? newValues['day'].join('')
+            : todaysDateYearStr === yearStr && todaysDateMonthStr === monthStr
+              ? minDateDayStr
+              : '1';
 
-      if (newDate < minDate) {
-        newDate.setTime(minDate.getTime());
-      } else if (newDate > maxDate) {
-        newDate.setTime(maxDate.getTime());
-      }
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+        const day = parseInt(dayStr, 10);
 
-      newValues['year'] = splitStringIntoGraphemes(newDate.getFullYear().toString());
-      newValues['month'] = splitStringIntoGraphemes((newDate.getMonth() + 1).toString());
-      newValues['day'] = splitStringIntoGraphemes(newDate.getDate().toString());
+        let newDate: Date;
+        const currentDate = new Date(Date.UTC(year, month - 1, day));
+        const spinAmount = shiftPressed ? 10 : 1;
+
+        if (sectionSlug === 'year') {
+          newDate = new Date(Date.UTC(year + spinAmount, month, 0));
+          newDate.setUTCDate(Math.min(newDate.getUTCDate(), currentDate.getUTCDate()));
+        } else if (sectionSlug === 'month') {
+          newDate = new Date(Date.UTC(year, month + spinAmount, 0));
+          newDate.setUTCDate(Math.min(newDate.getUTCDate(), currentDate.getUTCDate()));
+        } else {
+          newDate = new Date(Date.UTC(year, month - 1, day + spinAmount));
+        }
+
+        if (newDate < minDate) {
+          newDate.setTime(minDate.getTime());
+        } else if (newDate > maxDate) {
+          newDate.setTime(maxDate.getTime());
+        }
+
+        newValues['year'] = splitStringIntoGraphemes(newDate.getFullYear().toString());
+        newValues['month'] = splitStringIntoGraphemes((newDate.getMonth() + 1).toString());
+        newValues['day'] = splitStringIntoGraphemes(newDate.getDate().toString());
+      }
     }
 
     return newValues;
@@ -286,42 +294,49 @@ const dateSpinDownFn = (minDateISOString: string, maxDateISOString: string) => {
         newValues[sectionSlug] = splitStringIntoGraphemes(newValue.toString());
       }
     } else {
-      const yearStr = newValues['year'].length > 0 ? newValues['year'].join('') : minDate ? maxDateYearStr : '2000';
-      const monthStr = newValues['month'].length > 0 ? newValues['month'].join('') : minDate && maxDateYearStr === yearStr ? maxDateMonthStr : '1';
-      const dayStr =
-        newValues['day'].length > 0
-          ? newValues['day'].join('')
-          : minDate && maxDateYearStr === yearStr && maxDateMonthStr === monthStr
-            ? maxDateDayStr
-            : '31';
-
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10);
-      const day = parseInt(dayStr, 10);
-
-      let newDate: Date;
-      const currentDate = new Date(Date.UTC(year, month - 1, day));
-      const spinAmount = shiftPressed ? 10 : 1;
-
-      if (sectionSlug === 'year') {
-        newDate = new Date(Date.UTC(year - spinAmount, month, 0));
-        newDate.setUTCDate(Math.min(newDate.getUTCDate(), currentDate.getUTCDate()));
-      } else if (sectionSlug === 'month') {
-        newDate = new Date(Date.UTC(year, month - spinAmount, 0));
-        newDate.setUTCDate(Math.min(newDate.getUTCDate(), currentDate.getUTCDate()));
+      const allSectionsEmpty = Object.values(newValues).every((section) => section.length === 0);
+      if (allSectionsEmpty) {
+        newValues['year'] = splitStringIntoGraphemes(todaysDateYearStr);
+        newValues['month'] = splitStringIntoGraphemes(todaysDateMonthStr);
+        newValues['day'] = splitStringIntoGraphemes(todaysDateDayStr);
       } else {
-        newDate = new Date(Date.UTC(year, month - 1, day - spinAmount));
-      }
+        const yearStr = newValues['year'].length > 0 ? newValues['year'].join('') : minDate ? maxDateYearStr : '2000';
+        const monthStr = newValues['month'].length > 0 ? newValues['month'].join('') : minDate && maxDateYearStr === yearStr ? maxDateMonthStr : '1';
+        const dayStr =
+          newValues['day'].length > 0
+            ? newValues['day'].join('')
+            : minDate && maxDateYearStr === yearStr && maxDateMonthStr === monthStr
+              ? maxDateDayStr
+              : '31';
 
-      if (newDate < minDate) {
-        newDate.setTime(minDate.getTime());
-      } else if (newDate > maxDate) {
-        newDate.setTime(maxDate.getTime());
-      }
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+        const day = parseInt(dayStr, 10);
 
-      newValues['year'] = splitStringIntoGraphemes(newDate.getFullYear().toString());
-      newValues['month'] = splitStringIntoGraphemes((newDate.getMonth() + 1).toString());
-      newValues['day'] = splitStringIntoGraphemes(newDate.getDate().toString());
+        let newDate: Date;
+        const currentDate = new Date(Date.UTC(year, month - 1, day));
+        const spinAmount = shiftPressed ? 10 : 1;
+
+        if (sectionSlug === 'year') {
+          newDate = new Date(Date.UTC(year - spinAmount, month, 0));
+          newDate.setUTCDate(Math.min(newDate.getUTCDate(), currentDate.getUTCDate()));
+        } else if (sectionSlug === 'month') {
+          newDate = new Date(Date.UTC(year, month - spinAmount, 0));
+          newDate.setUTCDate(Math.min(newDate.getUTCDate(), currentDate.getUTCDate()));
+        } else {
+          newDate = new Date(Date.UTC(year, month - 1, day - spinAmount));
+        }
+
+        if (newDate < minDate) {
+          newDate.setTime(minDate.getTime());
+        } else if (newDate > maxDate) {
+          newDate.setTime(maxDate.getTime());
+        }
+
+        newValues['year'] = splitStringIntoGraphemes(newDate.getFullYear().toString());
+        newValues['month'] = splitStringIntoGraphemes((newDate.getMonth() + 1).toString());
+        newValues['day'] = splitStringIntoGraphemes(newDate.getDate().toString());
+      }
     }
 
     return newValues;
