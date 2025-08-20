@@ -84,7 +84,7 @@ const numericSpinUpFn = (minDecimalDigits: number) => {
     const currentIntegersInt = BigInt(currentIntegersStr);
     const currentDecimalsInt = BigInt((newValues['decimals'].join('').padEnd(minDecimalDigits, '0') || '0').substring(0, minDecimalDigits));
 
-    if (!altPressed) {
+    if (altPressed) {
       const spinAmount = shiftPressed ? 10n : 1n;
 
       if (sectionSlug === 'integers') {
@@ -137,7 +137,7 @@ const numericSpinDownFn = (minDecimalDigits: number) => {
     const currentIntegersInt = BigInt(currentIntegersStr);
     const currentDecimalsInt = BigInt((newValues['decimals'].join('').padEnd(minDecimalDigits, '0') || '0').substring(0, minDecimalDigits));
 
-    if (!altPressed) {
+    if (altPressed) {
       const spinAmount = shiftPressed ? 10n : 1n;
 
       if (sectionSlug === 'integers') {

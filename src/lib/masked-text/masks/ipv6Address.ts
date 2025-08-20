@@ -95,10 +95,10 @@ const ipv6AddressBlockSpinUpFn = (
   const newValues = {} as Record<string, string[]>;
 
   for (const [key, value] of Object.entries(values)) {
-    newValues[key] = value.length ? value : altPressed ? splitStringIntoGraphemes(minValue.toString(16)) : [];
+    newValues[key] = value.length ? value : !altPressed ? splitStringIntoGraphemes(minValue.toString(16)) : [];
   }
 
-  if (!altPressed) {
+  if (altPressed) {
     const sectionValue = parseInt((newValues[sectionSlug] || []).join('') || '0', 16);
 
     if (!Number.isNaN(sectionValue)) {
@@ -156,10 +156,10 @@ const ipv6AddressBlockSpinDownFn = (
   const newValues = {} as Record<string, string[]>;
 
   for (const [key, value] of Object.entries(values)) {
-    newValues[key] = value.length ? value : altPressed ? splitStringIntoGraphemes(maxValue.toString(16)) : [];
+    newValues[key] = value.length ? value : !altPressed ? splitStringIntoGraphemes(maxValue.toString(16)) : [];
   }
 
-  if (!altPressed) {
+  if (altPressed) {
     const sectionValue = parseInt((newValues[sectionSlug] || []).join('') || '0', 16);
 
     if (!Number.isNaN(sectionValue)) {

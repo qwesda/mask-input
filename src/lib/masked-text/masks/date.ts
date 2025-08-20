@@ -145,7 +145,7 @@ const dateSpinUpFn = (minDateISOString: string, maxDateISOString: string) => {
     const todaysDateMonthStr = (todaysDate.getUTCMonth() + 1).toString();
     const todaysDateDayStr = todaysDate.getUTCDate().toString();
 
-    if (!altPressed) {
+    if (altPressed) {
       const currentValue = parseInt(newValues[sectionSlug].join('') || '0', 10);
       const spinAmount = shiftPressed ? 10 : 1;
       let newValue = currentValue;
@@ -247,7 +247,7 @@ const dateSpinDownFn = (minDateISOString: string, maxDateISOString: string) => {
     const todaysDateMonthStr = (todaysDate.getUTCMonth() + 1).toString();
     const todaysDateDayStr = todaysDate.getUTCDate().toString();
 
-    if (!altPressed) {
+    if (altPressed) {
       const currentValue = parseInt(newValues[sectionSlug].join('') || '0', 10);
       const spinAmount = shiftPressed ? 10 : 1;
       let newValue = currentValue;
