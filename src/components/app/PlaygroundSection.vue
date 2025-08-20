@@ -1,6 +1,6 @@
 <template>
   <div class="playground-section">
-    <div class="playground-masks">
+    <div>
       <scroll-container>
         <slot />
       </scroll-container>
@@ -43,14 +43,6 @@
     border: none;
     padding: 0;
     margin: 0;
-  }
-
-  .playground-masks {
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 20px;
   }
 
   .playground-debug {

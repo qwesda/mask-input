@@ -1,15 +1,17 @@
 <template>
-  <label>UUID v1</label>
-  <MaskedText :mask="uuidV1Mask" v-model="uuidV1Value" @update:debug-info="updateDebugInfo" />
+  <div class="playground-masks">
+    <label>UUID v1</label>
+    <MaskedText :mask="uuidV1Mask" v-model="uuidV1Value" @update:debug-info="updateDebugInfo" />
 
-  <label>UUID v4</label>
-  <MaskedText :mask="uuidV4Mask" v-model="uuidV4Value" @update:debug-info="updateDebugInfo" />
+    <label>UUID v4</label>
+    <MaskedText :mask="uuidV4Mask" v-model="uuidV4Value" @update:debug-info="updateDebugInfo" />
 
-  <label>UUID v7</label>
-  <MaskedText :mask="uuidV7Mask" v-model="uuidV7Value" @update:debug-info="updateDebugInfo" />
+    <label>UUID v7</label>
+    <MaskedText :mask="uuidV7Mask" v-model="uuidV7Value" @update:debug-info="updateDebugInfo" />
 
-  <label>UUID any</label>
-  <MaskedText :mask="uuidAnyMask" v-model="uuidAnyValue" @update:debug-info="updateDebugInfo" />
+    <label>UUID any</label>
+    <MaskedText :mask="uuidAnyMask" v-model="uuidAnyValue" @update:debug-info="updateDebugInfo" />
+  </div>
 </template>
 
 <script lang="ts" setup>

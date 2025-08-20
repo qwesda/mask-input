@@ -1,11 +1,13 @@
 <template>
-  <label>ipv4Mask</label>
-  <MaskedText :mask="ipv4Mask" v-model="ipv4Value1" @update:debug-info="updateDebugInfo" />
-  <MaskedText :mask="ipv4Mask" v-model="ipv4Value2" @update:debug-info="updateDebugInfo" />
+  <div class="playground-masks">
+    <label>ipv4Mask</label>
+    <MaskedText :mask="ipv4Mask" v-model="ipv4Value1" @update:debug-info="updateDebugInfo" />
+    <MaskedText :mask="ipv4Mask" v-model="ipv4Value2" @update:debug-info="updateDebugInfo" />
 
-  <label>ipv6Mask</label>
-  <MaskedText :mask="ipv6Mask" v-model="ipv6Value1" @update:debug-info="updateDebugInfo" />
-  <MaskedText :mask="ipv6Mask" v-model="ipv6Value2" @update:debug-info="updateDebugInfo" />
+    <label>ipv6Mask</label>
+    <MaskedText :mask="ipv6Mask" v-model="ipv6Value1" @update:debug-info="updateDebugInfo" />
+    <MaskedText :mask="ipv6Mask" v-model="ipv6Value2" @update:debug-info="updateDebugInfo" />
+  </div>
 </template>
 
 <script lang="ts" setup>

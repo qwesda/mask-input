@@ -1,21 +1,23 @@
 <template>
-  <label>Date Mask Basic</label>
-  <MaskedText :mask="numericMaskBasic" v-model="numericValue" @update:debug-info="updateDebugInfo" />
+  <div class="playground-masks">
+    <label>Date Mask Basic</label>
+    <MaskedText :mask="numericMaskBasic" v-model="numericValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask Comma Separator</label>
-  <MaskedText :mask="numericMaskCommaSeparator" v-model="numericValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask Comma Separator</label>
+    <MaskedText :mask="numericMaskCommaSeparator" v-model="numericValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask Space Separator</label>
-  <MaskedText :mask="numericMaskSpaceSeparator" v-model="numericValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask Space Separator</label>
+    <MaskedText :mask="numericMaskSpaceSeparator" v-model="numericValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask European</label>
-  <MaskedText :mask="numericMaskEuropean" v-model="numericValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask European</label>
+    <MaskedText :mask="numericMaskEuropean" v-model="numericValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask with Suffix</label>
-  <MaskedText :mask="numericMaskWithSuffix" v-model="numericValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask with Suffix</label>
+    <MaskedText :mask="numericMaskWithSuffix" v-model="numericValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask with Prefixes</label>
-  <MaskedText :mask="numericMaskWithPrefixes" v-model="numericValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask with Prefixes</label>
+    <MaskedText :mask="numericMaskWithPrefixes" v-model="numericValue" @update:debug-info="updateDebugInfo" />
+  </div>
 </template>
 
 <script lang="ts" setup>

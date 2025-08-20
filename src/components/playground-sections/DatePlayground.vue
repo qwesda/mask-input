@@ -1,21 +1,23 @@
 <template>
-  <label>Date Mask ISO</label>
-  <MaskedText :mask="dateMaskISO" v-model="dateValue" @update:debug-info="updateDebugInfo" />
+  <div class="playground-masks">
+    <label>Date Mask ISO</label>
+    <MaskedText :mask="dateMaskISO" v-model="dateValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask DE</label>
-  <MaskedText :mask="dateMaskDE" v-model="dateValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask DE</label>
+    <MaskedText :mask="dateMaskDE" v-model="dateValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask EN</label>
-  <MaskedText :mask="dateMaskEN" v-model="dateValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask EN</label>
+    <MaskedText :mask="dateMaskEN" v-model="dateValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask US</label>
-  <MaskedText :mask="dateMaskUS" v-model="dateValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask US</label>
+    <MaskedText :mask="dateMaskUS" v-model="dateValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask JP</label>
-  <MaskedText :mask="dateMaskJP" v-model="dateValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask JP</label>
+    <MaskedText :mask="dateMaskJP" v-model="dateValue" @update:debug-info="updateDebugInfo" />
 
-  <label>Date Mask KR</label>
-  <MaskedText :mask="dateMaskKR" v-model="dateValue" @update:debug-info="updateDebugInfo" />
+    <label>Date Mask KR</label>
+    <MaskedText :mask="dateMaskKR" v-model="dateValue" @update:debug-info="updateDebugInfo" />
+  </div>
 </template>
 
 <script lang="ts" setup>
