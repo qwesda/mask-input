@@ -7,9 +7,9 @@
       @focusin="handleFocusin"
       @focusout="handleFocusout"
     >
-      <div ref="preInputHTMLRef" class="text-overlay" v-html="lastDerivedState.preInputHTMLString" />
+      <span ref="preInputHTMLRef" class="text-overlay" v-html="lastDerivedState.preInputHTMLString" />
 
-      <div
+      <span
         ref="inputRef"
         autofocus
         contenteditable="plaintext-only"
@@ -21,7 +21,7 @@
         @compositionend="handleCompositionEnd"
       />
 
-      <div ref="postInputHTMLRef" class="text-overlay" v-html="lastDerivedState.postInputHTMLString" />
+      <span ref="postInputHTMLRef" class="text-overlay" v-html="lastDerivedState.postInputHTMLString" />
     </div>
   </div>
 </template>
@@ -339,17 +339,6 @@
     outline: none;
     flex-shrink: 1;
     z-index: 1;
-  }
-
-  .masked-text-shadow-input {
-    white-space: pre;
-    padding: 0;
-    margin: 0;
-    line-height: 1;
-
-    border: none;
-    outline: none;
-    flex-grow: 1;
   }
 
   .masked-text-input:focus {
