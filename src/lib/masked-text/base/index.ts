@@ -15,8 +15,9 @@ import { compareSpaceCoordinates, splitStringIntoGraphemes } from './helper';
 // local types
 type InputHTMLStringPart = {
   cls: string;
+  attrs?: { [key: string]: string };
   dataAttrs?: { [key: string]: string };
-  value: string;
+  value?: string;
 };
 
 export const MaskSectionFixed = (mask: string, skipKeys?: string[]): MaskSectionFixedDefinition => ({
@@ -130,7 +131,7 @@ const getFixedSectionHTMLStrings = (
   maskSection: MaskSectionFixedDerivedState,
   valueSpaceToDisplaySpaceMap: Map<string, string>,
   semanticValidationStatus: boolean | undefined,
-): [string, string] => {
+): string => {
   const caretPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace);
   const selectionEndPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.selectionEndPositionInValueSpace);
 
@@ -152,7 +153,7 @@ const getFixedSectionHTMLStrings = (
 
   const htmlString: string = `<div class="${classes.join(' ')}">${maskSection.textInputDisplayString}</div>`;
 
-  return [isBeforeCursor ? htmlString : '', !isBeforeCursor ? htmlString : ''];
+  return htmlString;
 };
 
 const getInputSectionDerivedState = (
@@ -230,16 +231,23 @@ const getInputSectionDerivedState = (
 };
 
 const inputHTMLStringPartToHTML = (inputHTMLStringPart: InputHTMLStringPart) => {
-  const { cls, dataAttrs, value } = inputHTMLStringPart;
+  const { cls, attrs, dataAttrs, value } = inputHTMLStringPart;
+
+  const attrsStringString = inputHTMLStringPart.attrs
+    ? Object.entries(inputHTMLStringPart.attrs)
+        .map(([key, value]) => ` ${key}="${value}"`)
+        .join('')
+    : '';
 
   const dataAttrsStringString = inputHTMLStringPart.dataAttrs
     ? Object.entries(inputHTMLStringPart.dataAttrs)
         .map(([key, value]) => ` data-${key}="${value}"`)
         .join('')
     : '';
+
   const clsStringString = cls.length > 0 ? ` class="${cls}"` : '';
 
-  return `<span${dataAttrsStringString}${clsStringString}>${value}</span>`;
+  return `<span${clsStringString}${attrsStringString}${dataAttrsStringString}>${value ?? ''}</span>`;
 };
 
 const getInputSectionHTMLStrings = (
@@ -248,15 +256,26 @@ const getInputSectionHTMLStrings = (
   valueSpaceToDisplaySpaceMap: Map<string, string>,
   displaySpaceToValueSpaceMap: Map<string, string>,
   semanticValidationStatus: boolean | undefined,
-): [string, string, string[]] => {
-  const preInputHTMLStringParts: InputHTMLStringPart[] = [];
-  const postInputHTMLStringParts: InputHTMLStringPart[] = [];
-  const inputFieldClasses: string[] = [];
+): string => {
+  const inputHTMLStringParts: InputHTMLStringPart[] = [];
 
-  const caretPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace);
-  const selectionEndPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.selectionEndPositionInValueSpace);
+  const caretPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace) ?? '-1:-1';
+  const selectionEndPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.selectionEndPositionInValueSpace) ?? '-1:-1';
+
+  const [caretPositionInDisplaySpaceIndex, caretPositionInDisplaySpacePosition] = caretPositionInDisplaySpace
+    .split(':')
+    .map((x) => Number.parseInt(x));
+  const [selectionEndPositionInDisplaySpaceIndex, selectionEndPositionInDisplaySpacePosition] = selectionEndPositionInDisplaySpace
+    .split(':')
+    .map((x) => Number.parseInt(x));
+
+  const caretIsInsideSection = caretPositionInDisplaySpaceIndex === maskSection.index;
+  const selectionEndIsInsideSection = selectionEndPositionInDisplaySpaceIndex === maskSection.index;
 
   let posDisplaySpace = 0;
+
+  let caretPlaced = false;
+  let selectionEndPlaced = false;
 
   const firstValueSpaceCoordinates: string | undefined = maskSection.valueSpace.length > 0 ? maskSection.valueSpace[0] : undefined;
   const lastValueSpaceCoordinates: string | undefined =
@@ -265,21 +284,27 @@ const getInputSectionHTMLStrings = (
   for (const [i, maskChar] of maskSection.maskCharacters.entries()) {
     const currentDisplaySpaceCoordinatesLeft = `${maskSection.index}:${posDisplaySpace}`;
     const currentValueSpaceCoordinatesLeft = displaySpaceToValueSpaceMap.get(currentDisplaySpaceCoordinatesLeft);
+    const caretRelativePositionLeft = compareSpaceCoordinates(currentDisplaySpaceCoordinatesLeft, caretPositionInDisplaySpace) ?? -1;
+    const selectionEndRelativePositionLeft = compareSpaceCoordinates(currentDisplaySpaceCoordinatesLeft, selectionEndPositionInDisplaySpace) ?? -1;
 
     posDisplaySpace += maskChar.char.length;
 
     const currentDisplaySpaceCoordinatesRight = `${maskSection.index}:${posDisplaySpace}`;
     const currentValueSpaceCoordinatesRight = displaySpaceToValueSpaceMap.get(currentDisplaySpaceCoordinatesRight);
+    const caretRelativePositionRight = compareSpaceCoordinates(currentDisplaySpaceCoordinatesRight, caretPositionInDisplaySpace) ?? -1;
+    const selectionEndRelativePositionRight = compareSpaceCoordinates(currentDisplaySpaceCoordinatesRight, selectionEndPositionInDisplaySpace) ?? -1;
 
-    const caretRelativePosition = compareSpaceCoordinates(currentDisplaySpaceCoordinatesRight, caretPositionInDisplaySpace) ?? -1;
-    const selectionEndRelativePosition = compareSpaceCoordinates(currentDisplaySpaceCoordinatesRight, selectionEndPositionInDisplaySpace) ?? -1;
+    if (!caretPlaced && caretRelativePositionLeft == 0) {
+      caretPlaced = true;
 
-    const isBeforeCursor: boolean = caretRelativePosition <= 0;
-    const isBeforeSelectionEnd: boolean = selectionEndRelativePosition <= 0;
+      inputHTMLStringParts.push({ cls: 'placeholder-caret', attrs: { contenteditable: 'true' } });
+    }
 
-    const htmlStringParts = isBeforeCursor ? preInputHTMLStringParts : postInputHTMLStringParts;
-    const htmlStringPartClass =
-      (maskChar.type === 'mask' ? 'mask-char-mask' : 'mask-char-value') + (isBeforeCursor !== isBeforeSelectionEnd ? ' selected' : '');
+    if (!selectionEndPlaced && selectionEndRelativePositionLeft == 0 && caretPositionInDisplaySpace !== selectionEndPositionInDisplaySpace) {
+      selectionEndPlaced = true;
+
+      inputHTMLStringParts.push({ cls: 'placeholder-selection-end' });
+    }
 
     const dataAttrs: { [key: string]: string } = {};
 
@@ -295,11 +320,23 @@ const getInputSectionHTMLStrings = (
       dataAttrs['value-pos-right'] = lastValueSpaceCoordinates;
     }
 
-    htmlStringParts.push({
-      cls: htmlStringPartClass,
+    inputHTMLStringParts.push({
+      cls: maskChar.type === 'mask' ? 'mask-char-mask' : 'mask-char-value',
       dataAttrs,
       value: maskChar.char,
     });
+
+    if (!caretPlaced && caretRelativePositionRight == 0) {
+      caretPlaced = true;
+
+      inputHTMLStringParts.push({ cls: 'placeholder-caret', attrs: { contenteditable: 'true' } });
+    }
+
+    if (!selectionEndPlaced && selectionEndRelativePositionRight == 0 && caretPositionInDisplaySpace !== selectionEndPositionInDisplaySpace) {
+      selectionEndPlaced = true;
+
+      inputHTMLStringParts.push({ cls: 'placeholder-selection-end' });
+    }
   }
 
   const caretPositionInDisplayState = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace) ?? '-1:-1';
@@ -313,30 +350,33 @@ const getInputSectionHTMLStrings = (
 
   if (isActiveSection) {
     classes.push('active');
-    inputFieldClasses.push('active');
   }
 
   if (semanticValidationStatus === false) {
     classes.push('semantic-error');
-    inputFieldClasses.push('semantic-error');
   }
 
   if (maskSection.syntacticValidationStatus === false) {
     classes.push('syntax-error');
-    inputFieldClasses.push('syntax-error');
   }
 
-  const preInputHTMLString =
-    preInputHTMLStringParts.length > 0
-      ? `<div class="${classes.join(' ')}">${preInputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</div>`
-      : '';
+  if (inputHTMLStringParts.length === 0) {
+    inputHTMLStringParts.push({
+      cls: 'mask-char-mask',
+      dataAttrs: { 'value-pos-right': `${maskSection.index}:0` },
+      value: '&nbsp;',
+    });
 
-  const postInputHTMLString =
-    postInputHTMLStringParts.length > 0
-      ? `<div class="${classes.join(' ')}"">${postInputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</div>`
-      : '';
+    if (caretIsInsideSection && !caretPlaced) {
+      inputHTMLStringParts.push({ cls: 'placeholder-caret', attrs: { contenteditable: 'true' } });
+    }
 
-  return [preInputHTMLString, postInputHTMLString, inputFieldClasses];
+    if (selectionEndIsInsideSection && !selectionEndPlaced) {
+      inputHTMLStringParts.push({ cls: 'placeholder-selection-end' });
+    }
+  }
+
+  return `<div class="${classes.join(' ')}">${inputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</div>`;
 };
 
 export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefinition): MaskDerivedState => {
@@ -344,8 +384,7 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
 
   let valueIndex = -1;
 
-  const preInputHTMLStringParts = [];
-  const postInputHTMLStringParts = [];
+  const inputHTMLStringParts = [];
   const valueSpace: string[] = [];
   const displaySpace: string[] = [];
   const valueSpaceToDisplaySpaceMap: Map<string, string> = new Map();
@@ -381,7 +420,6 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     }
   }
 
-  const inputFieldClasses: Set<string> = new Set();
   const [semanticValidationStatus, semanticValidationMessage] = maskDefinition.semanticValidationFn
     ? maskDefinition.semanticValidationFn(maskState.values)
     : [undefined, ''];
@@ -392,21 +430,20 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     if (sectionDeriveState.type === 'fixed') {
       const sectionFixedDerivedState = sectionDeriveState as MaskSectionFixedDerivedState;
 
-      const [preInputHTMLString, postInputHTMLString] = getFixedSectionHTMLStrings(
+      const sectionInputHTMLString = getFixedSectionHTMLStrings(
         maskState,
         sectionFixedDerivedState,
         valueSpaceToDisplaySpaceMap,
         semanticValidationStatus,
       );
 
-      preInputHTMLStringParts.push(preInputHTMLString);
-      postInputHTMLStringParts.push(postInputHTMLString);
+      inputHTMLStringParts.push(sectionInputHTMLString);
     } else {
       valueIndex += 1;
 
       const sectionInputDerivedState = sectionDeriveState as MaskSectionInputDerivedState;
 
-      const [sectionPreInputHTMLString, sectionPostInputHTMLString, sectionInputFieldClasses] = getInputSectionHTMLStrings(
+      const sectionInputHTMLString = getInputSectionHTMLStrings(
         maskState,
         sectionInputDerivedState,
         valueSpaceToDisplaySpaceMap,
@@ -414,9 +451,7 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
         semanticValidationStatus,
       );
 
-      preInputHTMLStringParts.push(sectionPreInputHTMLString);
-      postInputHTMLStringParts.push(sectionPostInputHTMLString);
-      sectionInputFieldClasses.forEach((inputFieldClass) => inputFieldClasses.add(inputFieldClass));
+      inputHTMLStringParts.push(sectionInputHTMLString);
     }
   }
 
@@ -441,8 +476,6 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     caretDisplaySpaceIndex,
     caretDisplaySpacePosition,
 
-    inputFieldClasses: [...inputFieldClasses.values()],
-
     syntacticValidationStatus,
     semanticValidationStatus,
     semanticValidationMessage,
@@ -452,8 +485,7 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
     valueSpaceToDisplaySpaceMap,
     displaySpaceToValueSpaceMap,
 
-    preInputHTMLString: preInputHTMLStringParts.join(''),
-    postInputHTMLString: postInputHTMLStringParts.join(''),
+    inputHTMLString: inputHTMLStringParts.join(''),
 
     sections: sectionsDeriveState,
   };

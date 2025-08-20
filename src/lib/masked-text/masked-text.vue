@@ -1,33 +1,20 @@
 <template>
-  <div ref="containerRef">
-    <div
-      :class="['masked-text-container', { 'has-focus': hasFocus }]"
-      @mousedown.capture="handleMousedown"
-      @mouseup.capture="handleMouseup"
-      @focusin="handleFocusin"
-      @focusout="handleFocusout"
-    >
-      <span ref="preInputHTMLRef" class="text-overlay" v-html="lastDerivedState.preInputHTMLString" />
-
-      <span
-        ref="inputRef"
-        autofocus
-        contenteditable="plaintext-only"
-        class="masked-text-input"
-        style="width: 4px; margin-left: 0; margin-right: -4px; background: transparent"
-        @keydown.capture="handleKeydown"
-        @keyup.capture="handleKeyup"
-        @beforeinput="handleBeforeInput"
-        @compositionend="handleCompositionEnd"
-      />
-
-      <span ref="postInputHTMLRef" class="text-overlay" v-html="lastDerivedState.postInputHTMLString" />
-    </div>
-  </div>
+  <div
+    ref="containerRef"
+    class="masked-text-container"
+    :class="{ 'has-focus': hasFocus }"
+    @mousedown.capture="handleMousedown"
+    @focusin.capture="handleFocusin"
+    @focusout="handleFocusout"
+    @keydown.capture="handleKeydown"
+    @keyup.capture="handleKeyup"
+    @beforeinput.capture="handleBeforeInput"
+    @compositionend.capture="handleCompositionEnd"
+  />
 </template>
 
 <script lang="ts" setup>
-  import { ref, type Ref, watch } from 'vue';
+  import { onMounted, onUnmounted, ref, type Ref, watch } from 'vue';
   import type { MaskDefinition, MaskDerivedState, MaskState } from './base/types';
   import { getDerivedState, getInitialMaskState, updateMaskStateCaretAndSelection, updateMaskStateValues } from './base/index';
 
@@ -37,13 +24,16 @@
     getExternalModelValueFromInternalModel,
     getInternalModelValueExternalFromModel,
   } from './base/helper';
+
   import { applyPatchOperations } from './base/applyPatchOperations';
+
   import {
     determinePatchOperationFromBeforeInputEvent,
     determinePatchOperationFromCompositionEndEvent,
     determinePatchOperationFromKeydownEvent,
     determinePatchOperationFromKeyupEvent,
   } from './base/determinePatchOperations';
+
   import type { PatchOperation } from './base/types';
 
   interface Props {
@@ -71,11 +61,44 @@
   const lastDerivedState: Ref<MaskDerivedState> = ref(getDerivedState(state.value, props.mask));
 
   const hasFocus = ref(false);
-
   const containerRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
-  const preInputHTMLRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
-  const inputRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
-  const postInputHTMLRef: Ref<HTMLSpanElement | undefined> = ref<HTMLSpanElement>();
+
+  const render = () => {
+    if (containerRef.value) {
+      containerRef.value.innerHTML = lastDerivedState.value.inputHTMLString;
+
+      if (hasFocus.value) {
+        const caretSpan: HTMLSpanElement | null = containerRef.value.querySelector('.placeholder-caret');
+        const selectionEndSpan: HTMLSpanElement | null = containerRef.value.querySelector('.placeholder-selection-end');
+
+        if (caretSpan) {
+          caretSpan.focus();
+        }
+
+        if (caretSpan && selectionEndSpan) {
+          const range = document.createRange();
+
+          const position = caretSpan.compareDocumentPosition(selectionEndSpan);
+          const caretBeforeSelection = position & Node.DOCUMENT_POSITION_FOLLOWING;
+
+          if (caretBeforeSelection) {
+            range.setStart(caretSpan, 0);
+            range.setEnd(selectionEndSpan, 0);
+          } else {
+            range.setStart(selectionEndSpan, 0);
+            range.setEnd(caretSpan, 0);
+          }
+
+          const selection = window.getSelection();
+
+          if (selection) {
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+        }
+      }
+    }
+  };
 
   const runComponentInternalUpdateLoop = (event: Event | undefined, patchOperations: PatchOperation[] | undefined) => {
     const initialStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
@@ -89,29 +112,28 @@
         event.preventDefault();
       }
 
-      const clearInputRefContent = patchOperations.some((patchOperation) => patchOperation.op === 'insert-character');
-      resetInputCursorAnimation(clearInputRefContent);
-    }
+      const finalStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
+      const finalValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
+      const finalSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
 
-    const finalStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
-    const finalValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
-    const finalSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
+      if (!modelValuesEqual(initialStateModelValue, finalStateModelValue)) {
+        emits('update:modelValue', finalStateModelValue);
+      }
 
-    if (!modelValuesEqual(initialStateModelValue, finalStateModelValue)) {
-      emits('update:modelValue', finalStateModelValue);
-    }
+      if (initialValidatedValue !== finalValidatedValue) {
+        emits('update:validatedValue', finalValidatedValue);
+      }
 
-    if (initialValidatedValue !== finalValidatedValue) {
-      emits('update:validatedValue', finalValidatedValue);
-    }
+      if (initialSemanticValidationMessage !== finalSemanticValidationMessage) {
+        emits('update:semanticValidationMessage', finalSemanticValidationMessage);
+      }
 
-    if (initialSemanticValidationMessage !== finalSemanticValidationMessage) {
-      emits('update:semanticValidationMessage', finalSemanticValidationMessage);
-    }
+      render();
 
-    // TODO: remove this ... only for debugging purposes
-    if (hasFocus.value) {
-      emits('update:debugInfo', state.value, lastDerivedState.value);
+      // TODO: remove this ... only for debugging purposes
+      if (hasFocus.value) {
+        emits('update:debugInfo', state.value, lastDerivedState.value);
+      }
     }
   };
 
@@ -150,31 +172,13 @@
       emits('update:semanticValidationMessage', finalSemanticValidationMessage);
     }
 
+    render();
+
     // TODO: remove this ... only for debugging purposes
     if (hasFocus.value) {
       emits('update:debugInfo', state.value, lastDerivedState.value);
     }
   };
-
-  function resetInputCursorAnimation(clearContent: boolean = false) {
-    if (inputRef.value) {
-      if (clearContent) {
-        inputRef.value.textContent = '';
-      }
-
-      requestAnimationFrame(() => {
-        if (inputRef.value) {
-          inputRef.value.blur();
-
-          requestAnimationFrame(() => {
-            if (inputRef.value) {
-              inputRef.value.focus();
-            }
-          });
-        }
-      });
-    }
-  }
 
   const handleKeydown = (event: KeyboardEvent) => {
     const patchOperations = determinePatchOperationFromKeydownEvent(event, state.value, props.mask, lastDerivedState.value);
@@ -202,11 +206,7 @@
 
   const handleFocusin = (event: FocusEvent) => {
     if (!hasFocus.value) {
-      hasFocus.value = true;
-
-      emits('focus');
-
-      runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+      gainFocus();
     }
   };
 
@@ -214,16 +214,27 @@
     if (hasFocus.value) {
       setTimeout(() => {
         if (containerRef.value && !containerRef.value.contains(document.activeElement)) {
-          hasFocus.value = false;
-
-          emits('blur');
+          looseFocus();
         }
       }, 50);
     }
   };
 
-  const getClosestValueSpaceCoordinates = (event: MouseEvent) => {
-    const containersToCheck: HTMLElement[] = [preInputHTMLRef.value, postInputHTMLRef.value].filter((x) => x !== undefined) as HTMLElement[];
+  const gainFocus = () => {
+    hasFocus.value = true;
+
+    emits('focus');
+
+    runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+  };
+
+  const looseFocus = () => {
+    hasFocus.value = false;
+
+    emits('blur');
+  };
+
+  const getClosestValueSpaceCoordinates = (event: MouseEvent): string | undefined => {
     const containerElement = event.currentTarget as HTMLElement;
     const containerRect = containerElement.getBoundingClientRect();
     const relativeX = event.clientX - containerRect.left;
@@ -231,52 +242,50 @@
     let closestValueSpaceCoordinates: string | undefined = undefined;
     let minDistance = Infinity;
 
-    for (const container of containersToCheck) {
-      if (!container) {
-        continue;
+    if (!containerRef.value) {
+      return closestValueSpaceCoordinates;
+    }
+
+    const spans = containerRef.value.querySelectorAll('span');
+
+    spans.forEach((span: Element) => {
+      const spanElement = span as HTMLElement;
+      const spanRect = spanElement.getBoundingClientRect();
+      const spanRelativeLeft = spanRect.left - containerRect.left;
+      const spanRelativeRight = spanRect.right - containerRect.left;
+
+      let distance;
+
+      if (relativeX < spanRelativeLeft) {
+        distance = spanRelativeLeft - relativeX;
+      } else if (relativeX > spanRelativeRight) {
+        distance = relativeX - spanRelativeRight;
+      } else {
+        distance = 0;
       }
 
-      const spans = container.querySelectorAll('span');
+      if (distance < minDistance) {
+        const clickWasRightish = relativeX > spanRelativeLeft + spanRect.width / 2;
 
-      spans.forEach((span: Element) => {
-        const spanElement = span as HTMLElement;
-        const spanRect = spanElement.getBoundingClientRect();
-        const spanRelativeLeft = spanRect.left - containerRect.left;
-        const spanRelativeRight = spanRect.right - containerRect.left;
-
-        let distance;
-
-        if (relativeX < spanRelativeLeft) {
-          distance = spanRelativeLeft - relativeX;
-        } else if (relativeX > spanRelativeRight) {
-          distance = relativeX - spanRelativeRight;
+        if (clickWasRightish) {
+          if (spanElement.hasAttribute('data-value-pos-right')) {
+            closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-right')!;
+          } else if (spanElement.hasAttribute('data-value-pos-left')) {
+            closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-left')!;
+          }
         } else {
-          distance = 0;
-        }
-
-        if (distance < minDistance) {
-          const clickWasRightish = relativeX > spanRelativeLeft + spanRect.width / 2;
-
-          if (clickWasRightish) {
-            if (spanElement.hasAttribute('data-value-pos-right')) {
-              closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-right')!;
-            } else if (spanElement.hasAttribute('data-value-pos-left')) {
-              closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-left')!;
-            }
-          } else {
-            if (spanElement.hasAttribute('data-value-pos-left')) {
-              closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-left')!;
-            } else if (spanElement.hasAttribute('data-value-pos-right')) {
-              closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-right')!;
-            }
-          }
-
-          if (closestValueSpaceCoordinates !== undefined) {
-            minDistance = distance;
+          if (spanElement.hasAttribute('data-value-pos-left')) {
+            closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-left')!;
+          } else if (spanElement.hasAttribute('data-value-pos-right')) {
+            closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-right')!;
           }
         }
-      });
-    }
+
+        if (closestValueSpaceCoordinates !== undefined) {
+          minDistance = distance;
+        }
+      }
+    });
 
     return closestValueSpaceCoordinates;
   };
@@ -287,25 +296,13 @@
     if (closestValueSpaceCoordinates !== undefined) {
       state.value = updateMaskStateCaretAndSelection(state.value, closestValueSpaceCoordinates, closestValueSpaceCoordinates);
 
-      if (inputRef.value) {
-        inputRef.value.focus();
+      if (!hasFocus.value) {
+        gainFocus();
       }
+
+      render();
 
       event.preventDefault();
-
-      runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
-    }
-  };
-
-  const handleMouseup = (event: MouseEvent) => {
-    const closestValueSpaceCoordinates = getClosestValueSpaceCoordinates(event);
-
-    if (closestValueSpaceCoordinates !== undefined) {
-      state.value = updateMaskStateCaretAndSelection(state.value, closestValueSpaceCoordinates, closestValueSpaceCoordinates);
-
-      if (inputRef.value) {
-        inputRef.value.focus();
-      }
 
       runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
     }
@@ -316,85 +313,60 @@
     () => {
       runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
     },
-    { immediate: true },
   );
+
+  onMounted(() => {
+    render();
+  });
+
+  onUnmounted(() => {});
 </script>
 
 <style scoped>
   .masked-text-container {
-    display: flex;
-    flex-direction: row;
-    position: relative;
     line-height: 1;
   }
 
-  .masked-text-input {
-    white-space: pre;
-    padding: 0;
-    margin: 0;
-    line-height: 1;
-    height: 1em;
-
-    border: none;
-    outline: none;
-    flex-shrink: 1;
-    z-index: 1;
-  }
-
-  .masked-text-input:focus {
+  .masked-text-container:focus {
     outline: none;
   }
-
-  .text-overlay {
+  .masked-text-container :deep(div) {
     display: inline-block;
-    line-height: 1;
+  }
 
-    padding: 0;
-    margin: 0;
-    border: none;
-    outline: none;
-
-    white-space: pre;
-    pointer-events: none;
+  .masked-text-container :deep(.section-input) {
+    cursor: text;
     border-bottom: 1px solid transparent;
   }
-
-  .text-overlay :deep(.section-input) {
-    cursor: text;
+  .masked-text-container :deep(:focus) {
+    outline: none;
   }
 
-  .text-overlay :deep(div) {
-    display: inline-block;
-  }
-
-  .masked-text-container.has-focus .text-overlay :deep(.section-input.active) {
-    background-color: rgba(0, 0, 0, 0.02);
+  .masked-text-container.has-focus :deep(.section-input.active) {
+    background-color: rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   }
 
-  .text-overlay :deep(.mask-char-input) {
+  .masked-text-container :deep(.mask-char-input) {
     color: rgba(0, 0, 0, 1);
   }
 
-  .text-overlay :deep(.fixed-mask-input) {
+  .masked-text-container :deep(.fixed-mask-input) {
     color: rgba(0, 0, 0, 1);
   }
-  .text-overlay :deep(.mask-char-mask) {
+  .masked-text-container :deep(.mask-char-mask) {
     color: rgba(0, 0, 0, 0.4);
   }
-  .masked-text-container.has-focus .text-overlay :deep(.selected) {
-    background-color: rgba(0, 0, 0, 0.2);
-  }
 
-  .text-overlay :deep(.semantic-error),
-  .text-overlay :deep(.semantic-error.section-input),
-  .text-overlay :deep(.semantic-error.section-input.active) {
+  .masked-text-container :deep(.semantic-error),
+  .masked-text-container :deep(.semantic-error.section-input),
+  .masked-text-container :deep(.semantic-error.section-input.active) {
     background-color: rgba(200, 200, 0, 0.2);
     border-bottom: 1px solid rgba(222, 180, 143, 0.5);
   }
-  .text-overlay :deep(.syntax-error),
-  .text-overlay :deep(.syntax-error.section-input),
-  .text-overlay :deep(.syntax-error.section-input.active) {
+  .masked-text-container :deep(.syntax-error),
+  .masked-text-container :deep(.syntax-error.section-input),
+  .masked-text-container :deep(.syntax-error.section-input.active) {
     background-color: rgba(255, 0, 0, 0.2);
     border-bottom: 1px solid rgba(255, 0, 0, 0.5);
   }

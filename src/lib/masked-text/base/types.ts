@@ -114,12 +114,9 @@ export type MaskDerivedState = {
   textInputDisplayString: string;
   textInputDisplayStringWithSelection: string;
 
-  preInputHTMLString: string;
-  postInputHTMLString: string;
+  inputHTMLString: string;
 
   sections: MaskSectionDerivedState[];
-
-  inputFieldClasses: string[];
 
   semanticValidationStatus: boolean | undefined;
   semanticValidationMessage: string;
