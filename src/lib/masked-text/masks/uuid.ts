@@ -39,8 +39,6 @@ const uuidInputCharacterSubstitutionFn = (character: string): string => {
 const uuidSemanticValidationFn = (version: UuidVersion) => {
   const versionNumber = version ? version.substring(1) : undefined;
 
-  console.log(versionNumber, version);
-
   return (values: Record<string, string[]>): [boolean, string] => {
     const part1 = (values['part1'] || []).join('').toLowerCase();
     const part2 = (values['part2'] || []).join('').toLowerCase();
