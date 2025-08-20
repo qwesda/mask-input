@@ -141,7 +141,7 @@ const getFixedSectionHTMLStrings = (
   const isBeforeCursor: boolean = caretRelativePosition < 0;
   const isBeforeSelectionEnd: boolean = selectionEndRelativePosition < 0;
 
-  const classes: string[] = ['fixed-mask-input'];
+  const classes: string[] = ['section-fixed'];
 
   if (semanticValidationStatus === false) {
     classes.push('semantic-error');
@@ -151,9 +151,7 @@ const getFixedSectionHTMLStrings = (
     classes.push('selected');
   }
 
-  const htmlString: string = `<div class="${classes.join(' ')}">${maskSection.textInputDisplayString}</div>`;
-
-  return htmlString;
+  return `<span class="${classes.join(' ')}">${maskSection.textInputDisplayString}</span>`;
 };
 
 const getInputSectionDerivedState = (
@@ -297,7 +295,7 @@ const getInputSectionHTMLStrings = (
     if (!caretPlaced && caretRelativePositionLeft == 0) {
       caretPlaced = true;
 
-      inputHTMLStringParts.push({ cls: 'placeholder-caret', attrs: { contenteditable: 'true' } });
+      inputHTMLStringParts.push({ cls: 'placeholder-caret' });
     }
 
     if (!selectionEndPlaced && selectionEndRelativePositionLeft == 0 && caretPositionInDisplaySpace !== selectionEndPositionInDisplaySpace) {
@@ -329,7 +327,7 @@ const getInputSectionHTMLStrings = (
     if (!caretPlaced && caretRelativePositionRight == 0) {
       caretPlaced = true;
 
-      inputHTMLStringParts.push({ cls: 'placeholder-caret', attrs: { contenteditable: 'true' } });
+      inputHTMLStringParts.push({ cls: 'placeholder-caret' });
     }
 
     if (!selectionEndPlaced && selectionEndRelativePositionRight == 0 && caretPositionInDisplaySpace !== selectionEndPositionInDisplaySpace) {
@@ -368,7 +366,7 @@ const getInputSectionHTMLStrings = (
     });
 
     if (caretIsInsideSection && !caretPlaced) {
-      inputHTMLStringParts.push({ cls: 'placeholder-caret', attrs: { contenteditable: 'true' } });
+      inputHTMLStringParts.push({ cls: 'placeholder-caret' });
     }
 
     if (selectionEndIsInsideSection && !selectionEndPlaced) {
@@ -376,7 +374,7 @@ const getInputSectionHTMLStrings = (
     }
   }
 
-  return `<div class="${classes.join(' ')}">${inputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</div>`;
+  return `<span class="${classes.join(' ')}">${inputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</span>`;
 };
 
 export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefinition): MaskDerivedState => {

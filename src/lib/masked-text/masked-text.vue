@@ -2,6 +2,7 @@
   <div
     ref="containerRef"
     class="masked-text-container"
+    contenteditable="true"
     :class="{ 'has-focus': hasFocus }"
     @mousedown.capture="handleMousedown"
     @focusin.capture="handleFocusin"
@@ -70,31 +71,11 @@
       if (hasFocus.value) {
         const caretSpan: HTMLSpanElement | null = containerRef.value.querySelector('.placeholder-caret');
         const selectionEndSpan: HTMLSpanElement | null = containerRef.value.querySelector('.placeholder-selection-end');
+        const selection = window.getSelection();
 
-        if (caretSpan) {
-          caretSpan.focus();
-        }
-
-        if (caretSpan && selectionEndSpan) {
-          const range = document.createRange();
-
-          const position = caretSpan.compareDocumentPosition(selectionEndSpan);
-          const caretBeforeSelection = position & Node.DOCUMENT_POSITION_FOLLOWING;
-
-          if (caretBeforeSelection) {
-            range.setStart(caretSpan, 0);
-            range.setEnd(selectionEndSpan, 0);
-          } else {
-            range.setStart(selectionEndSpan, 0);
-            range.setEnd(caretSpan, 0);
-          }
-
-          const selection = window.getSelection();
-
-          if (selection) {
-            selection.removeAllRanges();
-            selection.addRange(range);
-          }
+        if (selection && caretSpan) {
+          selection.removeAllRanges();
+          selection.setBaseAndExtent(selectionEndSpan || caretSpan, 0, caretSpan, 0);
         }
       }
     }
@@ -249,6 +230,15 @@
     const spans = containerRef.value.querySelectorAll('span');
 
     spans.forEach((span: Element) => {
+      if (
+        span.classList.contains('placeholder-caret') ||
+        span.classList.contains('placeholder-selection-end') ||
+        span.classList.contains('section-input') ||
+        span.classList.contains('section-fixed')
+      ) {
+        return;
+      }
+
       const spanElement = span as HTMLElement;
       const spanRect = spanElement.getBoundingClientRect();
       const spanRelativeLeft = spanRect.left - containerRect.left;
@@ -324,7 +314,7 @@
 
 <style scoped>
   .masked-text-container {
-    line-height: 1;
+    line-height: 1.2;
   }
 
   .masked-text-container:focus {
@@ -347,12 +337,23 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   }
 
+  .masked-text-container :deep(.section-input),
+  .masked-text-container :deep(.placeholder-caret) {
+    line-height: 1.2;
+    height: 1.2rem;
+    position: relative;
+    top: 0px;
+  }
+
   .masked-text-container :deep(.mask-char-input) {
     color: rgba(0, 0, 0, 1);
   }
 
-  .masked-text-container :deep(.fixed-mask-input) {
-    color: rgba(0, 0, 0, 1);
+  .masked-text-container :deep(.section-fixed) {
+    color: rgba(0, 100, 200, 0.8);
+  }
+  .masked-text-container :deep(.mask-char-mask) {
+    color: rgba(0, 0, 0, 0.4);
   }
   .masked-text-container :deep(.mask-char-mask) {
     color: rgba(0, 0, 0, 0.4);
