@@ -166,7 +166,7 @@ export const determinePatchOperationFromKeydownEvent = (
     return [{ op: 'move-cursor', direction: 'right', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
   }
 
-  if (event.key === 'a' && isMac ? event.metaKey : event.ctrlKey) {
+  if (event.key === 'a' && (isMac ? event.metaKey : event.ctrlKey)) {
     return [{ op: 'select-all' }];
   }
 
