@@ -3,9 +3,9 @@ import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from 
 import { splitStringIntoGraphemes } from '../base/helper';
 
 const dateEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
-  const year = (values['year'] || []).join('');
-  const month = (values['month'] || []).join('');
-  const day = (values['day'] || []).join('');
+  const year = (values['year'] ?? []).join('');
+  const month = (values['month'] ?? []).join('');
+  const day = (values['day'] ?? []).join('');
 
   if (!year || !month || !day) {
     return undefined;
@@ -84,9 +84,9 @@ const dateSemanticValidationFn = (minDateISOString: string, maxDateISOString: st
   const maxDate = new Date(`${maxDateISOString}T00:00:00.000Z`);
 
   return (values: Record<string, string[]>): [boolean, string] => {
-    const yearStr = (values['year'] || []).join('');
-    const monthStr = (values['month'] || []).join('');
-    const dayStr = (values['day'] || []).join('');
+    const yearStr = (values['year'] ?? []).join('');
+    const monthStr = (values['month'] ?? []).join('');
+    const dayStr = (values['day'] ?? []).join('');
 
     if (!yearStr || !monthStr || !dayStr) {
       return [true, ''];

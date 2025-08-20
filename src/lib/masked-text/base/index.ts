@@ -134,8 +134,8 @@ const getFixedSectionHTMLStrings = (
   const caretPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace);
   const selectionEndPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(maskState.selectionEndPositionInValueSpace);
 
-  const caretRelativePosition = compareSpaceCoordinates(`${maskSection.index}:0`, caretPositionInDisplaySpace) || -1;
-  const selectionEndRelativePosition = compareSpaceCoordinates(`${maskSection.index}:0`, selectionEndPositionInDisplaySpace) || -1;
+  const caretRelativePosition = compareSpaceCoordinates(`${maskSection.index}:0`, caretPositionInDisplaySpace) ?? -1;
+  const selectionEndRelativePosition = compareSpaceCoordinates(`${maskSection.index}:0`, selectionEndPositionInDisplaySpace) ?? -1;
 
   const isBeforeCursor: boolean = caretRelativePosition < 0;
   const isBeforeSelectionEnd: boolean = selectionEndRelativePosition < 0;
@@ -166,7 +166,7 @@ const getInputSectionDerivedState = (
 
   const valueSpaceToDisplaySpaceMap: Map<string, string> = new Map();
   const displaySpaceToValueSpaceMap: Map<string, string> = new Map();
-  const value = maskState.values[sectionDefinition.slug] || [];
+  const value = maskState.values[sectionDefinition.slug] ?? [];
   const valueString = value.join('');
   const syntacticValidationStatus = sectionDefinition.syntacticValidationFn ? sectionDefinition.syntacticValidationFn(valueString) : undefined;
 
@@ -271,8 +271,8 @@ const getInputSectionHTMLStrings = (
     const currentDisplaySpaceCoordinatesRight = `${maskSection.index}:${posDisplaySpace}`;
     const currentValueSpaceCoordinatesRight = displaySpaceToValueSpaceMap.get(currentDisplaySpaceCoordinatesRight);
 
-    const caretRelativePosition = compareSpaceCoordinates(currentDisplaySpaceCoordinatesRight, caretPositionInDisplaySpace) || -1;
-    const selectionEndRelativePosition = compareSpaceCoordinates(currentDisplaySpaceCoordinatesRight, selectionEndPositionInDisplaySpace) || -1;
+    const caretRelativePosition = compareSpaceCoordinates(currentDisplaySpaceCoordinatesRight, caretPositionInDisplaySpace) ?? -1;
+    const selectionEndRelativePosition = compareSpaceCoordinates(currentDisplaySpaceCoordinatesRight, selectionEndPositionInDisplaySpace) ?? -1;
 
     const isBeforeCursor: boolean = caretRelativePosition <= 0;
     const isBeforeSelectionEnd: boolean = selectionEndRelativePosition <= 0;
@@ -302,7 +302,7 @@ const getInputSectionHTMLStrings = (
     });
   }
 
-  const caretPositionInDisplayState = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace) || '-1:-1';
+  const caretPositionInDisplayState = valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace) ?? '-1:-1';
   const [caretPositionInDisplayStateSectionIndex, caretPositionInDisplayStatePosition] = caretPositionInDisplayState
     .split(':')
     .map((x) => Number.parseInt(x));
@@ -425,7 +425,7 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
   const textInputDisplayStringWithSelection = getTextInputDisplayStringWithSelection(maskState, sectionsDeriveState, valueSpaceToDisplaySpaceMap);
 
   const [caretValueSpaceIndex, caretValueSpacePosition] = maskState.caretPositionInValueSpace.split(':').map((x) => Number.parseInt(x));
-  const [caretDisplaySpaceIndex, caretDisplaySpacePosition] = (valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace) || '-1:-1')
+  const [caretDisplaySpaceIndex, caretDisplaySpacePosition] = (valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace) ?? '-1:-1')
     .split(':')
     .map((x) => Number.parseInt(x));
 
@@ -496,7 +496,7 @@ export function encodeState(state: MaskState, maskDefinition: MaskDefinition): s
       i += 1;
     }
 
-    const sectionCharacters = state.values[section.slug] || [];
+    const sectionCharacters = state.values[section.slug] ?? [];
 
     if (i !== caretSectionIndex && i !== selectionEndSectionIndex) {
       encodedStateParts.push(sectionCharacters.join(''));
@@ -537,8 +537,8 @@ export function getTextInputDisplayStringWithSelection(
 ): string {
   const textInputDisplayStringWithSelectionParts: string[] = [];
 
-  const caretPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(state.caretPositionInValueSpace) || '-1:-1';
-  const selectionEndPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(state.selectionEndPositionInValueSpace) || '-1:-1';
+  const caretPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(state.caretPositionInValueSpace) ?? '-1:-1';
+  const selectionEndPositionInDisplaySpace = valueSpaceToDisplaySpaceMap.get(state.selectionEndPositionInValueSpace) ?? '-1:-1';
 
   const [caretSectionIndex, caretPosition] = caretPositionInDisplaySpace.split(':').map((x) => Number.parseInt(x));
   const [selectionEndSectionIndex, selectionEndPosition] = selectionEndPositionInDisplaySpace.split(':').map((x) => Number.parseInt(x));

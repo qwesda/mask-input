@@ -3,7 +3,7 @@ import type { MaskDefinition, MaskDerivedState, MaskSectionDerivedState } from '
 export const splitStringIntoGraphemes = function (value: string | undefined | null): string[] {
   const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' });
 
-  return Array.from(segmenter.segment(value || ''), (segment) => segment.segment);
+  return Array.from(segmenter.segment(value ?? ''), (segment) => segment.segment);
 };
 
 export const modelValuesEqual = (valuesA: Record<string, string>, valuesB: Record<string, string>): boolean => {

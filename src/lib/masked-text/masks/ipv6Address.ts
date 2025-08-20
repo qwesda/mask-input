@@ -4,14 +4,14 @@ import { splitStringIntoGraphemes } from '../base/helper';
 
 const ipv6AddressEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
   const blocks = [
-    (values['block1'] || []).join('') || '0',
-    (values['block2'] || []).join('') || '0',
-    (values['block3'] || []).join('') || '0',
-    (values['block4'] || []).join('') || '0',
-    (values['block5'] || []).join('') || '0',
-    (values['block6'] || []).join('') || '0',
-    (values['block7'] || []).join('') || '0',
-    (values['block8'] || []).join('') || '0',
+    (values['block1'] ?? []).join('') || '0',
+    (values['block2'] ?? []).join('') || '0',
+    (values['block3'] ?? []).join('') || '0',
+    (values['block4'] ?? []).join('') || '0',
+    (values['block5'] ?? []).join('') || '0',
+    (values['block6'] ?? []).join('') || '0',
+    (values['block7'] ?? []).join('') || '0',
+    (values['block8'] ?? []).join('') || '0',
   ];
 
   let longestZeroStart = -1;
@@ -71,7 +71,7 @@ const ipv6AddressBlockMaskFn = (sectionValue: string[]): MaskCharacter[] => {
 };
 
 const ipv6AddressBlockSemanticValidationFn = (values: Record<string, string[]>, sectionSlug: string): boolean => {
-  const value = (values[sectionSlug] || []).join('');
+  const value = (values[sectionSlug] ?? []).join('');
 
   if (!value) {
     return true;
@@ -99,7 +99,7 @@ const ipv6AddressBlockSpinUpFn = (
   }
 
   if (altPressed) {
-    const sectionValue = parseInt((newValues[sectionSlug] || []).join('') || '0', 16);
+    const sectionValue = parseInt((newValues[sectionSlug] ?? []).join('') || '0', 16);
 
     if (!Number.isNaN(sectionValue)) {
       if (sectionValue + spinAmount >= minValue && sectionValue + spinAmount <= maxValue) {
@@ -116,7 +116,7 @@ const ipv6AddressBlockSpinUpFn = (
     let everyBlockOverflowed = true;
 
     for (const blockSlug of blockSlugsToHandle) {
-      const sectionValue = parseInt((newValues[blockSlug] || []).join('') || '0', 16);
+      const sectionValue = parseInt((newValues[blockSlug] ?? []).join('') || '0', 16);
 
       if (!Number.isNaN(sectionValue)) {
         if (sectionValue + spinAmount >= minValue && sectionValue + spinAmount <= maxValue) {
@@ -160,7 +160,7 @@ const ipv6AddressBlockSpinDownFn = (
   }
 
   if (altPressed) {
-    const sectionValue = parseInt((newValues[sectionSlug] || []).join('') || '0', 16);
+    const sectionValue = parseInt((newValues[sectionSlug] ?? []).join('') || '0', 16);
 
     if (!Number.isNaN(sectionValue)) {
       if (sectionValue - spinAmount >= minValue && sectionValue - spinAmount < maxValue) {
@@ -177,7 +177,7 @@ const ipv6AddressBlockSpinDownFn = (
     let everyBlockUnderflowed = true;
 
     for (const blockSlug of blockSlugsToHandle) {
-      const sectionValue = parseInt((newValues[blockSlug] || []).join('') || '0', 16);
+      const sectionValue = parseInt((newValues[blockSlug] ?? []).join('') || '0', 16);
 
       if (!Number.isNaN(sectionValue)) {
         if (sectionValue - spinAmount >= minValue && sectionValue - spinAmount < maxValue) {

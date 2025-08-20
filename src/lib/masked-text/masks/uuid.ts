@@ -5,11 +5,11 @@ import { splitStringIntoGraphemes } from '../base/helper';
 type UuidVersion = 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'v6' | 'v7' | 'v8' | undefined;
 
 const uuidEncodeValidatedValue = (values: Record<string, string[]>, version: UuidVersion): string | undefined => {
-  const part1 = (values['part1'] || []).join('');
-  const part2 = (values['part2'] || []).join('');
-  const part3 = (values['part3'] || []).join('');
-  const part4 = (values['part4'] || []).join('');
-  const part5 = (values['part5'] || []).join('');
+  const part1 = (values['part1'] ?? []).join('');
+  const part2 = (values['part2'] ?? []).join('');
+  const part3 = (values['part3'] ?? []).join('');
+  const part4 = (values['part4'] ?? []).join('');
+  const part5 = (values['part5'] ?? []).join('');
 
   if (part1.length !== 8 || part2.length !== 4 || part3.length !== 4 || part4.length !== 4 || part5.length !== 12) {
     return undefined;
@@ -40,11 +40,11 @@ const uuidSemanticValidationFn = (version: UuidVersion) => {
   const versionNumber = version ? version.substring(1) : undefined;
 
   return (values: Record<string, string[]>): [boolean, string] => {
-    const part1 = (values['part1'] || []).join('').toLowerCase();
-    const part2 = (values['part2'] || []).join('').toLowerCase();
-    const part3 = (values['part3'] || []).join('').toLowerCase();
-    const part4 = (values['part4'] || []).join('').toLowerCase();
-    const part5 = (values['part5'] || []).join('').toLowerCase();
+    const part1 = (values['part1'] ?? []).join('').toLowerCase();
+    const part2 = (values['part2'] ?? []).join('').toLowerCase();
+    const part3 = (values['part3'] ?? []).join('').toLowerCase();
+    const part4 = (values['part4'] ?? []).join('').toLowerCase();
+    const part5 = (values['part5'] ?? []).join('').toLowerCase();
 
     const allParts = [part1, part2, part3, part4, part5].join('') as string;
 

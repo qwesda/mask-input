@@ -10,7 +10,8 @@ import type {
   PatchOperationDeleteForwards,
   PatchOperationDeleteSelection,
   PatchOperationInsertCharacter,
-  PatchOperationMoveCursor, PatchOperationSelectAll,
+  PatchOperationMoveCursor,
+  PatchOperationSelectAll,
   PatchOperationSelectNextSection,
   PatchOperationSetCursorPosition,
   PatchOperationSpin,
@@ -166,7 +167,7 @@ export const applyPatchOperationClearSelection = (
   currentDerivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): MaskState => {
-  const comparison = compareSpaceCoordinates(currentState.caretPositionInValueSpace, currentState.selectionEndPositionInValueSpace) || 0;
+  const comparison = compareSpaceCoordinates(currentState.caretPositionInValueSpace, currentState.selectionEndPositionInValueSpace) ?? 0;
 
   if (patchOperation.direction === 'left') {
     const lowerSelectionCoordinates = comparison < 0 ? currentState.caretPositionInValueSpace : currentState.selectionEndPositionInValueSpace;
@@ -214,7 +215,7 @@ export const applyPatchOperationDeleteSelection = (
       continue;
     }
 
-    const oldSectionValue = newValues[sectionDefinition.slug] || [];
+    const oldSectionValue = newValues[sectionDefinition.slug] ?? [];
 
     if (i === lowerSelectionIndex && i === upperSelectionIndex) {
       newValues[sectionDefinition.slug] = [...oldSectionValue.slice(0, lowerSelectionPosition), ...oldSectionValue.slice(upperSelectionPosition)];
@@ -266,7 +267,7 @@ export const applyPatchOperationSpin = (
     patchOperation.shiftPressed,
     patchOperation.altPressed,
   );
-  const newSectionValue = newValues[sectionDefinition.slug] || [];
+  const newSectionValue = newValues[sectionDefinition.slug] ?? [];
   const newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${[...newSectionValue].length}`;
   const newSelectionEndPosition = newCaretPosition;
 
@@ -295,7 +296,7 @@ export const applyPatchOperationDeleteBackwards = (
   let newCaretPosition: string;
 
   if (currentDerivedState.caretValueSpacePosition > 0) {
-    const currentSectionValue = newValues[sectionDefinition.slug] || [];
+    const currentSectionValue = newValues[sectionDefinition.slug] ?? [];
 
     newValues[sectionDefinition.slug] = [
       ...currentSectionValue.slice(0, currentDerivedState.caretValueSpacePosition - 1),
@@ -342,7 +343,7 @@ export const applyPatchOperationDeleteForwards = (
   maskDefinition: MaskDefinition,
 ): MaskState => {
   const sectionDefinition = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
-  const currentSectionValue = currentState.values[sectionDefinition.slug] || [];
+  const currentSectionValue = currentState.values[sectionDefinition.slug] ?? [];
 
   const newValues = { ...currentState.values };
   let newCaretPosition: string;
@@ -391,7 +392,7 @@ export const applyPatchOperationInsert = (
   maskDefinition: MaskDefinition,
 ): MaskState => {
   const sectionDefinition = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
-  const currentSectionValue = currentState.values[sectionDefinition.slug] || [];
+  const currentSectionValue = currentState.values[sectionDefinition.slug] ?? [];
   const inputBehavior = patchOperation.inputBehavior ?? sectionDefinition.inputBehavior;
 
   const atSectionMaxLengthLimit =

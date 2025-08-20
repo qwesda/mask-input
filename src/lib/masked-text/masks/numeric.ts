@@ -18,8 +18,8 @@ export type NumericMaskProps = {
 };
 
 const numericEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
-  const integersStr = (values['integers'] || []).join('') || '0';
-  const decimalsStr = (values['decimals'] || []).join('') || '0';
+  const integersStr = (values['integers'] ?? []).join('') || '0';
+  const decimalsStr = (values['decimals'] ?? []).join('') || '0';
   const integersValue = integersStr.padStart(integersStr.length, '0');
   const decimalsValue = decimalsStr.padEnd(decimalsStr.length, '0');
 

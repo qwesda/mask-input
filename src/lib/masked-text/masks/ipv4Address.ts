@@ -3,10 +3,10 @@ import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from 
 import { splitStringIntoGraphemes } from '../base/helper';
 
 const ipv4AddressEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
-  const block1 = Number.parseInt((values['block1'] || []).join(''));
-  const block2 = Number.parseInt((values['block2'] || []).join(''));
-  const block3 = Number.parseInt((values['block3'] || []).join(''));
-  const block4 = Number.parseInt((values['block4'] || []).join(''));
+  const block1 = Number.parseInt((values['block1'] ?? []).join(''));
+  const block2 = Number.parseInt((values['block2'] ?? []).join(''));
+  const block3 = Number.parseInt((values['block3'] ?? []).join(''));
+  const block4 = Number.parseInt((values['block4'] ?? []).join(''));
 
   if (Number.isNaN(block1) || Number.isNaN(block2) || Number.isNaN(block3) || Number.isNaN(block4)) {
     return undefined;
@@ -46,7 +46,7 @@ const ipv4AddressBlockSpinUpFn = (
   }
 
   if (altPressed) {
-    const sectionValue = Number.parseInt((newValues[sectionSlug] || []).join(''));
+    const sectionValue = Number.parseInt((newValues[sectionSlug] ?? []).join(''));
 
     if (!Number.isNaN(sectionValue)) {
       if (sectionValue + spinAmount >= minValue && sectionValue + spinAmount <= maxValue) {
@@ -63,7 +63,7 @@ const ipv4AddressBlockSpinUpFn = (
     let everyBlockOverflowed = true;
 
     for (const blockSlug of blockSlugsToHandle) {
-      const sectionValue = Number.parseInt((newValues[blockSlug] || []).join(''));
+      const sectionValue = Number.parseInt((newValues[blockSlug] ?? []).join(''));
 
       if (!Number.isNaN(sectionValue)) {
         if (sectionValue + spinAmount >= minValue && sectionValue + spinAmount <= maxValue) {
@@ -124,7 +124,7 @@ const ipv4AddressBlockSpinDownFn = (
     let everyBlockUnderflowed = true;
 
     for (const blockSlug of blockSlugsToHandle) {
-      const sectionValue = Number.parseInt((newValues[blockSlug] || []).join(''));
+      const sectionValue = Number.parseInt((newValues[blockSlug] ?? []).join(''));
 
       if (!Number.isNaN(sectionValue)) {
         if (sectionValue - spinAmount >= minValue && sectionValue - spinAmount < maxValue) {
