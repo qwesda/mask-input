@@ -6,6 +6,8 @@
       <button @click="$emit('update:modelValue', 'ip-addresses')" :class="{ active: modelValue === 'ip-addresses' }">IP Addr</button>
       <button @click="$emit('update:modelValue', 'special')" :class="{ active: modelValue === 'special' }">Special</button>
       <button @click="$emit('update:modelValue', 'uuid')" :class="{ active: modelValue === 'uuid' }">UUID</button>
+      <div style="flex-grow: 1" />
+      <input type="text" style="border: none; background-color: transparent" value="test input foo bar baz" />
     </div>
   </nav>
 </template>
