@@ -3,6 +3,8 @@
     <div>
       <scroll-container>
         <slot />
+
+        <div>&nbsp;</div>
       </scroll-container>
     </div>
 
