@@ -133,6 +133,18 @@ export type PatchOperationMoveCursor = {
   keepSelectionEnd: boolean;
 };
 
+export type PatchOperationSetCursorPosition = {
+  op: 'set-cursor-position';
+  caretPositionInValueSpace: string;
+  keepSelectionEnd: boolean;
+};
+
+export type PatchOperationSetSelection = {
+  op: 'set-selection';
+  caretPositionInValueSpace: string;
+  selectionEndPositionInValueSpace: string;
+};
+
 export type PatchOperationSelectNextSection = {
   op: 'select-next-section';
   direction: 'left' | 'right';
@@ -140,11 +152,6 @@ export type PatchOperationSelectNextSection = {
 
 export type PatchOperationSelectAll = {
   op: 'select-all';
-};
-
-export type PatchOperationSetCursorPosition = {
-  op: 'set-cursor-position';
-  keepSelectionEnd: boolean;
 };
 
 export type PatchOperationInsertCharacter = {
@@ -180,13 +187,16 @@ export type PatchOperationSpin = {
 
 export type PatchOperationMovement =
   | PatchOperationMoveCursor
+  | PatchOperationSetSelection
   | PatchOperationSetCursorPosition
   | PatchOperationSelectNextSection
   | PatchOperationSelectAll;
+
 export type PatchOperationEdit =
   | PatchOperationInsertCharacter
   | PatchOperationDeleteBackwards
   | PatchOperationDeleteForwards
   | PatchOperationDeleteSelection
   | PatchOperationSpin;
+
 export type PatchOperation = PatchOperationClearSelection | PatchOperationMovement | PatchOperationEdit;

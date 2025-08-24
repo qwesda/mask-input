@@ -64,8 +64,6 @@ export const findSection = (
     return undefined;
   }
 
-  const needleSection = derivedState.sections[options.startIndex];
-
   if (options.direction === 'right') {
     for (let i = searchStartIndex; i < derivedState.sections.length; i++) {
       const candidateSection = derivedState.sections[i];
@@ -164,4 +162,304 @@ export const getInternalModelValueExternalFromModel = (
   }
 
   return internalModelValue;
+};
+
+const getClosestMaskCharTargetNode = (
+  containerNode: HTMLElement,
+  startNode: Node | null,
+  startOffset: number,
+  preferredDirection: 'left' | 'right',
+  maskDefinition: MaskDefinition,
+): [HTMLElement | undefined, number] => {
+  if (!startNode) {
+    return [undefined, 0];
+  }
+
+  const startNodeElement = startNode.nodeType === Node.ELEMENT_NODE ? (startNode as HTMLElement) : (startNode.parentNode as HTMLElement);
+
+  type TargetNode = {
+    validTarget: boolean;
+    element: HTMLElement;
+    positionInValueSpace?: string;
+    offset: number;
+    length: number;
+  };
+
+  const flattenedElements: TargetNode[] = [];
+
+  let sectionValueIndex = -1;
+  let textOffset = 0;
+
+  for (let sectionDisplayIndex = 0; containerNode.childNodes.length > sectionDisplayIndex; sectionDisplayIndex += 1) {
+    const sectionNode = containerNode.childNodes[sectionDisplayIndex] as HTMLElement;
+    const section = maskDefinition.sections[sectionDisplayIndex];
+    const sectionStartTextOffset = textOffset;
+
+    if (sectionNode.nodeType === Node.ELEMENT_NODE && sectionNode.classList.contains('section-fixed')) {
+      textOffset += sectionNode.innerText?.length ?? 0;
+
+      flattenedElements.push({
+        validTarget: false,
+        element: sectionNode,
+        offset: textOffset,
+        length: sectionNode.innerText?.length ?? 0,
+      });
+    } else if (sectionNode.nodeType === Node.ELEMENT_NODE && sectionNode.classList.contains('section-input')) {
+      sectionValueIndex += 1;
+
+      let sectionValuePosition = 0;
+
+      for (let maskCharIndex = 0; maskCharIndex < sectionNode.childNodes.length; maskCharIndex += 1) {
+        const maskCharNode = sectionNode.childNodes[maskCharIndex] as HTMLElement;
+
+        if (maskCharNode.classList.contains('mask-char-value')) {
+          if (sectionValuePosition === 0) {
+            flattenedElements.push({
+              validTarget: true,
+              element: maskCharNode,
+              positionInValueSpace: `${sectionValueIndex}:${sectionValuePosition}`,
+              offset: textOffset,
+              length: 1,
+            });
+          }
+
+          sectionValuePosition += 1;
+          textOffset += 1;
+
+          flattenedElements.push({
+            validTarget: true,
+            element: maskCharNode,
+            positionInValueSpace: `${sectionValueIndex}:${sectionValuePosition}`,
+            offset: textOffset,
+            length: 1,
+          });
+        } else if (maskCharNode.classList.contains('mask-char-mask')) {
+          textOffset += maskCharNode.innerText?.length ?? 0;
+
+          flattenedElements.push({
+            validTarget: false,
+            element: maskCharNode,
+            offset: textOffset,
+            length: sectionNode.innerText?.length ?? 0,
+          });
+        }
+      }
+
+      if (sectionValuePosition === 0 && section.type === 'input') {
+        if (section.alignment === 'left') {
+          const firstChild = sectionNode.childNodes[0] as HTMLElement;
+
+          flattenedElements.push({
+            validTarget: true,
+            element: firstChild as HTMLElement,
+            positionInValueSpace: `${sectionValueIndex}:${0}`,
+            offset: sectionStartTextOffset,
+            length: firstChild.innerText?.length ?? 0,
+          });
+        } else {
+          const lastChild = sectionNode.childNodes[sectionNode.childNodes.length - 1] as HTMLElement;
+
+          flattenedElements.push({
+            validTarget: true,
+            element: lastChild as HTMLElement,
+            positionInValueSpace: `${sectionValueIndex}:${0}`,
+            offset: textOffset,
+            length: lastChild.innerText?.length ?? 0,
+          });
+        }
+      }
+    }
+  }
+
+  const targetNodeIndex = flattenedElements.findLastIndex((x) => x.element === startNodeElement);
+
+  if (targetNodeIndex !== -1) {
+    const targetNode = flattenedElements[targetNodeIndex];
+
+    if (targetNode.validTarget) {
+      return [targetNode.element, startOffset];
+    } else {
+      let closestLeftValidTarget: TargetNode | undefined = undefined;
+      let closestLeftValidTargetOffset = Infinity;
+      let closestRightValidTarget: TargetNode | undefined = undefined;
+      let closestRightValidTargetOffset = Infinity;
+
+      for (let i = targetNodeIndex - 1; i >= 0; i--) {
+        closestLeftValidTargetOffset -= flattenedElements[i].length;
+
+        if (flattenedElements[i].validTarget) {
+          closestLeftValidTarget = flattenedElements[i];
+          break;
+        }
+      }
+
+      for (let i = targetNodeIndex + 1; i < flattenedElements.length; i++) {
+        closestRightValidTargetOffset += flattenedElements[i].length;
+
+        if (flattenedElements[i].validTarget) {
+          closestRightValidTarget = flattenedElements[i];
+          break;
+        }
+      }
+
+      if (closestLeftValidTarget && closestRightValidTarget) {
+        if (closestLeftValidTargetOffset < closestRightValidTargetOffset) {
+          return [closestLeftValidTarget.element, closestLeftValidTarget.length];
+        } else if (closestLeftValidTargetOffset > closestRightValidTargetOffset) {
+          return [closestRightValidTarget.element, 0];
+        } else if (preferredDirection === 'left') {
+          return [closestLeftValidTarget.element, closestLeftValidTarget.length];
+        } else {
+          return [closestRightValidTarget.element, 0];
+        }
+      } else if (closestLeftValidTarget) {
+        return [closestLeftValidTarget.element, closestLeftValidTarget.length];
+      } else if (closestRightValidTarget) {
+        return [closestRightValidTarget.element, 0];
+      }
+    }
+  }
+
+  console.log('flattenedTargets', flattenedElements);
+
+  debugger;
+
+  return [undefined, 0];
+};
+
+export const getValueSpaceCoordinatesFromSelection = (
+  containerNode: HTMLElement,
+  selection: Selection,
+  maskDefinition: MaskDefinition,
+): [string | undefined, string | undefined, boolean] => {
+  let caretCoordinates: string | undefined = undefined;
+  let selectionEndCoordinates: string | undefined = undefined;
+
+  const { anchorNode, anchorOffset, focusNode, focusOffset, direction } = selection;
+
+  console.log('focusNode', focusNode, 'focusOffset', focusOffset);
+
+  const [targetAnchorNode, targetAnchorOffset] = getClosestMaskCharTargetNode(
+    containerNode,
+    anchorNode,
+    anchorOffset,
+    direction === 'backward' ? 'left' : 'right',
+    maskDefinition,
+  );
+  const [targetFocusNode, targetFocusOffset] = getClosestMaskCharTargetNode(
+    containerNode,
+    focusNode,
+    focusOffset,
+    direction === 'backward' ? 'left' : 'right',
+    maskDefinition,
+  );
+
+  if (!targetAnchorNode || !targetFocusNode) {
+    return [undefined, undefined, false];
+  }
+
+  const exactMatch =
+    (targetAnchorNode === anchorNode || targetAnchorNode === anchorNode?.parentNode) &&
+    targetAnchorOffset === anchorOffset &&
+    (targetFocusNode === focusNode || targetFocusNode === focusNode?.parentNode) &&
+    targetFocusOffset === focusOffset;
+
+  let valueSectionIndex = -1;
+
+  for (let i = 0; i < containerNode.childNodes.length; i++) {
+    const sectionNode = containerNode.childNodes[i] as HTMLElement;
+    let valueSectionPosition = 0;
+
+    if (sectionNode.nodeType === Node.ELEMENT_NODE && sectionNode.classList.contains('section-input')) {
+      const sectionNodeElement = sectionNode as HTMLElement;
+      valueSectionIndex += 1;
+
+      for (let i = 0; i < sectionNodeElement.childNodes.length; i++) {
+        const maskCharacterNode = sectionNodeElement.childNodes[i] as HTMLElement;
+
+        if (maskCharacterNode === targetAnchorNode && anchorOffset === 0) {
+          selectionEndCoordinates = `${valueSectionIndex}:${valueSectionPosition}`;
+        }
+
+        if (maskCharacterNode === targetFocusNode && focusOffset === 0) {
+          caretCoordinates = `${valueSectionIndex}:${valueSectionPosition}`;
+        }
+
+        if (maskCharacterNode.classList.contains('mask-char-value')) {
+          valueSectionPosition += 1;
+        }
+
+        if (maskCharacterNode === targetAnchorNode && anchorOffset > 0) {
+          selectionEndCoordinates = `${valueSectionIndex}:${valueSectionPosition}`;
+        }
+
+        if (maskCharacterNode === targetFocusNode && focusOffset > 0) {
+          caretCoordinates = `${valueSectionIndex}:${valueSectionPosition}`;
+        }
+
+        if (caretCoordinates && selectionEndCoordinates) {
+          break;
+        }
+      }
+    }
+  }
+
+  console.log('caretCoordinates', caretCoordinates, 'selectionEndCoordinates', selectionEndCoordinates, 'exactMatch', exactMatch);
+
+  return [caretCoordinates, selectionEndCoordinates, exactMatch];
+};
+
+export const getSelectionNodeAndOffsetFromPositionInValueSpace = (
+  containerNode: HTMLElement,
+  positionInValueSpace: string,
+  maskDefinition: MaskDefinition,
+): [HTMLElement | undefined, number] => {
+  const [targetSectionIndex, targetValuePositionInSection] = positionInValueSpace.split(':').map((x) => Number.parseInt(x));
+  const sectionNodes = containerNode.querySelectorAll('.section-input');
+
+  let valueSpacePosition = 0;
+
+  if (targetSectionIndex >= 0 && targetSectionIndex < sectionNodes.length) {
+    const sectionNode = sectionNodes[targetSectionIndex] as HTMLElement;
+
+    for (let i = 0; i < sectionNode.childNodes.length; i++) {
+      const maskCharacterNode = sectionNode.childNodes[i] as HTMLElement;
+
+      if (maskCharacterNode.classList.contains('mask-char-value')) {
+        if (valueSpacePosition === 0 && targetValuePositionInSection === 0) {
+          return [maskCharacterNode as HTMLElement, 0];
+        }
+
+        valueSpacePosition += 1;
+
+        if (valueSpacePosition === targetValuePositionInSection) {
+          return [maskCharacterNode as HTMLElement, 1];
+        }
+      }
+    }
+
+    if (targetValuePositionInSection === 0 && sectionNode.childNodes.length > 0) {
+      let inputSectionIndex = -1;
+
+      for (let i = 0; i < maskDefinition.sections.length; i++) {
+        const targetSection = maskDefinition.sections[i];
+
+        if (targetSection.type === 'input') {
+          inputSectionIndex += 1;
+
+          if (inputSectionIndex === targetSectionIndex) {
+            if (targetSection.alignment == 'left') {
+              return [sectionNode.childNodes[0] as HTMLElement, 0];
+            } else {
+              const lastChild = sectionNode.childNodes[sectionNode.childNodes.length - 1] as HTMLElement;
+
+              return [lastChild, 1];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return [undefined, -1];
 };

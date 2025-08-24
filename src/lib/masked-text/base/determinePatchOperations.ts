@@ -1,28 +1,18 @@
 import type { MaskDefinition, MaskDerivedState, MaskSectionInputDefinition, MaskState, PatchOperation, PatchOperationInsertCharacter } from './types';
-import { findSection, splitStringIntoGraphemes } from './helper';
+import { findSection, getValueSpaceCoordinatesFromSelection, splitStringIntoGraphemes } from './helper';
 import { getDerivedState } from './index';
 
-export const determinePatchOperationFromKeyupEvent = (
-  event: KeyboardEvent,
-  state: MaskState,
-  maskDefinition: MaskDefinition,
-  currentDerivedState?: MaskDerivedState,
-): PatchOperation[] | undefined => {
+export const determinePatchOperationFromKeyupEvent = (event: KeyboardEvent): [boolean, PatchOperation[] | undefined] => {
   if (event.isComposing) {
-    return undefined;
+    return [false, undefined];
   }
 
-  return undefined;
+  return [false, undefined];
 };
 
-export const determinePatchOperationFromBeforeInputEvent = (
-  event: InputEvent,
-  state: MaskState,
-  maskDefinition: MaskDefinition,
-  currentDerivedState?: MaskDerivedState,
-): PatchOperation[] | undefined => {
+export const determinePatchOperationFromBeforeInputEvent = (event: InputEvent, state: MaskState): [boolean, PatchOperation[] | undefined] => {
   if (event.isComposing) {
-    return undefined;
+    return [false, undefined];
   }
 
   const selectionIsPresent = state.selectionEndPositionInValueSpace !== state.caretPositionInValueSpace;
@@ -36,29 +26,30 @@ export const determinePatchOperationFromBeforeInputEvent = (
   });
 
   if (selectionIsPresent) {
-    return [{ op: 'delete-selection' }, ...insertCharacterPatchOperations];
+    return [true, [{ op: 'delete-selection' }, ...insertCharacterPatchOperations]];
   } else {
-    return insertCharacterPatchOperations;
+    return [true, insertCharacterPatchOperations];
   }
 };
 
 export const determinePatchOperationFromCompositionEndEvent = (
   event: CompositionEvent,
   state: MaskState,
-  maskDefinition: MaskDefinition,
-  currentDerivedState?: MaskDerivedState,
-): PatchOperation[] | undefined => {
-  if (!currentDerivedState) {
-    currentDerivedState = getDerivedState(state, maskDefinition);
-  }
-
-  const currentSection = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
+): [boolean, PatchOperation[] | undefined] => {
   const selectionIsPresent = state.selectionEndPositionInValueSpace !== state.caretPositionInValueSpace;
 
+  const insertCharacterPatchOperations = splitStringIntoGraphemes(event.data).map((value: string): PatchOperationInsertCharacter => {
+    return {
+      op: 'insert-character',
+      character: value,
+      inputBehavior: selectionIsPresent ? 'insert' : undefined,
+    };
+  });
+
   if (selectionIsPresent) {
-    return [{ op: 'delete-selection' }, { op: 'insert-character', character: event.data }];
+    return [true, [{ op: 'delete-selection' }, ...insertCharacterPatchOperations]];
   } else {
-    return [{ op: 'insert-character', character: event.data }];
+    return [true, insertCharacterPatchOperations];
   }
 };
 
@@ -67,7 +58,7 @@ export const determinePatchOperationFromKeydownEvent = (
   state: MaskState,
   maskDefinition: MaskDefinition,
   currentDerivedState?: MaskDerivedState,
-): PatchOperation[] | undefined => {
+): [boolean, PatchOperation[] | undefined] => {
   if (!currentDerivedState) {
     currentDerivedState = getDerivedState(state, maskDefinition);
   }
@@ -79,7 +70,7 @@ export const determinePatchOperationFromKeydownEvent = (
   const selectionIsPresent = state.selectionEndPositionInValueSpace !== state.caretPositionInValueSpace;
 
   if (event.isComposing) {
-    return undefined;
+    return [false, undefined];
   }
 
   if (event.key === 'Tab') {
@@ -92,7 +83,7 @@ export const determinePatchOperationFromKeydownEvent = (
       });
 
       if (nextInputSection) {
-        return [{ op: 'select-next-section', direction: 'right' }];
+        return [true, [{ op: 'select-next-section', direction: 'right' }]];
       }
     } else {
       const previousInputSection = findSection(currentDerivedState, {
@@ -103,32 +94,32 @@ export const determinePatchOperationFromKeydownEvent = (
       });
 
       if (previousInputSection) {
-        return [{ op: 'select-next-section', direction: 'left' }];
+        return [true, [{ op: 'select-next-section', direction: 'left' }]];
       }
     }
   }
 
   if (event.key === 'ArrowUp') {
-    return [{ op: 'spin', direction: 'up', metaPressed: event.metaKey, shiftPressed: event.shiftKey, altPressed: event.altKey }];
+    return [true, [{ op: 'spin', direction: 'up', metaPressed: event.metaKey, shiftPressed: event.shiftKey, altPressed: event.altKey }]];
   }
 
   if (event.key === 'ArrowDown') {
-    return [{ op: 'spin', direction: 'down', metaPressed: event.metaKey, shiftPressed: event.shiftKey, altPressed: event.altKey }];
+    return [true, [{ op: 'spin', direction: 'down', metaPressed: event.metaKey, shiftPressed: event.shiftKey, altPressed: event.altKey }]];
   }
 
   if (event.key === 'Backspace') {
     if (selectionIsPresent) {
-      return [{ op: 'delete-selection' }];
+      return [true, [{ op: 'delete-selection' }]];
     } else {
-      return [{ op: 'delete-backwards' }];
+      return [true, [{ op: 'delete-backwards' }]];
     }
   }
 
   if (event.key === 'Delete') {
     if (selectionIsPresent) {
-      return [{ op: 'delete-selection' }];
+      return [true, [{ op: 'delete-selection' }]];
     } else {
-      return [{ op: 'delete-forwards' }];
+      return [true, [{ op: 'delete-forwards' }]];
     }
   }
 
@@ -137,11 +128,14 @@ export const determinePatchOperationFromKeydownEvent = (
       selectionIsPresent && !maintainSelectionKeyPressed ? [{ op: 'clear-selection', direction: 'left' }] : [];
 
     if (skipLineLevelKeyPressed) {
-      return [...clearOperations, { op: 'move-cursor', direction: 'left', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
+      return [true, [...clearOperations, { op: 'move-cursor', direction: 'left', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }]];
     } else if (skipSectionLevelKeyPressed) {
-      return [...clearOperations, { op: 'move-cursor', direction: 'left', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }];
+      return [true, [...clearOperations, { op: 'move-cursor', direction: 'left', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }]];
     } else {
-      return [...clearOperations, { op: 'move-cursor', direction: 'left', level: 'character', keepSelectionEnd: maintainSelectionKeyPressed }];
+      return [
+        true,
+        [...clearOperations, { op: 'move-cursor', direction: 'left', level: 'character', keepSelectionEnd: maintainSelectionKeyPressed }],
+      ];
     }
   }
 
@@ -150,24 +144,27 @@ export const determinePatchOperationFromKeydownEvent = (
       selectionIsPresent && !maintainSelectionKeyPressed ? [{ op: 'clear-selection', direction: 'right' }] : [];
 
     if (skipLineLevelKeyPressed) {
-      return [...clearOperations, { op: 'move-cursor', direction: 'right', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
+      return [true, [...clearOperations, { op: 'move-cursor', direction: 'right', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }]];
     } else if (skipSectionLevelKeyPressed) {
-      return [...clearOperations, { op: 'move-cursor', direction: 'right', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }];
+      return [true, [...clearOperations, { op: 'move-cursor', direction: 'right', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }]];
     } else {
-      return [...clearOperations, { op: 'move-cursor', direction: 'right', level: 'character', keepSelectionEnd: maintainSelectionKeyPressed }];
+      return [
+        true,
+        [...clearOperations, { op: 'move-cursor', direction: 'right', level: 'character', keepSelectionEnd: maintainSelectionKeyPressed }],
+      ];
     }
   }
 
   if (event.key === 'Home') {
-    return [{ op: 'move-cursor', direction: 'left', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
+    return [true, [{ op: 'move-cursor', direction: 'left', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }]];
   }
 
   if (event.key === 'End') {
-    return [{ op: 'move-cursor', direction: 'right', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }];
+    return [true, [{ op: 'move-cursor', direction: 'right', level: 'line', keepSelectionEnd: maintainSelectionKeyPressed }]];
   }
 
   if (event.key === 'a' && (isMac ? event.metaKey : event.ctrlKey)) {
-    return [{ op: 'select-all' }];
+    return [true, [{ op: 'select-all' }]];
   }
 
   if (event.key.length === 1) {
@@ -186,11 +183,41 @@ export const determinePatchOperationFromKeydownEvent = (
         }) as MaskSectionInputDefinition | undefined;
 
         if (targetSection) {
-          return [{ op: 'move-cursor', direction: 'right', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }];
+          return [true, [{ op: 'move-cursor', direction: 'right', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }]];
         }
       }
     }
   }
 
-  return undefined;
+  return [false, undefined];
+};
+
+export const determinePatchOperationAfterSelectionChangeEvent = (
+  containerElement: HTMLElement,
+  state: MaskState,
+  maskDefinition: MaskDefinition,
+): [boolean, PatchOperation[] | undefined] => {
+  const selection = window.getSelection();
+
+  if (!selection || selection.rangeCount === 0) {
+    return [false, undefined];
+  }
+
+  const [caretPositionInValueSpace, selectionEndPositionInValueSpace, exactMatch] = getValueSpaceCoordinatesFromSelection(
+    containerElement,
+    selection,
+    maskDefinition,
+  );
+
+  if (caretPositionInValueSpace !== undefined && selectionEndPositionInValueSpace !== undefined) {
+    if (
+      !exactMatch ||
+      caretPositionInValueSpace !== state.caretPositionInValueSpace ||
+      selectionEndPositionInValueSpace !== state.selectionEndPositionInValueSpace
+    ) {
+      return [false, [{ op: 'set-selection', caretPositionInValueSpace, selectionEndPositionInValueSpace }]];
+    }
+  }
+
+  return [false, undefined];
 };

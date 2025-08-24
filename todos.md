@@ -15,18 +15,18 @@
 - [x] ~~add cmd+a/crtl+a support~~
 - [x] ~~handle section advance by using skip keys~~
 - [ ] holding key should repeat last key
-- [ ] don't blur/focus input element when on mobile
+- [x] ~~don't blur/focus input element when on mobile~~
  
-- [ ] update mouse event handling similar to keyboard event handling
-- [ ] add mouse drag support for selection
-- [ ] handle double click for section selection / triple click for whole selection 
+- [x] ~~update mouse event handling similar to keyboard event handling~~
+- [x] ~~add mouse drag support for selection~~
+- [x] ~~handle double click for section selection / triple click for whole selection~~  
 
 - [ ] add whole value copy/pase support
 - [ ] add partial (selection) copy/pase support
 - [ ] maybe add highlighting of problematic sections for semantic validation
 - [ ] maybe dynamic section hiding based on cursor position and values
-- [ ] maybe replace fake selection highlight with native browser selection highlight
-- [ ] maybe de-vueify the component
+- [x] ~~maybe replace fake selection highlight with native browser selection highlight~~
+- [x] ~~maybe de-vueify the component~~
 
 ## masks 
 

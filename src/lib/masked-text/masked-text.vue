@@ -15,7 +15,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { onMounted, onUnmounted, ref, type Ref, watch } from 'vue';
+  import { onBeforeUnmount, onMounted, ref, type Ref, watch } from 'vue';
   import type { MaskDefinition, MaskDerivedState, MaskState } from './base/types';
   import { getDerivedState, getInitialMaskState, updateMaskStateCaretAndSelection, updateMaskStateValues } from './base/index';
 
@@ -24,6 +24,7 @@
     findClosestValidValueSpaceCoordinates,
     getExternalModelValueFromInternalModel,
     getInternalModelValueExternalFromModel,
+    getSelectionNodeAndOffsetFromPositionInValueSpace,
   } from './base/helper';
 
   import { applyPatchOperations } from './base/applyPatchOperations';
@@ -33,6 +34,7 @@
     determinePatchOperationFromCompositionEndEvent,
     determinePatchOperationFromKeydownEvent,
     determinePatchOperationFromKeyupEvent,
+    determinePatchOperationAfterSelectionChangeEvent,
   } from './base/determinePatchOperations';
 
   import type { PatchOperation } from './base/types';
@@ -62,36 +64,69 @@
   const lastDerivedState: Ref<MaskDerivedState> = ref(getDerivedState(state.value, props.mask));
 
   const hasFocus = ref(false);
+  const isMouseDown = ref(false);
+  const isRenderScheduled = ref(false);
+
   const containerRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
 
+  const scheduleRender = (reRenderImmediately: boolean = false) => {
+    isRenderScheduled.value = true;
+
+    if (reRenderImmediately) {
+      render();
+    } else {
+      setTimeout(() => {
+        render();
+      }, 0);
+    }
+  };
+
   const render = () => {
-    if (containerRef.value) {
-      containerRef.value.innerHTML = lastDerivedState.value.inputHTMLString;
+    // console.log('render');
+
+    if (containerRef.value && isRenderScheduled.value) {
+      isRenderScheduled.value = false;
+
+      if (containerRef.value.innerHTML != lastDerivedState.value.inputHTMLString) {
+        containerRef.value.innerHTML = lastDerivedState.value.inputHTMLString;
+      }
 
       if (hasFocus.value) {
-        const caretSpan: HTMLSpanElement | null = containerRef.value.querySelector('.placeholder-caret');
-        const selectionEndSpan: HTMLSpanElement | null = containerRef.value.querySelector('.placeholder-selection-end');
+        const [caretNode, caretOffset] = getSelectionNodeAndOffsetFromPositionInValueSpace(
+          containerRef.value,
+          state.value.caretPositionInValueSpace,
+          props.mask,
+        );
+
+        const [selectionEndNode, selectionEndOffset] = getSelectionNodeAndOffsetFromPositionInValueSpace(
+          containerRef.value,
+          state.value.selectionEndPositionInValueSpace,
+          props.mask,
+        );
+
         const selection = window.getSelection();
 
-        if (selection && caretSpan) {
+        if (selection && caretNode && selectionEndNode) {
           selection.removeAllRanges();
-          selection.setBaseAndExtent(selectionEndSpan || caretSpan, 0, caretSpan, 0);
+          selection.setBaseAndExtent(selectionEndNode, selectionEndOffset, caretNode, caretOffset);
         }
       }
     }
   };
 
-  const runComponentInternalUpdateLoop = (event: Event | undefined, patchOperations: PatchOperation[] | undefined) => {
+  const runComponentInternalUpdateLoop = (patchOperations: PatchOperation[] | undefined) => {
     const initialStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
     const initialValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
     const initialSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
 
     if (patchOperations !== undefined) {
-      [state.value, lastDerivedState.value] = applyPatchOperations(patchOperations, state.value, props.mask, lastDerivedState.value);
-
-      if (event) {
-        event.preventDefault();
-      }
+      let reRenderImmediately: boolean;
+      [state.value, lastDerivedState.value, reRenderImmediately] = applyPatchOperations(
+        patchOperations,
+        state.value,
+        props.mask,
+        lastDerivedState.value,
+      );
 
       const finalStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
       const finalValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
@@ -109,7 +144,7 @@
         emits('update:semanticValidationMessage', finalSemanticValidationMessage);
       }
 
-      render();
+      scheduleRender(reRenderImmediately);
 
       // TODO: remove this ... only for debugging purposes
       if (hasFocus.value) {
@@ -153,7 +188,7 @@
       emits('update:semanticValidationMessage', finalSemanticValidationMessage);
     }
 
-    render();
+    scheduleRender();
 
     // TODO: remove this ... only for debugging purposes
     if (hasFocus.value) {
@@ -162,36 +197,56 @@
   };
 
   const handleKeydown = (event: KeyboardEvent) => {
-    const patchOperations = determinePatchOperationFromKeydownEvent(event, state.value, props.mask, lastDerivedState.value);
+    const [stopEvent, patchOperations] = determinePatchOperationFromKeydownEvent(event, state.value, props.mask, lastDerivedState.value);
 
-    runComponentInternalUpdateLoop(event, patchOperations);
+    if (stopEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    runComponentInternalUpdateLoop(patchOperations);
   };
 
   const handleBeforeInput = (event: InputEvent) => {
-    const patchOperations = determinePatchOperationFromBeforeInputEvent(event, state.value, props.mask, lastDerivedState.value);
+    const [stopEvent, patchOperations] = determinePatchOperationFromBeforeInputEvent(event, state.value);
 
-    runComponentInternalUpdateLoop(event, patchOperations);
+    if (stopEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    runComponentInternalUpdateLoop(patchOperations);
   };
 
   const handleCompositionEnd = (event: CompositionEvent) => {
-    const patchOperations = determinePatchOperationFromCompositionEndEvent(event, state.value, props.mask, lastDerivedState.value);
+    const [stopEvent, patchOperations] = determinePatchOperationFromCompositionEndEvent(event, state.value);
 
-    runComponentInternalUpdateLoop(event, patchOperations);
+    if (stopEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    runComponentInternalUpdateLoop(patchOperations);
   };
 
   const handleKeyup = (event: KeyboardEvent) => {
-    const patchOperations = determinePatchOperationFromKeyupEvent(event, state.value, props.mask, lastDerivedState.value);
+    const [stopEvent, patchOperations] = determinePatchOperationFromKeyupEvent(event);
 
-    runComponentInternalUpdateLoop(event, patchOperations);
+    if (stopEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    runComponentInternalUpdateLoop(patchOperations);
   };
 
-  const handleFocusin = (event: FocusEvent) => {
+  const handleFocusin = () => {
     if (!hasFocus.value) {
       gainFocus();
     }
   };
 
-  const handleFocusout = (event: FocusEvent) => {
+  const handleFocusout = () => {
     if (hasFocus.value) {
       setTimeout(() => {
         if (containerRef.value && !containerRef.value.contains(document.activeElement)) {
@@ -201,100 +256,66 @@
     }
   };
 
+  const handleDocumentSelectionChange = (event: Event) => {
+    if (!hasFocus.value) {
+      return;
+    }
+
+    const [stopEvent, patchOperations] = determinePatchOperationAfterSelectionChangeEvent(containerRef.value as HTMLElement, state.value, props.mask);
+
+    if (stopEvent) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    runComponentInternalUpdateLoop(patchOperations);
+  };
+
   const gainFocus = () => {
     hasFocus.value = true;
 
-    emits('focus');
+    registerGlobalEvenListeners();
 
-    runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+    emits('focus');
   };
 
   const looseFocus = () => {
     hasFocus.value = false;
 
+    deregisterGlobalEventListener();
+
     emits('blur');
   };
 
-  const getClosestValueSpaceCoordinates = (event: MouseEvent): string | undefined => {
-    const containerElement = event.currentTarget as HTMLElement;
-    const containerRect = containerElement.getBoundingClientRect();
-    const relativeX = event.clientX - containerRect.left;
-
-    let closestValueSpaceCoordinates: string | undefined = undefined;
-    let minDistance = Infinity;
-
-    if (!containerRef.value) {
-      return closestValueSpaceCoordinates;
-    }
-
-    const spans = containerRef.value.querySelectorAll('span');
-
-    spans.forEach((span: Element) => {
-      if (
-        span.classList.contains('placeholder-caret') ||
-        span.classList.contains('placeholder-selection-end') ||
-        span.classList.contains('section-input') ||
-        span.classList.contains('section-fixed')
-      ) {
-        return;
-      }
-
-      const spanElement = span as HTMLElement;
-      const spanRect = spanElement.getBoundingClientRect();
-      const spanRelativeLeft = spanRect.left - containerRect.left;
-      const spanRelativeRight = spanRect.right - containerRect.left;
-
-      let distance;
-
-      if (relativeX < spanRelativeLeft) {
-        distance = spanRelativeLeft - relativeX;
-      } else if (relativeX > spanRelativeRight) {
-        distance = relativeX - spanRelativeRight;
-      } else {
-        distance = 0;
-      }
-
-      if (distance < minDistance) {
-        const clickWasRightish = relativeX > spanRelativeLeft + spanRect.width / 2;
-
-        if (clickWasRightish) {
-          if (spanElement.hasAttribute('data-value-pos-right')) {
-            closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-right')!;
-          } else if (spanElement.hasAttribute('data-value-pos-left')) {
-            closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-left')!;
-          }
-        } else {
-          if (spanElement.hasAttribute('data-value-pos-left')) {
-            closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-left')!;
-          } else if (spanElement.hasAttribute('data-value-pos-right')) {
-            closestValueSpaceCoordinates = spanElement.getAttribute('data-value-pos-right')!;
-          }
-        }
-
-        if (closestValueSpaceCoordinates !== undefined) {
-          minDistance = distance;
-        }
-      }
-    });
-
-    return closestValueSpaceCoordinates;
+  const registerGlobalEvenListeners = () => {
+    document.addEventListener('selectionchange', handleDocumentSelectionChange);
+    document.addEventListener('mousedown', handleDocumentMouseDown);
+    document.addEventListener('mouseup', handleDocumentMouseUp);
   };
 
-  const handleMousedown = (event: MouseEvent) => {
-    const closestValueSpaceCoordinates = getClosestValueSpaceCoordinates(event);
+  const deregisterGlobalEventListener = () => {
+    document.removeEventListener('selectionchange', handleDocumentSelectionChange);
+    document.removeEventListener('mousedown', handleDocumentMouseDown);
+    document.removeEventListener('mouseup', handleDocumentMouseUp);
+  };
 
-    if (closestValueSpaceCoordinates !== undefined) {
-      state.value = updateMaskStateCaretAndSelection(state.value, closestValueSpaceCoordinates, closestValueSpaceCoordinates);
+  const handleDocumentMouseUp = () => {
+    if (isMouseDown.value) {
+      isMouseDown.value = false;
+    }
+  };
 
-      if (!hasFocus.value) {
-        gainFocus();
+  const handleDocumentMouseDown = (event: MouseEvent) => {
+    if (hasFocus.value) {
+      if (containerRef.value && !containerRef.value.contains(event.target as Node)) {
+        looseFocus();
       }
+    }
+  };
 
-      render();
-
-      event.preventDefault();
-
-      runComponentExternalUpdateLoop(props.modelValue, props.mask, state, lastDerivedState);
+  const handleMousedown = () => {
+    if (!hasFocus.value) {
+      gainFocus();
     }
   };
 
@@ -306,10 +327,12 @@
   );
 
   onMounted(() => {
-    render();
+    scheduleRender();
   });
 
-  onUnmounted(() => {});
+  onBeforeUnmount(() => {
+    deregisterGlobalEventListener();
+  });
 </script>
 
 <style scoped>
@@ -342,7 +365,7 @@
     line-height: 1.2;
     height: 1.2rem;
     position: relative;
-    top: 0px;
+    top: 0;
   }
 
   .masked-text-container :deep(.mask-char-input) {
@@ -351,6 +374,7 @@
 
   .masked-text-container :deep(.section-fixed) {
     color: rgba(0, 100, 200, 0.8);
+    pointer-events: none;
   }
   .masked-text-container :deep(.mask-char-mask) {
     color: rgba(0, 0, 0, 0.4);

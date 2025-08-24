@@ -1,10 +1,9 @@
 import type { MaskCharacter, MaskDefinition } from '../base/types';
 import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
-import { splitStringIntoGraphemes } from '../base/helper';
 
 type UuidVersion = 'v1' | 'v2' | 'v3' | 'v4' | 'v5' | 'v6' | 'v7' | 'v8' | undefined;
 
-const uuidEncodeValidatedValue = (values: Record<string, string[]>, version: UuidVersion): string | undefined => {
+const uuidEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
   const part1 = (values['part1'] ?? []).join('');
   const part2 = (values['part2'] ?? []).join('');
   const part3 = (values['part3'] ?? []).join('');
@@ -122,7 +121,7 @@ export const UuidMask = (version: UuidVersion): MaskDefinition => {
   const separatorSection = MaskSectionFixed('-', ['-']);
 
   return {
-    encodeValidatedValue: (values) => uuidEncodeValidatedValue(values, version),
+    encodeValidatedValue: (values) => uuidEncodeValidatedValue(values),
     semanticValidationFn: uuidSemanticValidationFn(version),
     sections: [
       MaskSectionInput('part1', part1Options),

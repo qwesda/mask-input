@@ -90,13 +90,11 @@ export const applyPatchOperationMoveCursor = (
     }
   }
 
-  const newState: MaskState = {
+  return {
     ...currentState,
     caretPositionInValueSpace: newCaretPosition,
     selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd ? currentState.selectionEndPositionInValueSpace : newCaretPosition,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationSetCursorPosition = (
@@ -105,15 +103,13 @@ export const applyPatchOperationSetCursorPosition = (
   currentDerivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): MaskState => {
-  const newState: MaskState = {
+  return {
     ...currentState,
     caretPositionInValueSpace: patchOperation.caretPositionInValueSpace,
     selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd
       ? currentState.selectionEndPositionInValueSpace
       : patchOperation.caretPositionInValueSpace,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationSetSelection = (
@@ -122,13 +118,11 @@ export const applyPatchOperationSetSelection = (
   currentDerivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): MaskState => {
-  const newState: MaskState = {
+  return {
     ...currentState,
     caretPositionInValueSpace: patchOperation.caretPositionInValueSpace,
     selectionEndPositionInValueSpace: patchOperation.selectionEndPositionInValueSpace,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationSelectNextSection = (
@@ -151,13 +145,11 @@ export const applyPatchOperationSelectNextSection = (
   const newCaretPositionInValueSpace = targetSection.valueSpace[targetSection.valueSpace.length - 1];
   const newSelectionEndPositionInValueSpace = targetSection.valueSpace[0];
 
-  const newState: MaskState = {
+  return {
     ...currentState,
     caretPositionInValueSpace: newCaretPositionInValueSpace,
     selectionEndPositionInValueSpace: newSelectionEndPositionInValueSpace,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationSelectAll = (
@@ -169,13 +161,11 @@ export const applyPatchOperationSelectAll = (
   const newCaretPositionInValueSpace = currentDerivedState.valueSpace[currentDerivedState.valueSpace.length - 1];
   const newSelectionEndPositionInValueSpace = currentDerivedState.valueSpace[0];
 
-  const newState: MaskState = {
+  return {
     ...currentState,
     caretPositionInValueSpace: newCaretPositionInValueSpace,
     selectionEndPositionInValueSpace: newSelectionEndPositionInValueSpace,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationClearSelection = (
@@ -254,14 +244,12 @@ export const applyPatchOperationDeleteSelection = (
     }
   }
 
-  const newState: MaskState = {
+  return {
     ...currentState,
     values: newValues,
     caretPositionInValueSpace: newCaretPosition,
     selectionEndPositionInValueSpace: newCaretPosition,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationSpin = (
@@ -286,16 +274,13 @@ export const applyPatchOperationSpin = (
   );
   const newSectionValue = newValues[sectionDefinition.slug] ?? [];
   const newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${[...newSectionValue].length}`;
-  const newSelectionEndPosition = newCaretPosition;
 
-  const newState: MaskState = {
+  return {
     ...currentState,
     values: newValues,
     caretPositionInValueSpace: newCaretPosition,
-    selectionEndPositionInValueSpace: newSelectionEndPosition,
+    selectionEndPositionInValueSpace: newCaretPosition,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationDeleteBackwards = (
@@ -343,14 +328,12 @@ export const applyPatchOperationDeleteBackwards = (
     }
   }
 
-  const newState: MaskState = {
+  return {
     ...currentState,
     values: newValues,
     caretPositionInValueSpace: newCaretPosition,
     selectionEndPositionInValueSpace: newCaretPosition,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationDeleteForwards = (
@@ -392,14 +375,12 @@ export const applyPatchOperationDeleteForwards = (
     }
   }
 
-  const newState: MaskState = {
+  return {
     ...currentState,
     values: newValues,
     caretPositionInValueSpace: newCaretPosition,
     selectionEndPositionInValueSpace: newCaretPosition,
   };
-
-  return newState;
 };
 
 export const applyPatchOperationInsert = (
@@ -457,10 +438,6 @@ export const applyPatchOperationInsert = (
     newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
   }
 
-  // if (sectionDefinition.syntacticValidationFn && !sectionDefinition.syntacticValidationFn(newSectionValue)) {
-  //   return currentState;
-  // }
-
   const newValues = { ...currentState.values };
 
   newValues[sectionDefinition.slug] = newSectionValue;
@@ -478,14 +455,12 @@ export const applyPatchOperationInsert = (
     }
   }
 
-  const newState: MaskState = {
+  return {
     ...currentState,
     values: newValues,
     caretPositionInValueSpace: newCaretPosition,
     selectionEndPositionInValueSpace: newCaretPosition,
   };
-
-  return newState;
 };
 
 export const applyPatchOperations = (
@@ -493,12 +468,21 @@ export const applyPatchOperations = (
   currentState: MaskState,
   maskDefinition: MaskDefinition,
   currentDerivedState?: MaskDerivedState,
-): [MaskState, MaskDerivedState] => {
+): [MaskState, MaskDerivedState, boolean] => {
   if (!currentDerivedState) {
     currentDerivedState = getDerivedState(currentState, maskDefinition);
   }
 
+  let reRenderImmediately = false;
+
   for (const patchOperation of patchOperations) {
+    reRenderImmediately =
+      patchOperation.op === 'insert-character' ||
+      patchOperation.op === 'delete-backwards' ||
+      patchOperation.op === 'delete-forwards' ||
+      patchOperation.op === 'delete-selection' ||
+      patchOperation.op === 'spin';
+
     if (patchOperation.op === 'move-cursor') {
       currentState = applyPatchOperationMoveCursor(patchOperation, currentState, currentDerivedState, maskDefinition);
       currentDerivedState = getDerivedState(currentState, maskDefinition);
@@ -535,5 +519,5 @@ export const applyPatchOperations = (
     }
   }
 
-  return [currentState, currentDerivedState];
+  return [currentState, currentDerivedState, reRenderImmediately];
 };
