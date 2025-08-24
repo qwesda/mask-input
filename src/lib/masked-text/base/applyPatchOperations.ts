@@ -14,6 +14,7 @@ import type {
   PatchOperationSelectAll,
   PatchOperationSelectNextSection,
   PatchOperationSetCursorPosition,
+  PatchOperationSetSelection,
   PatchOperationSpin,
 } from './types';
 import { compareSpaceCoordinates, findSection } from './helper';
@@ -106,9 +107,25 @@ export const applyPatchOperationSetCursorPosition = (
 ): MaskState => {
   const newState: MaskState = {
     ...currentState,
+    caretPositionInValueSpace: patchOperation.caretPositionInValueSpace,
     selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd
       ? currentState.selectionEndPositionInValueSpace
-      : currentState.caretPositionInValueSpace,
+      : patchOperation.caretPositionInValueSpace,
+  };
+
+  return newState;
+};
+
+export const applyPatchOperationSetSelection = (
+  patchOperation: PatchOperationSetSelection,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+  maskDefinition: MaskDefinition,
+): MaskState => {
+  const newState: MaskState = {
+    ...currentState,
+    caretPositionInValueSpace: patchOperation.caretPositionInValueSpace,
+    selectionEndPositionInValueSpace: patchOperation.selectionEndPositionInValueSpace,
   };
 
   return newState;
@@ -511,6 +528,9 @@ export const applyPatchOperations = (
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'select-all') {
       currentState = applyPatchOperationSelectAll(patchOperation, currentState, currentDerivedState, maskDefinition);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    } else if (patchOperation.op === 'set-selection') {
+      currentState = applyPatchOperationSetSelection(patchOperation, currentState, currentDerivedState, maskDefinition);
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     }
   }
