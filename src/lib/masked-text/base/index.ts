@@ -484,7 +484,7 @@ export function getTextInputDisplayStringWithSelection(
       );
     } else if (i !== caretSectionIndex && i === selectionEndSectionIndex) {
       textInputDisplayStringWithSelectionParts.push(
-        section.textInputDisplayString.substring(0, caretPosition) + '[' + section.textInputDisplayString.substring(caretPosition),
+        section.textInputDisplayString.substring(0, selectionEndPosition) + ']' + section.textInputDisplayString.substring(selectionEndPosition),
       );
     } else if (caretPosition <= selectionEndPosition) {
       textInputDisplayStringWithSelectionParts.push(
