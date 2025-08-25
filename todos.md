@@ -30,9 +30,9 @@
 
 - [x] ~~uuid~~
 - [x] year/month
-- [ ] year
-- [ ] date+time
+- [x] year
 - [ ] year/week
+- [ ] date+time
 - [ ] ipv4 subnet
 - [ ] ipv6 subnet
 - [ ] isrc

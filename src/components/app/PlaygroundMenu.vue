@@ -3,6 +3,7 @@
     <div class="menu-buttons">
       <button @click="$emit('update:modelValue', 'date')" :class="{ active: modelValue === 'date' }">Date</button>
       <button @click="$emit('update:modelValue', 'year-month')" :class="{ active: modelValue === 'year-month' }">Year/Month</button>
+      <button @click="$emit('update:modelValue', 'year')" :class="{ active: modelValue === 'year' }">Year</button>
       <button @click="$emit('update:modelValue', 'numeric')" :class="{ active: modelValue === 'numeric' }">Numeric</button>
       <button @click="$emit('update:modelValue', 'ip-addresses')" :class="{ active: modelValue === 'ip-addresses' }">IP Addr</button>
       <button @click="$emit('update:modelValue', 'special')" :class="{ active: modelValue === 'special' }">Special</button>
