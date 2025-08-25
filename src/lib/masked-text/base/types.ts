@@ -86,6 +86,7 @@ export type MaskSectionDerivedState = MaskSectionFixedDerivedState | MaskSection
 export type MaskDefinition = {
   encodeValidatedValue: (values: Record<string, string[]>) => string | undefined;
   semanticValidationFn?: (values: Record<string, string[]>) => [boolean, string];
+  valueNormalizationFn?: (values: Record<string, string[]>) => Record<string, string[]>;
   sections: MaskSectionDefinition[];
 };
 
@@ -177,6 +178,10 @@ export type PatchOperationDeleteSelection = {
   op: 'delete-selection';
 };
 
+export type PatchOperationApplyValueNormalization = {
+  op: 'apply-value-normalization';
+};
+
 export type PatchOperationSpin = {
   op: 'spin';
   direction: 'up' | 'down';
@@ -197,6 +202,7 @@ export type PatchOperationEdit =
   | PatchOperationDeleteBackwards
   | PatchOperationDeleteForwards
   | PatchOperationDeleteSelection
+  | PatchOperationApplyValueNormalization
   | PatchOperationSpin;
 
 export type PatchOperation = PatchOperationClearSelection | PatchOperationMovement | PatchOperationEdit;

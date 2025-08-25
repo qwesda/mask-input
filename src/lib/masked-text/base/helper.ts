@@ -320,10 +320,6 @@ const getClosestMaskCharTargetNode = (
     }
   }
 
-  console.log('flattenedTargets', flattenedElements);
-
-  debugger;
-
   return [undefined, 0];
 };
 
@@ -337,7 +333,7 @@ export const getValueSpaceCoordinatesFromSelection = (
 
   const { anchorNode, anchorOffset, focusNode, focusOffset, direction } = selection;
 
-  console.log('focusNode', focusNode, 'focusOffset', focusOffset);
+  // console.log('focusNode', focusNode, 'focusOffset', focusOffset);
 
   const [targetAnchorNode, targetAnchorOffset] = getClosestMaskCharTargetNode(
     containerNode,
@@ -404,7 +400,7 @@ export const getValueSpaceCoordinatesFromSelection = (
     }
   }
 
-  console.log('caretCoordinates', caretCoordinates, 'selectionEndCoordinates', selectionEndCoordinates, 'exactMatch', exactMatch);
+  // console.log('caretCoordinates', caretCoordinates, 'selectionEndCoordinates', selectionEndCoordinates, 'exactMatch', exactMatch);
 
   return [caretCoordinates, selectionEndCoordinates, exactMatch];
 };

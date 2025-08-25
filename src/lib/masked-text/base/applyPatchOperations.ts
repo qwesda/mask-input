@@ -5,6 +5,7 @@ import type {
   MaskSectionInputDerivedState,
   MaskState,
   PatchOperation,
+  PatchOperationApplyValueNormalization,
   PatchOperationClearSelection,
   PatchOperationDeleteBackwards,
   PatchOperationDeleteForwards,
@@ -90,8 +91,14 @@ export const applyPatchOperationMoveCursor = (
     }
   }
 
+  const newValues =
+    maskDefinition.valueNormalizationFn && newCaretPosition.split(':')[0] !== currentState.caretPositionInValueSpace.split(':')[0]
+      ? maskDefinition.valueNormalizationFn(currentState.values)
+      : currentState.values;
+
   return {
     ...currentState,
+    values: newValues,
     caretPositionInValueSpace: newCaretPosition,
     selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd ? currentState.selectionEndPositionInValueSpace : newCaretPosition,
   };
@@ -103,8 +110,15 @@ export const applyPatchOperationSetCursorPosition = (
   currentDerivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): MaskState => {
+  const newValues =
+    maskDefinition.valueNormalizationFn &&
+    patchOperation.caretPositionInValueSpace.split(':')[0] !== currentState.caretPositionInValueSpace.split(':')[0]
+      ? maskDefinition.valueNormalizationFn(currentState.values)
+      : currentState.values;
+
   return {
     ...currentState,
+    values: newValues,
     caretPositionInValueSpace: patchOperation.caretPositionInValueSpace,
     selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd
       ? currentState.selectionEndPositionInValueSpace
@@ -118,8 +132,15 @@ export const applyPatchOperationSetSelection = (
   currentDerivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): MaskState => {
+  const newValues =
+    maskDefinition.valueNormalizationFn &&
+    patchOperation.caretPositionInValueSpace.split(':')[0] !== currentState.caretPositionInValueSpace.split(':')[0]
+      ? maskDefinition.valueNormalizationFn(currentState.values)
+      : currentState.values;
+
   return {
     ...currentState,
+    values: newValues,
     caretPositionInValueSpace: patchOperation.caretPositionInValueSpace,
     selectionEndPositionInValueSpace: patchOperation.selectionEndPositionInValueSpace,
   };
@@ -145,8 +166,14 @@ export const applyPatchOperationSelectNextSection = (
   const newCaretPositionInValueSpace = targetSection.valueSpace[targetSection.valueSpace.length - 1];
   const newSelectionEndPositionInValueSpace = targetSection.valueSpace[0];
 
+  const newValues =
+    maskDefinition.valueNormalizationFn && newCaretPositionInValueSpace.split(':')[0] !== currentState.caretPositionInValueSpace.split(':')[0]
+      ? maskDefinition.valueNormalizationFn(currentState.values)
+      : currentState.values;
+
   return {
     ...currentState,
+    values: newValues,
     caretPositionInValueSpace: newCaretPositionInValueSpace,
     selectionEndPositionInValueSpace: newSelectionEndPositionInValueSpace,
   };
@@ -161,8 +188,11 @@ export const applyPatchOperationSelectAll = (
   const newCaretPositionInValueSpace = currentDerivedState.valueSpace[currentDerivedState.valueSpace.length - 1];
   const newSelectionEndPositionInValueSpace = currentDerivedState.valueSpace[0];
 
+  const newValues = maskDefinition.valueNormalizationFn ? maskDefinition.valueNormalizationFn(currentState.values) : currentState.values;
+
   return {
     ...currentState,
+    values: newValues,
     caretPositionInValueSpace: newCaretPositionInValueSpace,
     selectionEndPositionInValueSpace: newSelectionEndPositionInValueSpace,
   };
@@ -249,6 +279,20 @@ export const applyPatchOperationDeleteSelection = (
     values: newValues,
     caretPositionInValueSpace: newCaretPosition,
     selectionEndPositionInValueSpace: newCaretPosition,
+  };
+};
+
+export const applyPatchOperationApplyValueNormalization = (
+  patchOperation: PatchOperationApplyValueNormalization,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+  maskDefinition: MaskDefinition,
+): MaskState => {
+  const newValues = maskDefinition.valueNormalizationFn ? maskDefinition.valueNormalizationFn(currentState.values) : currentState.values;
+
+  return {
+    ...currentState,
+    values: newValues,
   };
 };
 
@@ -503,6 +547,9 @@ export const applyPatchOperations = (
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'delete-forwards') {
       currentState = applyPatchOperationDeleteForwards(patchOperation, currentState, currentDerivedState, maskDefinition);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    } else if (patchOperation.op === 'apply-value-normalization') {
+      currentState = applyPatchOperationApplyValueNormalization(patchOperation, currentState, currentDerivedState, maskDefinition);
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'spin') {
       currentState = applyPatchOperationSpin(patchOperation, currentState, currentDerivedState, maskDefinition);

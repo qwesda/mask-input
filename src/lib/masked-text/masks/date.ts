@@ -343,6 +343,19 @@ const dateSpinDownFn = (minDateISOString: string, maxDateISOString: string) => {
   };
 };
 
+const valueNormalizationFn = (values: Record<string, string[]>): Record<string, string[]> => {
+  const normalizedValues = { ...values };
+
+  if (values.year && values.year.length <= 2) {
+    const yearValue = parseInt(values.year.join(''));
+    const century = yearValue < 90 ? 2000 : 1900;
+
+    normalizedValues.year = (century + yearValue).toString().split('');
+  }
+
+  return normalizedValues;
+};
+
 export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDate?: Date, maxDate?: Date): MaskDefinition => {
   const minDateISOString = minDate?.toISOString() ?? '1900-01-01';
   const maxDateISOString = maxDate?.toISOString() ?? '2100-12-31';
@@ -398,6 +411,7 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
   return {
     encodeValidatedValue: dateEncodeValidatedValue,
     semanticValidationFn,
+    valueNormalizationFn,
     sections,
   };
 };

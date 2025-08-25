@@ -283,6 +283,8 @@
 
     deregisterGlobalEventListener();
 
+    runComponentInternalUpdateLoop([{ op: 'apply-value-normalization' }]);
+
     emits('blur');
   };
 
@@ -366,9 +368,6 @@
   .masked-text-container :deep(.section-fixed) {
     color: rgba(0, 100, 200, 0.8);
     pointer-events: none;
-  }
-  .masked-text-container :deep(.mask-char-mask) {
-    color: rgba(0, 0, 0, 0.4);
   }
   .masked-text-container :deep(.mask-char-mask) {
     color: rgba(0, 0, 0, 0.4);
