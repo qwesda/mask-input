@@ -348,9 +348,12 @@ const valueNormalizationFn = (values: Record<string, string[]>): Record<string, 
 
   if (values.year && values.year.length <= 2) {
     const yearValue = parseInt(values.year.join(''));
-    const century = yearValue < 90 ? 2000 : 1900;
 
-    normalizedValues.year = (century + yearValue).toString().split('');
+    if (!isNaN(yearValue)) {
+      const century = yearValue < 90 ? 2000 : 1900;
+
+      normalizedValues.year = (century + yearValue).toString().split('');
+    }
   }
 
   return normalizedValues;
