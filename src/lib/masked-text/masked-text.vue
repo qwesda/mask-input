@@ -64,7 +64,6 @@
   const lastDerivedState: Ref<MaskDerivedState> = ref(getDerivedState(state.value, props.mask));
 
   const hasFocus = ref(false);
-  const isMouseDown = ref(false);
   const isRenderScheduled = ref(false);
 
   const containerRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
@@ -290,19 +289,11 @@
   const registerGlobalEvenListeners = () => {
     document.addEventListener('selectionchange', handleDocumentSelectionChange);
     document.addEventListener('mousedown', handleDocumentMouseDown);
-    document.addEventListener('mouseup', handleDocumentMouseUp);
   };
 
   const deregisterGlobalEventListener = () => {
     document.removeEventListener('selectionchange', handleDocumentSelectionChange);
     document.removeEventListener('mousedown', handleDocumentMouseDown);
-    document.removeEventListener('mouseup', handleDocumentMouseUp);
-  };
-
-  const handleDocumentMouseUp = () => {
-    if (isMouseDown.value) {
-      isMouseDown.value = false;
-    }
   };
 
   const handleDocumentMouseDown = (event: MouseEvent) => {
