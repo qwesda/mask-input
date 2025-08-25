@@ -30,13 +30,13 @@
 
 ## masks 
 
-- [ ] date+time mask
-- [ ] year mask
+- [ ] date+time
+- [ ] year
 - [ ] year/month
 - [ ] year/week
-- [ ] ipv4 subnet mask
-- [ ] ipv6 subnet mask
-- [ ] barcode mask (ean13, upc, isbn)
+- [ ] ipv4 subnet
+- [ ] ipv6 subnet
+- [ ] barcode (ean13, upc, isbn)
 - [x] ~~uuid~~
 
 ## test app
