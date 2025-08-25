@@ -14,30 +14,29 @@
 - [x] ~~alt right/left should always switch to the next/prev section~~
 - [x] ~~add cmd+a/crtl+a support~~
 - [x] ~~handle section advance by using skip keys~~
-- [ ] holding key should repeat last key
 - [x] ~~don't blur/focus input element when on mobile~~
- 
 - [x] ~~update mouse event handling similar to keyboard event handling~~
 - [x] ~~add mouse drag support for selection~~
-- [x] ~~handle double click for section selection / triple click for whole selection~~  
-
-- [ ] add whole value copy/pase support
-- [ ] add partial (selection) copy/pase support
-- [ ] maybe add highlighting of problematic sections for semantic validation
-- [ ] maybe dynamic section hiding based on cursor position and values
+- [x] ~~handle double click for section selection / triple click for whole selection~~
+- [x] ~~add whole value copy/pase support~~
 - [x] ~~maybe replace fake selection highlight with native browser selection highlight~~
 - [x] ~~maybe de-vueify the component~~
+- [ ] holding key should repeat last key
+- [ ] maybe add partial (selection) copy/pase support
+- [ ] maybe add highlighting of problematic sections for semantic validation
+- [ ] maybe dynamic section hiding based on cursor position and values
 
 ## masks 
 
+- [x] ~~uuid~~
 - [ ] date+time
 - [ ] year
 - [ ] year/month
 - [ ] year/week
 - [ ] ipv4 subnet
 - [ ] ipv6 subnet
+- [ ] isrc
 - [ ] barcode (ean13, upc, isbn)
-- [x] ~~uuid~~
 
 ## test app
 
