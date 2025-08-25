@@ -10,7 +10,7 @@ const yearMonthEncodeValidatedValue = (values: Record<string, string[]>): string
     return undefined;
   }
 
-  return year + '-' + month.padStart(2, '0');
+  return year + '-' + month.padStart(2, '0') + '-01';
 };
 
 const yearMonthYearMaskFn = (sectionValue: string[]): MaskCharacter[] => {
@@ -277,8 +277,12 @@ const yearMonthValueNormalizationFn = (values: Record<string, string[]>): Record
 };
 
 export const YearMonthMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minYearMonth?: Date, maxYearMonth?: Date): MaskDefinition => {
-  const minYearMonthISOString = minYearMonth ? `${minYearMonth.getFullYear()}-${(minYearMonth.getMonth() + 1).toString().padStart(2, '0')}` : '1900-01';
-  const maxYearMonthISOString = maxYearMonth ? `${maxYearMonth.getFullYear()}-${(maxYearMonth.getMonth() + 1).toString().padStart(2, '0')}` : '2100-12';
+  const minYearMonthISOString = minYearMonth
+    ? `${minYearMonth.getFullYear()}-${(minYearMonth.getMonth() + 1).toString().padStart(2, '0')}`
+    : '1900-01';
+  const maxYearMonthISOString = maxYearMonth
+    ? `${maxYearMonth.getFullYear()}-${(maxYearMonth.getMonth() + 1).toString().padStart(2, '0')}`
+    : '2100-12';
 
   const sectionYear = MaskSectionInput('year', {
     maskingFn: yearMonthYearMaskFn,
