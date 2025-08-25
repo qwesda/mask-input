@@ -87,6 +87,7 @@ export type MaskDefinition = {
   encodeValidatedValue: (values: Record<string, string[]>) => string | undefined;
   semanticValidationFn?: (values: Record<string, string[]>) => [boolean, string];
   valueNormalizationFn?: (values: Record<string, string[]>) => Record<string, string[]>;
+  getValuesFromStringRepresentation?: (stringRepresentation: string) => Record<string, string[]>;
   sections: MaskSectionDefinition[];
 };
 
@@ -146,6 +147,11 @@ export type PatchOperationSetSelection = {
   selectionEndPositionInValueSpace: string;
 };
 
+export type PatchOperationSetValues = {
+  op: 'set-values';
+  values: Record<string, string[]>;
+};
+
 export type PatchOperationSelectNextSection = {
   op: 'select-next-section';
   direction: 'left' | 'right';
@@ -195,6 +201,7 @@ export type PatchOperationMovement =
   | PatchOperationSetSelection
   | PatchOperationSetCursorPosition
   | PatchOperationSelectNextSection
+  | PatchOperationSetValues
   | PatchOperationSelectAll;
 
 export type PatchOperationEdit =

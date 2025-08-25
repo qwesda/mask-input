@@ -16,6 +16,7 @@ import type {
   PatchOperationSelectNextSection,
   PatchOperationSetCursorPosition,
   PatchOperationSetSelection,
+  PatchOperationSetValues,
   PatchOperationSpin,
 } from './types';
 import { compareSpaceCoordinates, findSection } from './helper';
@@ -507,6 +508,18 @@ export const applyPatchOperationInsert = (
   };
 };
 
+export const applyPatchOperationSetValues = (
+  patchOperation: PatchOperationSetValues,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+  maskDefinition: MaskDefinition,
+): MaskState => {
+  return {
+    ...currentState,
+    values: patchOperation.values,
+  };
+};
+
 export const applyPatchOperations = (
   patchOperations: PatchOperation[],
   currentState: MaskState,
@@ -562,6 +575,9 @@ export const applyPatchOperations = (
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'set-selection') {
       currentState = applyPatchOperationSetSelection(patchOperation, currentState, currentDerivedState, maskDefinition);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    } else if (patchOperation.op === 'set-values') {
+      currentState = applyPatchOperationSetValues(patchOperation, currentState, currentDerivedState, maskDefinition);
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     }
   }

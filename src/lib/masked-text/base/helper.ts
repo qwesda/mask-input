@@ -459,3 +459,57 @@ export const getSelectionNodeAndOffsetFromPositionInValueSpace = (
 
   return [undefined, -1];
 };
+
+export const encodeValuesAsHtml = (maskDefinition: MaskDefinition, values: Record<string, string[]>): string => {
+  const spans = [];
+
+  for (const section of maskDefinition.sections) {
+    if (section.type === 'input') {
+      const className = `masked-text-value-${section.slug}`;
+
+      for (const value of values[section.slug]) {
+        spans.push(`<span class="${className}">${value}</span>`);
+      }
+    } else if (section.type === 'fixed') {
+      spans.push(`<span>${section.mask}</span>`);
+    }
+  }
+
+  return `<div class="masked-text-clipboard-data">${spans.join('')}</div>`;
+};
+
+export const parseValuesFromHtml = (html: string): Record<string, string[]> | null => {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const container = doc.querySelector('.masked-text-clipboard-data');
+
+    if (!container) {
+      return null;
+    }
+
+    const values: Record<string, string[]> = {};
+    const spans = container.querySelectorAll('span[class^="masked-text-value-"]');
+
+    spans.forEach((span) => {
+      const match = span.className.match(/masked-text-value-(.+)/);
+
+      if (match) {
+        const key = match[1];
+        const value = span.textContent || '';
+
+        if (!values[key]) {
+          values[key] = [];
+        }
+
+        values[key].push(value);
+      }
+    });
+
+    return values;
+  } catch (error) {
+    console.error('Failed to parse HTML clipboard data:', error);
+
+    return null;
+  }
+};

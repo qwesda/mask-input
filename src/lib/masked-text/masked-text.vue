@@ -11,33 +11,35 @@
     @keyup.capture="handleKeyup"
     @beforeinput.capture="handleBeforeInput"
     @compositionend.capture="handleCompositionEnd"
+    @copy.capture="copyWholeValue"
+    @paste.capture="pasteWholeValue"
   />
 </template>
 
 <script lang="ts" setup>
   import { onBeforeUnmount, onMounted, ref, type Ref, watch } from 'vue';
-  import type { MaskDefinition, MaskDerivedState, MaskState } from './base/types';
+  import type { MaskDefinition, MaskDerivedState, MaskState, PatchOperation } from './base/types';
   import { getDerivedState, getInitialMaskState, updateMaskStateCaretAndSelection, updateMaskStateValues } from './base/index';
 
   import {
-    modelValuesEqual,
+    encodeValuesAsHtml,
     findClosestValidValueSpaceCoordinates,
     getExternalModelValueFromInternalModel,
     getInternalModelValueExternalFromModel,
     getSelectionNodeAndOffsetFromPositionInValueSpace,
+    modelValuesEqual,
+    parseValuesFromHtml,
   } from './base/helper';
 
   import { applyPatchOperations } from './base/applyPatchOperations';
 
   import {
+    determinePatchOperationAfterSelectionChangeEvent,
     determinePatchOperationFromBeforeInputEvent,
     determinePatchOperationFromCompositionEndEvent,
     determinePatchOperationFromKeydownEvent,
     determinePatchOperationFromKeyupEvent,
-    determinePatchOperationAfterSelectionChangeEvent,
   } from './base/determinePatchOperations';
-
-  import type { PatchOperation } from './base/types';
 
   interface Props {
     mask: MaskDefinition;
@@ -309,6 +311,54 @@
   const handleMousedown = () => {
     if (!hasFocus.value) {
       gainFocus();
+    }
+  };
+
+  const copyWholeValue = async (event: ClipboardEvent) => {
+    if (event.clipboardData) {
+      if (lastDerivedState.value.validatedStringEncodedValue !== undefined) {
+        event.clipboardData.setData('text/plain', lastDerivedState.value.validatedStringEncodedValue);
+      }
+
+      const htmlValues = encodeValuesAsHtml(props.mask, state.value.values);
+
+      event.clipboardData.setData('text/html', htmlValues);
+
+      event.preventDefault();
+    }
+  };
+
+  const pasteWholeValue = async () => {
+    try {
+      const clipboardData = await navigator.clipboard.read();
+
+      for (const item of clipboardData) {
+        if (item.types.includes('text/html')) {
+          const htmlBlob = await item.getType('text/html');
+          const htmlText = await htmlBlob.text();
+          const values = parseValuesFromHtml(htmlText);
+
+          if (values) {
+            runComponentInternalUpdateLoop([{ op: 'set-values', values: values }]);
+
+            return;
+          }
+        }
+
+        if (item.types.includes('text/plain')) {
+          const textBlob = await item.getType('text/plain');
+          const plainText = await textBlob.text();
+
+          if (props.mask.getValuesFromStringRepresentation) {
+            const values = props.mask.getValuesFromStringRepresentation(plainText);
+
+            runComponentInternalUpdateLoop([{ op: 'set-values', values: values }]);
+            return;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to read clipboard:', error);
     }
   };
 
