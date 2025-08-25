@@ -29,9 +29,9 @@
 ## masks 
 
 - [x] ~~uuid~~
-- [ ] date+time
+- [x] year/month
 - [ ] year
-- [ ] year/month
+- [ ] date+time
 - [ ] year/week
 - [ ] ipv4 subnet
 - [ ] ipv6 subnet

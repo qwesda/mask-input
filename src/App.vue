@@ -6,6 +6,10 @@
       <DatePlayground />
     </PlaygroundSection>
 
+    <PlaygroundSection v-else-if="activeSection === 'year-month'">
+      <YearMonthPlayground />
+    </PlaygroundSection>
+
     <PlaygroundSection v-else-if="activeSection === 'numeric'">
       <NumericPlayground />
     </PlaygroundSection>
@@ -32,12 +36,13 @@
   import PlaygroundSection from '@/components/app/PlaygroundSection.vue';
 
   import DatePlayground from '@/components/playground-sections/DatePlayground.vue';
+  import YearMonthPlayground from '@/components/playground-sections/YearMonthPlayground.vue';
   import NumericPlayground from '@/components/playground-sections/NumericPlayground.vue';
   import IpAddressesPlayground from '@/components/playground-sections/IpAddressesPlayground.vue';
   import SpecialPlayground from '@/components/playground-sections/SpecialPlayground.vue';
   import UuidPlayground from '@/components/playground-sections/UuidPlayground.vue';
 
-  const activeSection: Ref<'date' | 'numeric' | 'ip-addresses' | 'special' | 'uuid'> = ref('date' as const);
+  const activeSection: Ref<'date' | 'year-month' | 'numeric' | 'ip-addresses' | 'special' | 'uuid'> = ref('date' as const);
 
   bindToLocalStorage(activeSection, 'playground/activeSection');
 </script>
