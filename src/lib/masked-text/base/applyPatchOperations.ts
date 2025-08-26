@@ -92,14 +92,8 @@ export const applyPatchOperationMoveCursor = (
     }
   }
 
-  const newValues =
-    maskDefinition.valueNormalizationFn && newCaretPosition.split(':')[0] !== currentState.caretPositionInValueSpace.split(':')[0]
-      ? maskDefinition.valueNormalizationFn(currentState.values)
-      : currentState.values;
-
   return {
     ...currentState,
-    values: newValues,
     caretPositionInValueSpace: newCaretPosition,
     selectionEndPositionInValueSpace: patchOperation.keepSelectionEnd ? currentState.selectionEndPositionInValueSpace : newCaretPosition,
   };
@@ -133,15 +127,8 @@ export const applyPatchOperationSetSelection = (
   currentDerivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): MaskState => {
-  const newValues =
-    maskDefinition.valueNormalizationFn &&
-    patchOperation.caretPositionInValueSpace.split(':')[0] !== currentState.caretPositionInValueSpace.split(':')[0]
-      ? maskDefinition.valueNormalizationFn(currentState.values)
-      : currentState.values;
-
   return {
     ...currentState,
-    values: newValues,
     caretPositionInValueSpace: patchOperation.caretPositionInValueSpace,
     selectionEndPositionInValueSpace: patchOperation.selectionEndPositionInValueSpace,
   };
@@ -167,14 +154,8 @@ export const applyPatchOperationSelectNextSection = (
   const newCaretPositionInValueSpace = targetSection.valueSpace[targetSection.valueSpace.length - 1];
   const newSelectionEndPositionInValueSpace = targetSection.valueSpace[0];
 
-  const newValues =
-    maskDefinition.valueNormalizationFn && newCaretPositionInValueSpace.split(':')[0] !== currentState.caretPositionInValueSpace.split(':')[0]
-      ? maskDefinition.valueNormalizationFn(currentState.values)
-      : currentState.values;
-
   return {
     ...currentState,
-    values: newValues,
     caretPositionInValueSpace: newCaretPositionInValueSpace,
     selectionEndPositionInValueSpace: newSelectionEndPositionInValueSpace,
   };
@@ -189,11 +170,8 @@ export const applyPatchOperationSelectAll = (
   const newCaretPositionInValueSpace = currentDerivedState.valueSpace[currentDerivedState.valueSpace.length - 1];
   const newSelectionEndPositionInValueSpace = currentDerivedState.valueSpace[0];
 
-  const newValues = maskDefinition.valueNormalizationFn ? maskDefinition.valueNormalizationFn(currentState.values) : currentState.values;
-
   return {
     ...currentState,
-    values: newValues,
     caretPositionInValueSpace: newCaretPositionInValueSpace,
     selectionEndPositionInValueSpace: newSelectionEndPositionInValueSpace,
   };
@@ -533,6 +511,8 @@ export const applyPatchOperations = (
   let reRenderImmediately = false;
 
   for (const patchOperation of patchOperations) {
+    const lastDerivedState = currentDerivedState;
+
     reRenderImmediately =
       patchOperation.op === 'insert-character' ||
       patchOperation.op === 'delete-backwards' ||
@@ -578,6 +558,16 @@ export const applyPatchOperations = (
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'set-values') {
       currentState = applyPatchOperationSetValues(patchOperation, currentState, currentDerivedState, maskDefinition);
+      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    }
+
+    if (maskDefinition.valueNormalizationFn && lastDerivedState.caretValueSpaceIndex !== currentDerivedState.caretValueSpaceIndex) {
+      currentState = applyPatchOperationApplyValueNormalization(
+        { op: 'apply-value-normalization' },
+        currentState,
+        currentDerivedState,
+        maskDefinition,
+      );
       currentDerivedState = getDerivedState(currentState, maskDefinition);
     }
   }
