@@ -6,5 +6,19 @@ import { DateMask } from './date';
 import { YearMonthMask } from './yearMonth';
 import { YearMask } from './year';
 import { UuidMask } from './uuid';
+import { IsrcMask } from './isrc';
+import { EanMask } from './ean';
 
-export { NumericMask, type NumericMaskProps, IPv4AddressMask, IPv6AddressMask, DateMask, YearMonthMask, YearMask, StringsMask, UuidMask };
+export {
+  NumericMask,
+  type NumericMaskProps,
+  IPv4AddressMask,
+  IPv6AddressMask,
+  DateMask,
+  YearMonthMask,
+  YearMask,
+  StringsMask,
+  UuidMask,
+  IsrcMask,
+  EanMask,
+};

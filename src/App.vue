@@ -29,6 +29,14 @@
     <PlaygroundSection v-else-if="activeSection === 'uuid'">
       <UuidPlayground />
     </PlaygroundSection>
+
+    <PlaygroundSection v-else-if="activeSection === 'isrc'">
+      <IsrcPlayground />
+    </PlaygroundSection>
+
+    <PlaygroundSection v-else-if="activeSection === 'ean'">
+      <EanPlayground />
+    </PlaygroundSection>
   </div>
 </template>
 
@@ -46,8 +54,10 @@
   import IpAddressesPlayground from '@/components/playground-sections/IpAddressesPlayground.vue';
   import SpecialPlayground from '@/components/playground-sections/SpecialPlayground.vue';
   import UuidPlayground from '@/components/playground-sections/UuidPlayground.vue';
+  import IsrcPlayground from '@/components/playground-sections/IsrcPlayground.vue';
+  import EanPlayground from '@/components/playground-sections/EanPlayground.vue';
 
-  const activeSection: Ref<'date' | 'year-month' | 'year' | 'numeric' | 'ip-addresses' | 'special' | 'uuid'> = ref('date' as const);
+  const activeSection: Ref<'date' | 'year-month' | 'year' | 'numeric' | 'ip-addresses' | 'special' | 'uuid' | 'isrc' | 'ean'> = ref('date' as const);
 
   bindToLocalStorage(activeSection, 'playground/activeSection');
 </script>
