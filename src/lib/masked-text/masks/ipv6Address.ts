@@ -60,7 +60,9 @@ const ipv6AddressEncodeValidatedValue = (values: Record<string, string[]>): stri
   return blocks.join(':');
 };
 
-const ipv6AddressBlockMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const ipv6AddressBlockMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
+
   if (sectionValue.length === 0) {
     return [{ char: '0', type: 'mask' as const }];
   }

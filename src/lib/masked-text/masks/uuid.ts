@@ -17,7 +17,9 @@ const uuidEncodeValidatedValue = (values: Record<string, string[]>): string | un
   return `${part1}-${part2}-${part3}-${part4}-${part5}`.toLowerCase();
 };
 
-const uuidHexMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const uuidHexMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
+
   if (sectionValue.length === 0) {
     return [{ char: '0', type: 'mask' as const }];
   }

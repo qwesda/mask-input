@@ -27,7 +27,8 @@ const numericEncodeValidatedValue = (values: Record<string, string[]>): string |
 };
 
 const numericIntegerMaskFn = (minDigits: number, thousandSeparator?: string) => {
-  return (sectionValue: string[]): MaskCharacter[] => {
+  return (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+    const sectionValue = values[sectionSlug] ?? [];
     const ret: MaskCharacter[] = [];
 
     for (let i = 0; i < Math.max(minDigits - sectionValue.length, 0); i++) {
@@ -53,7 +54,8 @@ const numericIntegerMaskFn = (minDigits: number, thousandSeparator?: string) => 
 };
 
 const numericDecimalsMaskFn = (minDigits: number | undefined) => {
-  return (sectionValue: string[]): MaskCharacter[] => {
+  return (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+    const sectionValue = values[sectionSlug] ?? [];
     const ret: MaskCharacter[] = [];
 
     for (let i = 0; i < sectionValue.length; i++) {

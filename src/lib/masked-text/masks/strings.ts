@@ -10,7 +10,9 @@ const stringsEncodeValidatedValue = (values: Record<string, string[]>): string |
   return `${block1}.${block2}.${block3}.${block4}`;
 };
 
-const stringsBlockMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const stringsBlockMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
+
   return sectionValue.map((c) => {
     return { char: c, type: 'value' as const };
   });

@@ -27,7 +27,7 @@ export const MaskSectionFixed = (mask: string, skipKeys?: string[]): MaskSection
 export const MaskSectionInput = (
   slug: string,
   options: {
-    maskingFn: (sectionValue: string[]) => MaskCharacter[];
+    maskingFn: (sectionSlug: string, values: Record<string, string[]>) => MaskCharacter[];
 
     inputBehavior?: 'replace' | 'insert';
     alignment?: 'left' | 'right';
@@ -156,7 +156,7 @@ const getInputSectionDerivedState = (
   const valueString = value.join('');
   const syntacticValidationStatus = sectionDefinition.syntacticValidationFn ? sectionDefinition.syntacticValidationFn(valueString) : undefined;
 
-  const maskCharacters: MaskCharacter[] = sectionDefinition.maskingFn(value);
+  const maskCharacters: MaskCharacter[] = sectionDefinition.maskingFn(sectionDefinition.slug, maskState.values);
 
   let posValueSpace = 0;
   let posDisplaySpace = 0;

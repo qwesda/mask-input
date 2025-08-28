@@ -19,7 +19,9 @@ const ipv4AddressEncodeValidatedValue = (values: Record<string, string[]>): stri
   return `${block1}.${block2}.${block3}.${block4}`;
 };
 
-const ipv4AddressBlockMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const ipv4AddressBlockMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
+
   if (sectionValue.length === 0) {
     return [{ char: '0', type: 'mask' as const }];
   }

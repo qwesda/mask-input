@@ -7,7 +7,7 @@ export interface MaskSectionFixedDefinition {
 export interface MaskSectionInputDefinition {
   type: 'input';
   slug: string;
-  maskingFn: (sectionValue: string[]) => MaskCharacter[];
+  maskingFn: (sectionSlug: string, values: Record<string, string[]>) => MaskCharacter[];
 
   inputBehavior: 'replace' | 'insert';
   alignment: 'left' | 'right';

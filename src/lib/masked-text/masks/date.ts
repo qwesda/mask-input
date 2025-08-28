@@ -14,7 +14,8 @@ const dateEncodeValidatedValue = (values: Record<string, string[]>): string | un
   return year + '-' + month.padStart(2, '0') + '-' + day.padStart(2, '0');
 };
 
-const dateYearMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const dateYearMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
@@ -37,7 +38,8 @@ const dateYearMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   return ret;
 };
 
-const dateMonthMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const dateMonthMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
@@ -58,7 +60,8 @@ const dateMonthMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   return ret;
 };
 
-const dateDayMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const dateDayMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {

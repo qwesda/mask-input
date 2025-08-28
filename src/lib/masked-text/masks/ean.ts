@@ -52,8 +52,8 @@ const eanSemanticValidationFn = (values: Record<string, string[]>): [boolean, st
   return [true, ''];
 };
 
-// Country Code (first digit) masking function
-const countryCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const countryCodeMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
@@ -65,8 +65,8 @@ const countryCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   return ret;
 };
 
-// Manufacturer Code (6 digits) masking function
-const manufacturerCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const manufacturerCodeMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   for (let i = 0; i < sectionValue.length; i++) {
@@ -80,8 +80,8 @@ const manufacturerCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   return ret;
 };
 
-// Product Code (5 digits) masking function
-const productCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const productCodeMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   for (let i = 0; i < sectionValue.length; i++) {
@@ -95,8 +95,8 @@ const productCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   return ret;
 };
 
-// Check Digit masking function
-const checkDigitMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const checkDigitMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
