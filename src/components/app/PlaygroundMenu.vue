@@ -10,6 +10,7 @@
       <button @click="$emit('update:modelValue', 'uuid')" :class="{ active: modelValue === 'uuid' }">UUID</button>
       <button @click="$emit('update:modelValue', 'isrc')" :class="{ active: modelValue === 'isrc' }">ISRC</button>
       <button @click="$emit('update:modelValue', 'ean')" :class="{ active: modelValue === 'ean' }">EAN</button>
+      <button @click="$emit('update:modelValue', 'isbn')" :class="{ active: modelValue === 'isbn' }">ISBN</button>
       <div style="flex-grow: 1" />
       <input type="text" style="border: none; background-color: transparent" value="test input foo bar baz" />
     </div>

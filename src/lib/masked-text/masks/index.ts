@@ -8,6 +8,7 @@ import { YearMask } from './year';
 import { UuidMask } from './uuid';
 import { IsrcMask } from './isrc';
 import { EanMask } from './ean';
+import { IsbnMask } from './isbn';
 
 export {
   NumericMask,
@@ -21,4 +22,5 @@ export {
   UuidMask,
   IsrcMask,
   EanMask,
+  IsbnMask,
 };
