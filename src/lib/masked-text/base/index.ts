@@ -34,6 +34,7 @@ export const MaskSectionInput = (
 
     inputCharacterFilterFn?: (inputCharacter: string) => boolean;
     inputCharacterSubstitutionFn?: (inputCharacter: string) => string;
+    autoAdvanceFn?: (values: Record<string, string[]>) => boolean;
 
     syntacticValidationFn?: (sectionValue: string) => boolean;
     semanticValidationFn?: (values: Record<string, string[]>, sectionSlug: string) => boolean | string;
@@ -61,6 +62,7 @@ export const MaskSectionInput = (
 
   inputCharacterFilterFn: options.inputCharacterFilterFn,
   inputCharacterSubstitutionFn: options.inputCharacterSubstitutionFn,
+  autoAdvanceFn: options.autoAdvanceFn,
 
   syntacticValidationFn: options.syntacticValidationFn,
 

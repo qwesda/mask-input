@@ -466,7 +466,13 @@ export const applyPatchOperationInsert = (
 
   newValues[sectionDefinition.slug] = newSectionValue;
 
-  if (sectionDefinition.maxLength && currentDerivedState.caretValueSpacePosition + 1 >= sectionDefinition.maxLength) {
+  let shouldAutoAdvance = false;
+
+  if (sectionDefinition.autoAdvanceFn) {
+    shouldAutoAdvance = sectionDefinition.autoAdvanceFn(newValues);
+  }
+
+  if (shouldAutoAdvance || (sectionDefinition.maxLength && currentDerivedState.caretValueSpacePosition + 1 >= sectionDefinition.maxLength)) {
     const nextInputSection = findSection(currentDerivedState, {
       startIndex: currentDerivedState.caretDisplaySpaceIndex,
       direction: 'right',

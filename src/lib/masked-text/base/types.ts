@@ -14,6 +14,7 @@ export interface MaskSectionInputDefinition {
 
   inputCharacterFilterFn: ((inputCharacter: string) => boolean) | undefined;
   inputCharacterSubstitutionFn: ((inputCharacter: string) => string) | undefined;
+  autoAdvanceFn: ((values: Record<string, string[]>) => boolean) | undefined;
 
   syntacticValidationFn: ((sectionValue: string) => boolean) | undefined;
 

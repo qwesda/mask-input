@@ -23,6 +23,7 @@
 - [x] ~~maybe de-vueify the component~~
 - [x] ~~merge spinUp and spinDown functions~~
 - [x] ~~change maskingFn to receive all section values~~
+- [x] ~~add `autoAdvanceFn` for dynamic section lengths~~
 - [ ] holding key should repeat last key
 - [ ] maybe add partial (selection) copy/pase support
 - [ ] maybe add highlighting of problematic sections for semantic validation
