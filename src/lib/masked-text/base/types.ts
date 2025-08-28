@@ -17,17 +17,9 @@ export interface MaskSectionInputDefinition {
 
   syntacticValidationFn: ((sectionValue: string) => boolean) | undefined;
 
-  spinUpFn:
+  spinFn:
     | ((
-        values: Record<string, string[]>,
-        sectionSlug: string,
-        metaPressed: boolean,
-        shiftPressed: boolean,
-        altPressed: boolean,
-      ) => Record<string, string[]>)
-    | undefined;
-  spinDownFn:
-    | ((
+        direction: 'up' | 'down',
         values: Record<string, string[]>,
         sectionSlug: string,
         metaPressed: boolean,

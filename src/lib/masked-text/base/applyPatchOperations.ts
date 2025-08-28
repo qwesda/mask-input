@@ -282,19 +282,20 @@ export const applyPatchOperationSpin = (
   maskDefinition: MaskDefinition,
 ): MaskState => {
   const sectionDefinition = maskDefinition.sections[currentDerivedState.caretDisplaySpaceIndex] as MaskSectionInputDefinition;
-  const spinFn = patchOperation.direction === 'up' ? sectionDefinition.spinUpFn : sectionDefinition.spinDownFn;
 
-  if (!spinFn) {
+  if (!sectionDefinition.spinFn) {
     return currentState;
   }
 
-  const newValues = spinFn(
+  const newValues = sectionDefinition.spinFn(
+    patchOperation.direction,
     currentState.values,
     sectionDefinition.slug,
     patchOperation.metaPressed,
     patchOperation.shiftPressed,
     patchOperation.altPressed,
   );
+
   const newSectionValue = newValues[sectionDefinition.slug] ?? [];
   const newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${[...newSectionValue].length}`;
 

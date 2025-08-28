@@ -12,7 +12,8 @@ const yearEncodeValidatedValue = (values: Record<string, string[]>): string | un
   return `${year}-01-01`;
 };
 
-const yearMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const yearMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
@@ -64,11 +65,12 @@ const yearSemanticValidationFn = (minYearString: string, maxYearString: string) 
   };
 };
 
-const yearSpinUpFn = (minYearString: string, maxYearString: string) => {
+const yearSpinFn = (minYearString: string, maxYearString: string) => {
   const minYear = parseInt(minYearString, 10);
   const maxYear = parseInt(maxYearString, 10);
 
   return (
+    direction: 'up' | 'down',
     values: Record<string, string[]>,
     sectionSlug: string,
     metaPressed: boolean,
@@ -102,55 +104,7 @@ const yearSpinUpFn = (minYearString: string, maxYearString: string) => {
         const yearStr = newValues['year'].length > 0 ? newValues['year'].join('') : todaysDateYearStr;
         const year = parseInt(yearStr, 10);
         const spinAmount = shiftPressed ? 10 : 1;
-        const newYear = Math.max(Math.min(year + spinAmount, maxYear), minYear);
-
-        newValues['year'] = splitStringIntoGraphemes(newYear.toString());
-      }
-    }
-
-    return newValues;
-  };
-};
-
-const yearSpinDownFn = (minYearString: string, maxYearString: string) => {
-  const minYear = parseInt(minYearString, 10);
-  const maxYear = parseInt(maxYearString, 10);
-
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values } as Record<string, string[]>;
-
-    const todaysDate = new Date();
-    const todaysDateYearStr = todaysDate.getUTCFullYear().toString();
-
-    if (altPressed) {
-      const currentValue = parseInt(newValues[sectionSlug].join('') || '0', 10);
-      const spinAmount = shiftPressed ? 10 : 1;
-      let newValue = currentValue;
-
-      if (sectionSlug === 'year') {
-        if (newValues[sectionSlug].length === 0) {
-          newValues[sectionSlug] = splitStringIntoGraphemes(todaysDateYearStr);
-        } else {
-          newValue = Math.min(Math.max(currentValue - spinAmount, minYear), maxYear);
-          newValues[sectionSlug] = splitStringIntoGraphemes(newValue.toString());
-        }
-      }
-    } else {
-      const allSectionsEmpty = Object.values(newValues).every((section) => section.length === 0);
-
-      if (allSectionsEmpty) {
-        newValues['year'] = splitStringIntoGraphemes(todaysDateYearStr);
-      } else {
-        const yearStr = newValues['year'].length > 0 ? newValues['year'].join('') : todaysDateYearStr;
-        const year = parseInt(yearStr, 10);
-        const spinAmount = shiftPressed ? 10 : 1;
-        const newYear = Math.min(Math.max(year - spinAmount, minYear), maxYear);
+        const newYear = Math.max(Math.min(year + spinAmount * (direction === 'up' ? 1 : -1), maxYear), minYear);
 
         newValues['year'] = splitStringIntoGraphemes(newYear.toString());
       }
@@ -186,8 +140,7 @@ export const YearMask = (minYear?: number, maxYear?: number): MaskDefinition => 
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,4}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     maxLength: 4,
-    spinUpFn: yearSpinUpFn(minYearString, maxYearString),
-    spinDownFn: yearSpinDownFn(minYearString, maxYearString),
+    spinFn: yearSpinFn(minYearString, maxYearString),
   });
 
   const semanticValidationFn = yearSemanticValidationFn(minYearString, maxYearString);

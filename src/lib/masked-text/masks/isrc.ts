@@ -15,7 +15,8 @@ const isrcEncodeValidatedValue = (values: Record<string, string[]>): string | un
   return `${countryCode}-${registrantCode}-${year}-${designation}`;
 };
 
-const countryCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const countryCodeMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
@@ -36,7 +37,8 @@ const countryCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   return ret;
 };
 
-const registrantCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const registrantCodeMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
@@ -58,7 +60,8 @@ const registrantCodeMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   return ret;
 };
 
-const yearMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const yearMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
@@ -79,7 +82,8 @@ const yearMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   return ret;
 };
 
-const designationMaskFn = (sectionValue: string[]): MaskCharacter[] => {
+const designationMaskFn = (sectionSlug: string, values: Record<string, string[]>): MaskCharacter[] => {
+  const sectionValue = values[sectionSlug] ?? [];
   const ret: MaskCharacter[] = [];
 
   if (sectionValue.length === 0) {
@@ -113,24 +117,19 @@ const isrcSemanticValidationFn = (values: Record<string, string[]>): [boolean, s
     return [true, ''];
   }
 
-  // Validate country code (2 letters)
-  if (countryCode.length !== 2 || !/^[A-Z]{2}$/.test(countryCode)) {
+  if (!/^[A-Z]{2}$/.test(countryCode)) {
     return [false, 'Country code must be 2 uppercase letters'];
   }
 
-  // Validate registrant code (3 alphanumeric characters)
-  if (registrantCode.length !== 3 || !/^[A-Z0-9]{3}$/.test(registrantCode)) {
+  if (!/^[A-Z0-9]{3}$/.test(registrantCode)) {
     return [false, 'Registrant code must be 3 alphanumeric characters'];
   }
 
-  // Validate year (2 digits, should be reasonable)
-  const yearNum = parseInt(year, 10);
-  if (year.length !== 2 || isNaN(yearNum)) {
+  if (!/^[0-9]{2}$/.test(year)) {
     return [false, 'Year must be 2 digits'];
   }
 
-  // Validate designation (5 digits)
-  if (designation.length !== 5 || !/^[0-9]{5}$/.test(designation)) {
+  if (!/^[0-9]{5}$/.test(designation)) {
     return [false, 'Designation must be 5 digits'];
   }
 
@@ -145,7 +144,6 @@ const registrantCodeInputCharacterSubstitutionFn = (char: string): string => {
   return char.toUpperCase();
 };
 
-// Data sets for spinning through ISRC components
 const allCountryCodes = [
   'AD',
   'AE',
@@ -155,16 +153,14 @@ const allCountryCodes = [
   'AL',
   'AM',
   'AO',
-  'AQ',
   'AR',
-  'AS',
   'AT',
   'AU',
   'AW',
-  'AX',
   'AZ',
   'BA',
   'BB',
+  'BC',
   'BD',
   'BE',
   'BF',
@@ -172,39 +168,38 @@ const allCountryCodes = [
   'BH',
   'BI',
   'BJ',
-  'BL',
+  'BK',
   'BM',
   'BN',
   'BO',
-  'BQ',
+  'BP',
   'BR',
   'BS',
-  'BT',
-  'BV',
   'BW',
+  'BX',
   'BY',
   'BZ',
   'CA',
-  'CC',
+  'CB',
   'CD',
   'CF',
   'CG',
   'CH',
   'CI',
-  'CK',
   'CL',
   'CM',
   'CN',
   'CO',
-  'CR',
+  'CP',
+  'CS',
   'CU',
   'CV',
   'CW',
-  'CX',
   'CY',
   'CZ',
   'DE',
-  'DJ',
+  'DG',
+  'DG',
   'DK',
   'DM',
   'DO',
@@ -212,37 +207,30 @@ const allCountryCodes = [
   'EC',
   'EE',
   'EG',
-  'EH',
-  'ER',
   'ES',
   'ET',
   'FI',
   'FJ',
-  'FK',
-  'FM',
   'FO',
   'FR',
+  'FX',
   'GA',
   'GB',
   'GD',
   'GE',
-  'GF',
   'GG',
   'GH',
   'GI',
   'GL',
   'GM',
   'GN',
-  'GP',
   'GQ',
   'GR',
-  'GS',
   'GT',
-  'GU',
   'GW',
+  'GX',
   'GY',
   'HK',
-  'HM',
   'HN',
   'HR',
   'HT',
@@ -252,7 +240,6 @@ const allCountryCodes = [
   'IL',
   'IM',
   'IN',
-  'IO',
   'IQ',
   'IR',
   'IS',
@@ -264,11 +251,10 @@ const allCountryCodes = [
   'KE',
   'KG',
   'KH',
-  'KI',
   'KM',
   'KN',
-  'KP',
   'KR',
+  'KS',
   'KW',
   'KY',
   'KZ',
@@ -282,21 +268,18 @@ const allCountryCodes = [
   'LT',
   'LU',
   'LV',
-  'LY',
   'MA',
   'MC',
   'MD',
   'ME',
   'MF',
   'MG',
-  'MH',
   'MK',
   'ML',
   'MM',
   'MN',
   'MO',
   'MP',
-  'MQ',
   'MR',
   'MS',
   'MT',
@@ -307,16 +290,12 @@ const allCountryCodes = [
   'MY',
   'MZ',
   'NA',
-  'NC',
   'NE',
-  'NF',
   'NG',
   'NI',
   'NL',
   'NO',
   'NP',
-  'NR',
-  'NU',
   'NZ',
   'OM',
   'PA',
@@ -326,15 +305,15 @@ const allCountryCodes = [
   'PH',
   'PK',
   'PL',
-  'PM',
-  'PN',
   'PR',
   'PS',
   'PT',
-  'PW',
   'PY',
   'QA',
-  'RE',
+  'QM',
+  'QN',
+  'QT',
+  'QZ',
   'RO',
   'RS',
   'RU',
@@ -345,9 +324,7 @@ const allCountryCodes = [
   'SD',
   'SE',
   'SG',
-  'SH',
   'SI',
-  'SJ',
   'SK',
   'SL',
   'SM',
@@ -355,293 +332,172 @@ const allCountryCodes = [
   'SO',
   'SR',
   'SS',
-  'ST',
   'SV',
   'SX',
   'SY',
   'SZ',
   'TC',
   'TD',
-  'TF',
   'TG',
   'TH',
-  'TJ',
-  'TK',
   'TL',
-  'TM',
   'TN',
   'TO',
   'TR',
   'TT',
-  'TV',
   'TW',
   'TZ',
   'UA',
   'UG',
-  'UM',
+  'UK',
   'US',
   'UY',
   'UZ',
-  'VA',
   'VC',
   'VE',
   'VG',
-  'VI',
   'VN',
   'VU',
-  'WF',
-  'WS',
+  'XK',
   'YE',
-  'YT',
+  'YU',
   'ZA',
+  'ZB',
   'ZM',
   'ZW',
+  'ZZ',
 ];
 
-// Helper functions for dynamic registrant code cycling
-const registrantCodeToIndex = (code: string): number => {
-  if (code.length !== 3) return 0;
+const countryCodeSpinFn = (
+  direction: 'up' | 'down',
+  values: Record<string, string[]>,
+  sectionSlug: string,
+  metaPressed: boolean,
+  shiftPressed: boolean,
+  altPressed: boolean,
+): Record<string, string[]> => {
+  const newValues = { ...values };
 
-  const letter = code.charCodeAt(0) - 65; // A=0, B=1, etc.
-  const number = parseInt(code.slice(1), 10);
+  if (sectionSlug === 'countryCode') {
+    const currentValue = newValues[sectionSlug]?.join('') || '';
+    const currentIndex = allCountryCodes.indexOf(currentValue);
+    const spinDirection = direction === 'up' ? 1 : -1;
 
-  if (letter < 0 || letter > 25 || isNaN(number) || number < 0 || number > 99) {
-    return 0; // Default to A00 if invalid
+    if (currentIndex === -1) {
+      newValues[sectionSlug] = splitStringIntoGraphemes(allCountryCodes[0]);
+    } else {
+      let nextIndex = currentIndex + spinDirection;
+
+      if (nextIndex < 0) {
+        nextIndex = allCountryCodes.length - 1;
+      } else if (nextIndex >= allCountryCodes.length) {
+        nextIndex = 0;
+      }
+
+      newValues[sectionSlug] = splitStringIntoGraphemes(allCountryCodes[nextIndex]);
+    }
   }
 
-  return letter * 100 + number; // A00=0, A01=1, ..., A99=99, B00=100, etc.
+  return newValues;
 };
 
-const indexToRegistrantCode = (index: number): string => {
-  const totalCodes = 26 * 100; // A00-Z99 = 2600 total codes
-  const normalizedIndex = ((index % totalCodes) + totalCodes) % totalCodes; // Handle negative wrap
+const registrantCodeSpinFn = (
+  direction: 'up' | 'down',
+  values: Record<string, string[]>,
+  sectionSlug: string,
+  metaPressed: boolean,
+  shiftPressed: boolean,
+  altPressed: boolean,
+): Record<string, string[]> => {
+  const newValues = { ...values };
 
-  const letter = Math.floor(normalizedIndex / 100);
-  const number = normalizedIndex % 100;
+  if (sectionSlug === 'registrantCode') {
+    const currentValue = newValues[sectionSlug]?.join('') || '';
+    const currentIndex = currentValue ? Number.parseInt(currentValue, 36) : Number.NaN;
+    const spinDirection = direction === 'up' ? 1 : -1;
+    const spinAmount = (shiftPressed ? 36 : 1) * spinDirection;
+    const maxAmount = Number.parseInt('ZZZ', 36);
 
-  return String.fromCharCode(65 + letter) + number.toString().padStart(2, '0');
-};
+    if (Number.isNaN(currentIndex)) {
+      newValues[sectionSlug] = splitStringIntoGraphemes('000');
+    } else {
+      let nextCode = currentIndex + spinAmount;
 
-// Spin functions for country code
-const countryCodeSpinUpFn = () => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values };
-
-    if (sectionSlug === 'countryCode') {
-      const currentValue = newValues[sectionSlug]?.join('') || '';
-      const currentIndex = allCountryCodes.indexOf(currentValue);
-
-      if (currentIndex === -1) {
-        // If current value is not in the list, start with first item
-        newValues[sectionSlug] = splitStringIntoGraphemes(allCountryCodes[0]);
-      } else {
-        // Move to next item, wrap around to beginning
-        const nextIndex = (currentIndex + 1) % allCountryCodes.length;
-        newValues[sectionSlug] = splitStringIntoGraphemes(allCountryCodes[nextIndex]);
+      if (nextCode < 0) {
+        nextCode = maxAmount;
+      } else if (nextCode > maxAmount) {
+        nextCode = 0;
       }
-    }
 
-    return newValues;
-  };
+      const nextCodeStr = nextCode.toString(36).padStart(3, '0').toUpperCase();
+
+      newValues[sectionSlug] = splitStringIntoGraphemes(nextCodeStr);
+    }
+  }
+
+  return newValues;
 };
 
-const countryCodeSpinDownFn = () => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values };
+const yearSpinFn = (
+  direction: 'up' | 'down',
+  values: Record<string, string[]>,
+  sectionSlug: string,
+  metaPressed: boolean,
+  shiftPressed: boolean,
+  altPressed: boolean,
+): Record<string, string[]> => {
+  const newValues = { ...values };
 
-    if (sectionSlug === 'countryCode') {
-      const currentValue = newValues[sectionSlug]?.join('') || '';
-      const currentIndex = allCountryCodes.indexOf(currentValue);
+  if (sectionSlug === 'year') {
+    const currentValue = newValues[sectionSlug]?.join('') || '';
+    const currentYear = currentValue ? parseInt(currentValue, 10) : new Date().getFullYear() % 100;
+    const spinDirection = direction === 'up' ? 1 : -1;
+    const spinAmount = (shiftPressed ? 10 : 1) * spinDirection;
 
-      if (currentIndex === -1) {
-        // If current value is not in the list, start with last item
-        newValues[sectionSlug] = splitStringIntoGraphemes(allCountryCodes[allCountryCodes.length - 1]);
-      } else {
-        // Move to previous item, wrap around to end
-        const prevIndex = currentIndex === 0 ? allCountryCodes.length - 1 : currentIndex - 1;
-        newValues[sectionSlug] = splitStringIntoGraphemes(allCountryCodes[prevIndex]);
-      }
+    let newYear = currentYear + spinAmount;
+
+    if (newYear > 99) {
+      newYear = 0;
+    } else if (newYear < 0) {
+      newYear = 99;
     }
 
-    return newValues;
-  };
+    const yearStr = newYear.toString().padStart(2, '0');
+    newValues[sectionSlug] = splitStringIntoGraphemes(yearStr);
+  }
+
+  return newValues;
 };
 
-// Spin functions for registrant code
-const registrantCodeSpinUpFn = () => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values };
+const designationSpinFn = (
+  direction: 'up' | 'down',
+  values: Record<string, string[]>,
+  sectionSlug: string,
+  metaPressed: boolean,
+  shiftPressed: boolean,
+  altPressed: boolean,
+): Record<string, string[]> => {
+  const newValues = { ...values };
 
-    if (sectionSlug === 'registrantCode') {
-      const currentValue = newValues[sectionSlug]?.join('') || '';
-      const currentIndex = currentValue ? registrantCodeToIndex(currentValue) : -1;
-      const spinAmount = shiftPressed ? 100 : 1; // Jump by 100 positions (next letter) when shift is pressed
+  if (sectionSlug === 'designation') {
+    const currentValue = newValues[sectionSlug]?.join('') || '';
+    const currentDesignation = currentValue ? parseInt(currentValue, 10) : 0;
+    const spinDirection = direction === 'up' ? 1 : -1;
+    const spinAmount = (shiftPressed ? 1000 : altPressed ? 100 : 1) * spinDirection;
 
-      if (currentIndex === -1) {
-        // If current value is invalid or empty, start with A00
-        newValues[sectionSlug] = splitStringIntoGraphemes('A00');
-      } else {
-        // Move to next code
-        const nextCode = indexToRegistrantCode(currentIndex + spinAmount);
-        newValues[sectionSlug] = splitStringIntoGraphemes(nextCode);
-      }
+    let newDesignation = currentDesignation + spinAmount;
+
+    if (newDesignation > 99999) {
+      newDesignation = newDesignation % 100000;
+    } else if (newDesignation < 0) {
+      newDesignation = 99999 + (newDesignation + 1);
     }
 
-    return newValues;
-  };
-};
+    const designationStr = newDesignation.toString().padStart(5, '0');
+    newValues[sectionSlug] = splitStringIntoGraphemes(designationStr);
+  }
 
-const registrantCodeSpinDownFn = () => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values };
-
-    if (sectionSlug === 'registrantCode') {
-      const currentValue = newValues[sectionSlug]?.join('') || '';
-      const currentIndex = currentValue ? registrantCodeToIndex(currentValue) : -1;
-      const spinAmount = shiftPressed ? 100 : 1; // Jump by 100 positions (previous letter) when shift is pressed
-
-      if (currentIndex === -1) {
-        // If current value is invalid or empty, start with Z99
-        newValues[sectionSlug] = splitStringIntoGraphemes('Z99');
-      } else {
-        // Move to previous code
-        const prevCode = indexToRegistrantCode(currentIndex - spinAmount);
-        newValues[sectionSlug] = splitStringIntoGraphemes(prevCode);
-      }
-    }
-
-    return newValues;
-  };
-};
-
-// Spin functions for year
-const yearSpinUpFn = () => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values };
-
-    if (sectionSlug === 'year') {
-      const currentValue = newValues[sectionSlug]?.join('') || '';
-      const currentYear = currentValue ? parseInt(currentValue, 10) : new Date().getFullYear() % 100;
-      const spinAmount = shiftPressed ? 10 : 1;
-
-      let newYear = currentYear + spinAmount;
-      if (newYear > 99) newYear = 0; // Wrap around for 2-digit years
-
-      const yearStr = newYear.toString().padStart(2, '0');
-      newValues[sectionSlug] = splitStringIntoGraphemes(yearStr);
-    }
-
-    return newValues;
-  };
-};
-
-const yearSpinDownFn = () => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values };
-
-    if (sectionSlug === 'year') {
-      const currentValue = newValues[sectionSlug]?.join('') || '';
-      const currentYear = currentValue ? parseInt(currentValue, 10) : new Date().getFullYear() % 100;
-      const spinAmount = shiftPressed ? 10 : 1;
-
-      let newYear = currentYear - spinAmount;
-      if (newYear < 0) newYear = 99; // Wrap around for 2-digit years
-
-      const yearStr = newYear.toString().padStart(2, '0');
-      newValues[sectionSlug] = splitStringIntoGraphemes(yearStr);
-    }
-
-    return newValues;
-  };
-};
-
-// Spin functions for designation
-const designationSpinUpFn = () => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values };
-
-    if (sectionSlug === 'designation') {
-      const currentValue = newValues[sectionSlug]?.join('') || '';
-      const currentDesignation = currentValue ? parseInt(currentValue, 10) : 0;
-      const spinAmount = shiftPressed ? 1000 : altPressed ? 100 : 1;
-
-      let newDesignation = currentDesignation + spinAmount;
-      if (newDesignation > 99999) newDesignation = newDesignation % 100000; // Keep within 5 digits
-
-      const designationStr = newDesignation.toString().padStart(5, '0');
-      newValues[sectionSlug] = splitStringIntoGraphemes(designationStr);
-    }
-
-    return newValues;
-  };
-};
-
-const designationSpinDownFn = () => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values };
-
-    if (sectionSlug === 'designation') {
-      const currentValue = newValues[sectionSlug]?.join('') || '';
-      const currentDesignation = currentValue ? parseInt(currentValue, 10) : 0;
-      const spinAmount = shiftPressed ? 1000 : altPressed ? 100 : 1;
-
-      let newDesignation = currentDesignation - spinAmount;
-      if (newDesignation < 0) newDesignation = 99999 + (newDesignation + 1); // Wrap around
-
-      const designationStr = newDesignation.toString().padStart(5, '0');
-      newValues[sectionSlug] = splitStringIntoGraphemes(designationStr);
-    }
-
-    return newValues;
-  };
+  return newValues;
 };
 
 export const IsrcMask = (): MaskDefinition => {
@@ -652,8 +508,7 @@ export const IsrcMask = (): MaskDefinition => {
     inputCharacterFilterFn: validationFnFromRegexString(`^[A-Za-z]$`),
     inputCharacterSubstitutionFn: countryCodeInputCharacterSubstitutionFn,
     maxLength: 2,
-    spinUpFn: countryCodeSpinUpFn(),
-    spinDownFn: countryCodeSpinDownFn(),
+    spinFn: countryCodeSpinFn,
   });
 
   const sectionRegistrantCode = MaskSectionInput('registrantCode', {
@@ -663,8 +518,7 @@ export const IsrcMask = (): MaskDefinition => {
     inputCharacterFilterFn: validationFnFromRegexString(`^[A-Za-z0-9]$`),
     inputCharacterSubstitutionFn: registrantCodeInputCharacterSubstitutionFn,
     maxLength: 3,
-    spinUpFn: registrantCodeSpinUpFn(),
-    spinDownFn: registrantCodeSpinDownFn(),
+    spinFn: registrantCodeSpinFn,
   });
 
   const sectionYear = MaskSectionInput('year', {
@@ -673,8 +527,7 @@ export const IsrcMask = (): MaskDefinition => {
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,2}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     maxLength: 2,
-    spinUpFn: yearSpinUpFn(),
-    spinDownFn: yearSpinDownFn(),
+    spinFn: yearSpinFn,
   });
 
   const sectionDesignation = MaskSectionInput('designation', {
@@ -683,8 +536,7 @@ export const IsrcMask = (): MaskDefinition => {
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,5}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     maxLength: 5,
-    spinUpFn: designationSpinUpFn(),
-    spinDownFn: designationSpinDownFn(),
+    spinFn: designationSpinFn,
   });
 
   const skipKeys = ['-', ' '];

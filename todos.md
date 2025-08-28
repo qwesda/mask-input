@@ -21,6 +21,7 @@
 - [x] ~~add whole value copy/pase support~~
 - [x] ~~maybe replace fake selection highlight with native browser selection highlight~~
 - [x] ~~maybe de-vueify the component~~
+- [x] ~~merge spinUp and spinDown functions~~
 - [ ] holding key should repeat last key
 - [ ] maybe add partial (selection) copy/pase support
 - [ ] maybe add highlighting of problematic sections for semantic validation

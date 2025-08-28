@@ -29,14 +29,16 @@ const ipv4AddressBlockMaskFn = (sectionValue: string[]): MaskCharacter[] => {
   });
 };
 
-const ipv4AddressBlockSpinUpFn = (
+const ipv4AddressBlockSpinFn = (
+  direction: 'up' | 'down',
   values: Record<string, string[]>,
   sectionSlug: string,
   metaPressed: boolean,
   shiftPressed: boolean,
   altPressed: boolean,
 ): Record<string, string[]> => {
-  let spinAmount = shiftPressed ? 10 : 1;
+  const spinDirection = direction === 'up' ? 1 : -1;
+  let spinAmount = (shiftPressed ? 10 : 1) * spinDirection;
   const minValue = 0;
   const maxValue = 255;
   const newValues = {} as Record<string, string[]>;
@@ -48,14 +50,14 @@ const ipv4AddressBlockSpinUpFn = (
   if (altPressed) {
     const sectionValue = Number.parseInt((newValues[sectionSlug] ?? []).join(''));
 
-    if (!Number.isNaN(sectionValue)) {
-      if (sectionValue + spinAmount >= minValue && sectionValue + spinAmount <= maxValue) {
-        newValues[sectionSlug] = splitStringIntoGraphemes((sectionValue + spinAmount).toString());
-      } else if (sectionValue + spinAmount > maxValue) {
-        newValues[sectionSlug] = splitStringIntoGraphemes((sectionValue + spinAmount - (maxValue + 1)).toString());
-      } else {
-        newValues[sectionSlug] = splitStringIntoGraphemes(minValue.toString());
-      }
+    if (Number.isNaN(sectionValue)) {
+      newValues[sectionSlug] = ['0'];
+    } else if (sectionValue + spinAmount >= minValue && sectionValue + spinAmount <= maxValue) {
+      newValues[sectionSlug] = splitStringIntoGraphemes((sectionValue + spinAmount).toString());
+    } else if (sectionValue + spinAmount > maxValue) {
+      newValues[sectionSlug] = splitStringIntoGraphemes((sectionValue + spinAmount - (maxValue + 1)).toString());
+    } else {
+      newValues[sectionSlug] = splitStringIntoGraphemes(minValue.toString());
     }
   } else {
     const allBlockSlugs = Object.keys(newValues).sort().reverse();
@@ -65,18 +67,18 @@ const ipv4AddressBlockSpinUpFn = (
     for (const blockSlug of blockSlugsToHandle) {
       const sectionValue = Number.parseInt((newValues[blockSlug] ?? []).join(''));
 
-      if (!Number.isNaN(sectionValue)) {
-        if (sectionValue + spinAmount >= minValue && sectionValue + spinAmount <= maxValue) {
-          newValues[blockSlug] = splitStringIntoGraphemes((sectionValue + spinAmount).toString());
-          everyBlockOverflowed = false;
-          break;
-        } else if (sectionValue + spinAmount > maxValue) {
-          newValues[blockSlug] = splitStringIntoGraphemes((sectionValue + spinAmount - (maxValue + 1)).toString());
-          spinAmount = 1;
-        } else {
-          newValues[blockSlug] = splitStringIntoGraphemes(minValue.toString());
-          everyBlockOverflowed = false;
-        }
+      if (Number.isNaN(sectionValue)) {
+        newValues[sectionSlug] = ['0'];
+      } else if (sectionValue + spinAmount >= minValue && sectionValue + spinAmount <= maxValue) {
+        newValues[blockSlug] = splitStringIntoGraphemes((sectionValue + spinAmount).toString());
+        everyBlockOverflowed = false;
+        break;
+      } else if (sectionValue + spinAmount > maxValue) {
+        newValues[blockSlug] = splitStringIntoGraphemes((sectionValue + spinAmount - (maxValue + 1)).toString());
+        spinAmount = 1;
+      } else {
+        newValues[blockSlug] = splitStringIntoGraphemes(minValue.toString());
+        everyBlockOverflowed = false;
       }
     }
 
@@ -85,66 +87,12 @@ const ipv4AddressBlockSpinUpFn = (
         newValues[blockSlug] = splitStringIntoGraphemes(maxValue.toString());
       }
     }
-  }
 
-  return newValues;
-};
-
-const ipv4AddressBlockSpinDownFn = (
-  values: Record<string, string[]>,
-  sectionSlug: string,
-  metaPressed: boolean,
-  shiftPressed: boolean,
-  altPressed: boolean,
-): Record<string, string[]> => {
-  let spinAmount = shiftPressed ? 10 : 1;
-  const minValue = 0;
-  const maxValue = 255;
-  const newValues = {} as Record<string, string[]>;
-
-  for (const [key, value] of Object.entries(values)) {
-    newValues[key] = value.length ? value : !altPressed ? splitStringIntoGraphemes(maxValue.toString()) : [];
-  }
-
-  if (altPressed) {
-    const sectionValue = Number.parseInt(newValues[sectionSlug].join(''));
-
-    if (!Number.isNaN(sectionValue)) {
-      if (sectionValue - spinAmount >= minValue && sectionValue - spinAmount < maxValue) {
-        newValues[sectionSlug] = splitStringIntoGraphemes((sectionValue - spinAmount).toString());
-      } else if (sectionValue - spinAmount < minValue) {
-        newValues[sectionSlug] = splitStringIntoGraphemes((sectionValue - spinAmount + (maxValue + 1)).toString());
-      } else {
-        newValues[sectionSlug] = splitStringIntoGraphemes(maxValue.toString());
-      }
-    }
-  } else {
-    const allBlockSlugs = Object.keys(newValues).sort().reverse();
-    const blockSlugsToHandle = allBlockSlugs.slice(allBlockSlugs.indexOf(sectionSlug));
-    let everyBlockUnderflowed = true;
-
-    for (const blockSlug of blockSlugsToHandle) {
-      const sectionValue = Number.parseInt((newValues[blockSlug] ?? []).join(''));
-
-      if (!Number.isNaN(sectionValue)) {
-        if (sectionValue - spinAmount >= minValue && sectionValue - spinAmount < maxValue) {
-          newValues[blockSlug] = splitStringIntoGraphemes((sectionValue - spinAmount).toString());
-          everyBlockUnderflowed = false;
-          break;
-        } else if (sectionValue - spinAmount < minValue) {
-          newValues[blockSlug] = splitStringIntoGraphemes((sectionValue - spinAmount + (maxValue + 1)).toString());
-          spinAmount = 1;
-        } else {
-          newValues[sectionSlug] = splitStringIntoGraphemes(maxValue.toString());
-          everyBlockUnderflowed = false;
-        }
-      }
-    }
-
-    if (everyBlockUnderflowed) {
-      for (const blockSlug of blockSlugsToHandle) {
-        newValues[blockSlug] = splitStringIntoGraphemes(minValue.toString());
-      }
+    if (allBlockSlugs.length === 0) {
+      newValues['block1'] = ['0'];
+      newValues['block2'] = ['0'];
+      newValues['block3'] = ['0'];
+      newValues['block4'] = ['0'];
     }
   }
 
@@ -160,8 +108,7 @@ export const IPv4AddressMask = (): MaskDefinition => {
     syntacticValidationFn: validationFnFromRegexString(`^([0-9]{0,3})$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
 
-    spinUpFn: ipv4AddressBlockSpinUpFn,
-    spinDownFn: ipv4AddressBlockSpinDownFn,
+    spinFn: ipv4AddressBlockSpinFn,
   };
 
   const separatorSection = MaskSectionFixed('.', ['.', ' ']);

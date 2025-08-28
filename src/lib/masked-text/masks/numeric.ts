@@ -70,8 +70,9 @@ const numericDecimalsMaskFn = (minDigits: number | undefined) => {
   };
 };
 
-const numericSpinUpFn = (minDecimalDigits: number) => {
+const numericSpinFn = (minDecimalDigits: number) => {
   return (
+    direction: 'up' | 'down',
     values: Record<string, string[]>,
     sectionSlug: string,
     metaPressed: boolean,
@@ -85,7 +86,8 @@ const numericSpinUpFn = (minDecimalDigits: number) => {
     const currentDecimalsInt = BigInt((newValues['decimals'].join('').padEnd(minDecimalDigits, '0') || '0').substring(0, minDecimalDigits));
 
     if (altPressed) {
-      const spinAmount = shiftPressed ? 10n : 1n;
+      const spinDirection = direction === 'up' ? 1n : -1n;
+      const spinAmount = (shiftPressed ? 10n : 1n) * spinDirection;
 
       if (sectionSlug === 'integers') {
         const newIntegersInt = currentIntegersInt + spinAmount;
@@ -101,63 +103,13 @@ const numericSpinUpFn = (minDecimalDigits: number) => {
         newValues[sectionSlug] = splitStringIntoGraphemes(newDecimalsInt.toString().padStart(minDecimalDigits, '0'));
       }
     } else {
+      const spinDirection = direction === 'up' ? 1n : -1n;
       const decimalMultiplier = BigInt(10 ** minDecimalDigits);
-      const spinAmount = (shiftPressed ? 10n : 1n) * (sectionSlug === 'integers' ? decimalMultiplier : 1n);
+      const spinAmount = (shiftPressed ? 10n : 1n) * spinDirection * (sectionSlug === 'integers' ? decimalMultiplier : 1n);
       const signMultiplier = currentIntegersStr.startsWith('-') ? -1n : 1n;
       const combinedValue = signMultiplier * (signMultiplier * currentIntegersInt * decimalMultiplier + currentDecimalsInt);
 
       const newCombinedValue = combinedValue + spinAmount;
-
-      const newIntegersInt = newCombinedValue / decimalMultiplier;
-      const newDecimalsInt = newCombinedValue % decimalMultiplier;
-
-      const absoluteIntegersInt = newIntegersInt < 0n ? -newIntegersInt : newIntegersInt;
-      const absoluteDecimalsInt = newDecimalsInt < 0n ? -newDecimalsInt : newDecimalsInt;
-      const sign = newIntegersInt < 0n || (newIntegersInt === 0n && newDecimalsInt < 0n) ? '-' : '';
-
-      newValues['integers'] = splitStringIntoGraphemes(sign + absoluteIntegersInt.toString());
-      newValues['decimals'] = splitStringIntoGraphemes(absoluteDecimalsInt.toString().padStart(minDecimalDigits, '0'));
-    }
-
-    return newValues;
-  };
-};
-
-const numericSpinDownFn = (minDecimalDigits: number) => {
-  return (
-    values: Record<string, string[]>,
-    sectionSlug: string,
-    metaPressed: boolean,
-    shiftPressed: boolean,
-    altPressed: boolean,
-  ): Record<string, string[]> => {
-    const newValues = { ...values } as Record<string, string[]>;
-
-    const currentIntegersStr = newValues['integers'].join('') || '0';
-    const currentIntegersInt = BigInt(currentIntegersStr);
-    const currentDecimalsInt = BigInt((newValues['decimals'].join('').padEnd(minDecimalDigits, '0') || '0').substring(0, minDecimalDigits));
-
-    if (altPressed) {
-      const spinAmount = shiftPressed ? 10n : 1n;
-
-      if (sectionSlug === 'integers') {
-        const newIntegersInt = currentIntegersInt - spinAmount;
-
-        newValues[sectionSlug] = splitStringIntoGraphemes(newIntegersInt.toString());
-      } else if (sectionSlug === 'decimals' && minDecimalDigits >= 1) {
-        const maxDecimalsInt = BigInt('9'.repeat(minDecimalDigits || 1));
-        const newDecimalsInt =
-          currentDecimalsInt - spinAmount >= 0 ? currentDecimalsInt - spinAmount : maxDecimalsInt + (currentDecimalsInt - spinAmount + 1n);
-
-        newValues[sectionSlug] = splitStringIntoGraphemes(newDecimalsInt.toString().padStart(minDecimalDigits, '0'));
-      }
-    } else {
-      const decimalMultiplier = BigInt(10 ** minDecimalDigits);
-      const spinAmount = (shiftPressed ? 10n : 1n) * (sectionSlug === 'integers' ? decimalMultiplier : 1n);
-      const signMultiplier = currentIntegersStr.startsWith('-') ? -1n : 1n;
-      const combinedValue = signMultiplier * (signMultiplier * currentIntegersInt * decimalMultiplier + currentDecimalsInt);
-
-      const newCombinedValue = combinedValue - spinAmount;
 
       const newIntegersInt = newCombinedValue / decimalMultiplier;
       const newDecimalsInt = newCombinedValue % decimalMultiplier;
@@ -197,8 +149,7 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
     alignment: 'right',
     syntacticValidationFn: validationFnFromRegexString(`^-?(|[0-9]|[1-9][0-9]*)$`),
     maxLength: maxIntegerDigits,
-    spinUpFn: numericSpinUpFn(minDecimalDigits),
-    spinDownFn: numericSpinDownFn(minDecimalDigits),
+    spinFn: numericSpinFn(minDecimalDigits),
   });
 
   const decimalsInputSection = MaskSectionInput('decimals', {
@@ -207,8 +158,7 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
     alignment: 'left',
     syntacticValidationFn: validationFnFromRegexString(`^([0-9]*)$`),
     maxLength: maxDecimalDigits,
-    spinUpFn: numericSpinUpFn(minDecimalDigits),
-    spinDownFn: numericSpinDownFn(minDecimalDigits),
+    spinFn: numericSpinFn(minDecimalDigits),
   });
 
   return {

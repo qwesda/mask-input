@@ -38,14 +38,8 @@ export const MaskSectionInput = (
     syntacticValidationFn?: (sectionValue: string) => boolean;
     semanticValidationFn?: (values: Record<string, string[]>, sectionSlug: string) => boolean | string;
 
-    spinUpFn?: (
-      values: Record<string, string[]>,
-      sectionSlug: string,
-      metaPressed: boolean,
-      shiftPressed: boolean,
-      altPressed: boolean,
-    ) => Record<string, string[]>;
-    spinDownFn?: (
+    spinFn?: (
+      direction: 'up' | 'down',
       values: Record<string, string[]>,
       sectionSlug: string,
       metaPressed: boolean,
@@ -70,8 +64,7 @@ export const MaskSectionInput = (
 
   syntacticValidationFn: options.syntacticValidationFn,
 
-  spinUpFn: options.spinUpFn,
-  spinDownFn: options.spinDownFn,
+  spinFn: options.spinFn,
 
   sectionCommitValueTransformation: options.sectionCommitValueTransformation,
 

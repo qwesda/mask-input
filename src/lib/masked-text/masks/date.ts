@@ -124,7 +124,7 @@ const dateSemanticValidationFn = (minDateISOString: string, maxDateISOString: st
   };
 };
 
-const dateSpinUpFn = (minDateISOString: string, maxDateISOString: string) => {
+const dateSpinFn = (minDateISOString: string, maxDateISOString: string) => {
   const maxDate = new Date(`${maxDateISOString}T00:00:00.000Z`);
   const minDate = new Date(`${minDateISOString}T00:00:00.000Z`);
   const minDateYearStr = minDate.getUTCFullYear().toString();
@@ -132,6 +132,7 @@ const dateSpinUpFn = (minDateISOString: string, maxDateISOString: string) => {
   const minDateDayStr = minDate.getUTCDate().toString();
 
   return (
+    direction: 'up' | 'down',
     values: Record<string, string[]>,
     sectionSlug: string,
     metaPressed: boolean,
@@ -147,7 +148,8 @@ const dateSpinUpFn = (minDateISOString: string, maxDateISOString: string) => {
 
     if (altPressed) {
       const currentValue = parseInt(newValues[sectionSlug].join('') || '0', 10);
-      const spinAmount = shiftPressed ? 10 : 1;
+      const spinDirection = direction === 'up' ? 1 : -1;
+      const spinAmount = (sectionSlug === 'month' ? (shiftPressed ? 6 : 1) : shiftPressed ? 10 : 1) * spinDirection;
       let newValue = currentValue;
 
       if (sectionSlug === 'year') {
@@ -206,7 +208,8 @@ const dateSpinUpFn = (minDateISOString: string, maxDateISOString: string) => {
 
         let newDate: Date;
         const currentDate = new Date(Date.UTC(year, month - 1, day));
-        const spinAmount = shiftPressed ? 10 : 1;
+        const spinDirection = direction === 'up' ? 1 : -1;
+        const spinAmount = (sectionSlug === 'month' ? (shiftPressed ? 6 : 1) : shiftPressed ? 10 : 1) * spinDirection;
 
         if (sectionSlug === 'year') {
           newDate = new Date(Date.UTC(year + spinAmount, month, 0));
@@ -369,8 +372,7 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,4}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     maxLength: 4,
-    spinUpFn: dateSpinUpFn(minDateISOString, maxDateISOString),
-    spinDownFn: dateSpinDownFn(minDateISOString, maxDateISOString),
+    spinFn: dateSpinFn(minDateISOString, maxDateISOString),
   });
 
   const sectionMonth = MaskSectionInput('month', {
@@ -379,8 +381,7 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,2}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     maxLength: 2,
-    spinUpFn: dateSpinUpFn(minDateISOString, maxDateISOString),
-    spinDownFn: dateSpinDownFn(minDateISOString, maxDateISOString),
+    spinFn: dateSpinFn(minDateISOString, maxDateISOString),
   });
 
   const sectionDay = MaskSectionInput('day', {
@@ -389,8 +390,7 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
     syntacticValidationFn: validationFnFromRegexString(`^[0-9]{0,2}$`),
     inputCharacterFilterFn: validationFnFromRegexString(`^[0-9]$`),
     maxLength: 2,
-    spinUpFn: dateSpinUpFn(minDateISOString, maxDateISOString),
-    spinDownFn: dateSpinDownFn(minDateISOString, maxDateISOString),
+    spinFn: dateSpinFn(minDateISOString, maxDateISOString),
   });
 
   const skipKeys = ['/', '.', '-', ' '];
