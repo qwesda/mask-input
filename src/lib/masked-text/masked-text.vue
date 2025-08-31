@@ -4,9 +4,9 @@
     class="masked-text-container"
     contenteditable="true"
     :class="{ 'has-focus': hasFocus }"
-    @mousedown.capture="handleMousedown"
     @focusin.capture="handleFocusin"
     @focusout="handleFocusout"
+    @mousedown.capture="handleMousedown"
     @keydown.capture="handleKeydown"
     @beforeinput.capture="handleBeforeInput"
     @compositionstart.capture="handleCompositionStart"
@@ -95,12 +95,14 @@
         const [caretNode, caretOffset] = getSelectionNodeAndOffsetFromPositionInValueSpace(
           containerRef.value,
           state.value.caretPositionInValueSpace,
+          lastDerivedState.value,
           props.mask,
         );
 
         const [selectionEndNode, selectionEndOffset] = getSelectionNodeAndOffsetFromPositionInValueSpace(
           containerRef.value,
           state.value.selectionEndPositionInValueSpace,
+          lastDerivedState.value,
           props.mask,
         );
 
@@ -114,12 +116,12 @@
     }
   };
 
-  const runComponentInternalUpdateLoop = (patchOperations: PatchOperation[] | undefined) => {
+  const runComponentInternalUpdateLoop = (patchOperations: PatchOperation[]) => {
     const initialStateModelValue = getExternalModelValueFromInternalModel(state.value.values);
     const initialValidatedValue = lastDerivedState.value.validatedStringEncodedValue;
     const initialSemanticValidationMessage = lastDerivedState.value.semanticValidationMessage;
 
-    if (patchOperations !== undefined) {
+    if (patchOperations.length > 0) {
       let reRenderImmediately: boolean;
       [state.value, lastDerivedState.value, reRenderImmediately] = applyPatchOperations(
         patchOperations,
