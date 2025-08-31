@@ -132,6 +132,7 @@ export type PatchOperationSetCursorPosition = {
   op: 'set-cursor-position';
   caretPositionInValueSpace: string;
   keepSelectionEnd: boolean;
+  reRenderImmediately?: boolean;
 };
 
 export type PatchOperationSetSelection = {

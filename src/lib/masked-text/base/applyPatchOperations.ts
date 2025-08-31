@@ -531,6 +531,7 @@ export const applyPatchOperations = (
       currentState = applyPatchOperationMoveCursor(patchOperation, currentState, currentDerivedState, maskDefinition);
     } else if (patchOperation.op === 'set-cursor-position') {
       currentState = applyPatchOperationSetCursorPosition(patchOperation, currentState, currentDerivedState, maskDefinition);
+      reRenderImmediately = reRenderImmediately || (patchOperation.reRenderImmediately ?? false);
     } else if (patchOperation.op === 'clear-selection') {
       currentState = applyPatchOperationClearSelection(patchOperation, currentState, currentDerivedState, maskDefinition);
     } else if (patchOperation.op === 'delete-selection') {
