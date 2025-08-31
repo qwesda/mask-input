@@ -66,6 +66,7 @@
   const lastDerivedState: Ref<MaskDerivedState> = ref(getDerivedState(state.value, props.mask));
 
   const hasFocus = ref(false);
+  const isMouseDown = ref(false);
   const isIMEComposing = ref(false);
   const isRenderScheduled = ref(false);
 
@@ -281,7 +282,7 @@
   };
 
   const handleDocumentSelectionChange = (event: Event) => {
-    if (!hasFocus.value || isIMEComposing.value) {
+    if (!hasFocus.value || isIMEComposing.value || isMouseDown.value) {
       return;
     }
 
@@ -315,12 +316,22 @@
 
   const registerGlobalEvenListeners = () => {
     document.addEventListener('selectionchange', handleDocumentSelectionChange);
+    document.addEventListener('mouseup', handleDocumentMouseUp);
     document.addEventListener('mousedown', handleDocumentMouseDown);
   };
 
   const deregisterGlobalEventListener = () => {
     document.removeEventListener('selectionchange', handleDocumentSelectionChange);
+    document.removeEventListener('mouseup', handleDocumentMouseUp);
     document.removeEventListener('mousedown', handleDocumentMouseDown);
+  };
+
+  const handleDocumentMouseUp = (event: MouseEvent) => {
+    isMouseDown.value = false;
+
+    const [_, patchOperations] = determinePatchOperationAfterSelectionChangeEvent(containerRef.value as HTMLElement, state.value, props.mask);
+
+    runComponentInternalUpdateLoop(patchOperations);
   };
 
   const handleDocumentMouseDown = (event: MouseEvent) => {
@@ -335,6 +346,8 @@
     if (!hasFocus.value) {
       gainFocus();
     }
+
+    isMouseDown.value = true;
   };
 
   const copyWholeValue = async (event: ClipboardEvent) => {
