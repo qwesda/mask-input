@@ -222,8 +222,6 @@ export const applyPatchOperationDeleteSelection = (
   const [lowerSelectionIndex, lowerSelectionPosition] = lowerSelectionCoordinates.split(':').map((x) => parseInt(x));
   const [upperSelectionIndex, upperSelectionPosition] = upperSelectionCoordinates.split(':').map((x) => parseInt(x));
 
-  let newCaretPosition = '0:0';
-
   const newValues = { ...currentState.values };
 
   for (const [i, sectionDefinition] of maskDefinition.sections.filter((x) => x.type === 'input').entries()) {
@@ -235,19 +233,10 @@ export const applyPatchOperationDeleteSelection = (
 
     if (i === lowerSelectionIndex && i === upperSelectionIndex) {
       newValues[sectionDefinition.slug] = [...oldSectionValue.slice(0, lowerSelectionPosition), ...oldSectionValue.slice(upperSelectionPosition)];
-      newCaretPosition = `${i}:${lowerSelectionPosition}`;
     } else if (i === lowerSelectionIndex && i !== upperSelectionIndex) {
       newValues[sectionDefinition.slug] = oldSectionValue.slice(0, lowerSelectionPosition);
-
-      if (lowerSelectionCoordinates === currentState.caretPositionInValueSpace) {
-        newCaretPosition = `${i}:${lowerSelectionPosition}`;
-      }
     } else if (i !== lowerSelectionIndex && i === upperSelectionIndex) {
       newValues[sectionDefinition.slug] = oldSectionValue.slice(upperSelectionPosition);
-
-      if (upperSelectionCoordinates === currentState.caretPositionInValueSpace) {
-        newCaretPosition = `${i}:0`;
-      }
     } else if (i !== lowerSelectionIndex && i !== upperSelectionIndex) {
       newValues[sectionDefinition.slug] = [''];
     }
@@ -256,8 +245,8 @@ export const applyPatchOperationDeleteSelection = (
   return {
     ...currentState,
     values: newValues,
-    caretPositionInValueSpace: newCaretPosition,
-    selectionEndPositionInValueSpace: newCaretPosition,
+    caretPositionInValueSpace: lowerSelectionCoordinates,
+    selectionEndPositionInValueSpace: lowerSelectionCoordinates,
   };
 };
 
