@@ -461,7 +461,7 @@ export const applyPatchOperationInsert = (
   }
 
   let newSectionValue: string[];
-  let newCaretPosition: string;
+  let newCaretPosition: string = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
 
   if (inputBehavior === 'replace') {
     if (currentDerivedState.caretValueSpacePosition < currentSectionValue.length) {
@@ -473,8 +473,6 @@ export const applyPatchOperationInsert = (
     } else {
       newSectionValue = [...currentSectionValue, character];
     }
-
-    newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
   } else {
     if (sectionDefinition.maxLength && currentSectionValue.length + 1 > sectionDefinition.maxLength) {
       return currentState;
@@ -485,7 +483,6 @@ export const applyPatchOperationInsert = (
       character,
       ...currentSectionValue.slice(currentDerivedState.caretValueSpacePosition),
     ];
-    newCaretPosition = `${currentDerivedState.caretValueSpaceIndex}:${currentDerivedState.caretValueSpacePosition + 1}`;
   }
 
   const newValues = { ...currentState.values };
