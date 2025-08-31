@@ -2,17 +2,17 @@ import type { MaskDefinition, MaskDerivedState, MaskSectionInputDefinition, Mask
 import { findSection, getValueSpaceCoordinatesFromSelection, splitStringIntoGraphemes } from './helper';
 import { getDerivedState } from './index';
 
-export const determinePatchOperationFromKeyupEvent = (event: KeyboardEvent): [boolean, PatchOperation[] | undefined] => {
+export const determinePatchOperationFromKeyupEvent = (event: KeyboardEvent): [boolean, PatchOperation[]] => {
   if (event.isComposing) {
-    return [false, undefined];
+    return [false, []];
   }
 
-  return [false, undefined];
+  return [false, []];
 };
 
-export const determinePatchOperationFromBeforeInputEvent = (event: InputEvent, state: MaskState): [boolean, PatchOperation[] | undefined] => {
+export const determinePatchOperationFromBeforeInputEvent = (event: InputEvent, state: MaskState): [boolean, PatchOperation[]] => {
   if (event.isComposing) {
-    return [false, undefined];
+    return [false, []];
   }
 
   const selectionIsPresent = state.selectionEndPositionInValueSpace !== state.caretPositionInValueSpace;
@@ -21,7 +21,6 @@ export const determinePatchOperationFromBeforeInputEvent = (event: InputEvent, s
     return {
       op: 'insert-character',
       character: value,
-      inputBehavior: selectionIsPresent ? 'insert' : undefined,
     };
   });
 
@@ -32,12 +31,7 @@ export const determinePatchOperationFromBeforeInputEvent = (event: InputEvent, s
   }
 };
 
-export const determinePatchOperationFromCompositionEndEvent = (
-  event: CompositionEvent,
-  state: MaskState,
-): [boolean, PatchOperation[] | undefined] => {
-  const selectionIsPresent = state.selectionEndPositionInValueSpace !== state.caretPositionInValueSpace;
-
+export const determinePatchOperationFromCompositionEndEvent = (event: CompositionEvent, state: MaskState): [boolean, PatchOperation[]] => {
   const insertCharacterPatchOperations = splitStringIntoGraphemes(event.data).map((value: string): PatchOperationInsertCharacter => {
     return {
       op: 'insert-character',
@@ -58,7 +52,7 @@ export const determinePatchOperationFromKeydownEvent = (
   state: MaskState,
   maskDefinition: MaskDefinition,
   currentDerivedState?: MaskDerivedState,
-): [boolean, PatchOperation[] | undefined] => {
+): [boolean, PatchOperation[]] => {
   if (!currentDerivedState) {
     currentDerivedState = getDerivedState(state, maskDefinition);
   }
@@ -70,7 +64,7 @@ export const determinePatchOperationFromKeydownEvent = (
   const selectionIsPresent = state.selectionEndPositionInValueSpace !== state.caretPositionInValueSpace;
 
   if (event.isComposing) {
-    return [false, undefined];
+    return [false, []];
   }
 
   if (event.key === 'Tab') {
@@ -189,18 +183,18 @@ export const determinePatchOperationFromKeydownEvent = (
     }
   }
 
-  return [false, undefined];
+  return [false, []];
 };
 
 export const determinePatchOperationAfterSelectionChangeEvent = (
   containerElement: HTMLElement,
   state: MaskState,
   maskDefinition: MaskDefinition,
-): [boolean, PatchOperation[] | undefined] => {
+): [boolean, PatchOperation[]] => {
   const selection = window.getSelection();
 
   if (!selection || selection.rangeCount === 0) {
-    return [false, undefined];
+    return [false, []];
   }
 
   const [caretPositionInValueSpace, selectionEndPositionInValueSpace, exactMatch] = getValueSpaceCoordinatesFromSelection(
@@ -219,5 +213,5 @@ export const determinePatchOperationAfterSelectionChangeEvent = (
     }
   }
 
-  return [false, undefined];
+  return [false, []];
 };
