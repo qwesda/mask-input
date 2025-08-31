@@ -349,10 +349,10 @@ const dateSpinDownFn = (minDateISOString: string, maxDateISOString: string) => {
   };
 };
 
-const valueNormalizationFn = (values: Record<string, string[]>): Record<string, string[]> => {
+const dateValueNormalizationFn = (values: Record<string, string[]>): Record<string, string[]> => {
   const normalizedValues = { ...values };
 
-  if (values.year && values.year.length <= 2) {
+  if (values.year && values.year.length >= 1 && values.year.length <= 2) {
     const yearValue = parseInt(values.year.join(''));
 
     if (!isNaN(yearValue)) {
