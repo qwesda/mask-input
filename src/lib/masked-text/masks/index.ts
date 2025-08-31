@@ -1,7 +1,6 @@
 import { NumericMask, type NumericMaskProps } from './numeric';
 import { IPv4AddressMask } from './ipv4Address';
 import { IPv6AddressMask } from './ipv6Address';
-import { StringsMask } from './strings';
 import { DateMask } from './date';
 import { YearMonthMask } from './yearMonth';
 import { YearMask } from './year';
@@ -18,7 +17,6 @@ export {
   DateMask,
   YearMonthMask,
   YearMask,
-  StringsMask,
   UuidMask,
   IsrcMask,
   EanMask,
