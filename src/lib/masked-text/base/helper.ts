@@ -333,8 +333,6 @@ export const getValueSpaceCoordinatesFromSelection = (
 
   const { anchorNode, anchorOffset, focusNode, focusOffset, direction } = selection;
 
-  // console.log('focusNode', focusNode, 'focusOffset', focusOffset);
-
   const [targetAnchorNode, targetAnchorOffset] = getClosestMaskCharTargetNode(
     containerNode,
     anchorNode,
@@ -399,8 +397,6 @@ export const getValueSpaceCoordinatesFromSelection = (
       }
     }
   }
-
-  // console.log('caretCoordinates', caretCoordinates, 'selectionEndCoordinates', selectionEndCoordinates, 'exactMatch', exactMatch);
 
   return [caretCoordinates, selectionEndCoordinates, exactMatch];
 };

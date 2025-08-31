@@ -83,8 +83,6 @@
   };
 
   const render = () => {
-    // console.log('render');
-
     if (containerRef.value && isRenderScheduled.value) {
       isRenderScheduled.value = false;
 
