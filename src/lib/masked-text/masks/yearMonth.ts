@@ -198,7 +198,7 @@ const yearMonthSpinFn = (minYearMonthISOString: string, maxYearMonthISOString: s
 const yearMonthValueNormalizationFn = (values: Record<string, string[]>): Record<string, string[]> => {
   const normalizedValues = { ...values };
 
-  if (values.year && values.year.length <= 2) {
+  if (values.year && values.year.length >= 1 && values.year.length <= 2) {
     const yearValue = parseInt(values.year.join(''));
     const century = yearValue < 90 ? 2000 : 1900;
 
