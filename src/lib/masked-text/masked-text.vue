@@ -10,6 +10,8 @@
     @keydown.capture="handleKeydown"
     @keyup.capture="handleKeyup"
     @beforeinput.capture="handleBeforeInput"
+    @compositionstart.capture="handleCompositionStart"
+    @ompositionupdate.capture="handleCompositionUpdate"
     @compositionend.capture="handleCompositionEnd"
     @copy.capture="copyWholeValue"
     @paste.capture="pasteWholeValue"
@@ -66,6 +68,7 @@
   const lastDerivedState: Ref<MaskDerivedState> = ref(getDerivedState(state.value, props.mask));
 
   const hasFocus = ref(false);
+  const isIMEComposing = ref(false);
   const isRenderScheduled = ref(false);
 
   const containerRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
@@ -196,6 +199,10 @@
   };
 
   const handleKeydown = (event: KeyboardEvent) => {
+    if (!hasFocus.value || isIMEComposing.value) {
+      return;
+    }
+
     const [stopEvent, patchOperations] = determinePatchOperationFromKeydownEvent(event, state.value, props.mask, lastDerivedState.value);
 
     if (stopEvent) {
@@ -207,6 +214,10 @@
   };
 
   const handleBeforeInput = (event: InputEvent) => {
+    if (!hasFocus.value || isIMEComposing.value) {
+      return;
+    }
+
     const [stopEvent, patchOperations] = determinePatchOperationFromBeforeInputEvent(event, state.value);
 
     if (stopEvent) {
@@ -217,8 +228,33 @@
     runComponentInternalUpdateLoop(patchOperations);
   };
 
+  const handleCompositionStart = (event: CompositionEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+
+    isIMEComposing.value = true;
+  };
+
+  const handleCompositionUpdate = (event: CompositionEvent) => {
+    isIMEComposing.value = true;
+  };
+
   const handleCompositionEnd = (event: CompositionEvent) => {
-    const [stopEvent, patchOperations] = determinePatchOperationFromCompositionEndEvent(event, state.value);
+    isIMEComposing.value = false;
+
+    let stopEvent = false;
+    let patchOperations: PatchOperation[] = [];
+
+    if (event.data) {
+      [stopEvent, patchOperations] = determinePatchOperationFromCompositionEndEvent(event, state.value);
+    } else {
+      patchOperations.push({
+        op: 'set-cursor-position',
+        caretPositionInValueSpace: state.value.caretPositionInValueSpace,
+        keepSelectionEnd: false,
+        reRenderImmediately: true,
+      });
+    }
 
     if (stopEvent) {
       event.preventDefault();
@@ -229,6 +265,10 @@
   };
 
   const handleKeyup = (event: KeyboardEvent) => {
+    if (!hasFocus.value || isIMEComposing.value) {
+      return;
+    }
+
     const [stopEvent, patchOperations] = determinePatchOperationFromKeyupEvent(event);
 
     if (stopEvent) {
@@ -256,7 +296,7 @@
   };
 
   const handleDocumentSelectionChange = (event: Event) => {
-    if (!hasFocus.value) {
+    if (!hasFocus.value || isIMEComposing.value) {
       return;
     }
 
