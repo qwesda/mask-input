@@ -28,15 +28,10 @@ export const determinePatchOperationFromCompositionEndEvent = (event: Compositio
     return {
       op: 'insert-character',
       character: value,
-      inputBehavior: selectionIsPresent ? 'insert' : undefined,
     };
   });
 
-  if (selectionIsPresent) {
-    return [true, [{ op: 'delete-selection' }, ...insertCharacterPatchOperations]];
-  } else {
-    return [true, insertCharacterPatchOperations];
-  }
+  return [true, insertCharacterPatchOperations];
 };
 
 export const determinePatchOperationFromKeydownEvent = (
