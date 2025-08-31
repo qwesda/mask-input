@@ -424,8 +424,7 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   }
 
-  .masked-text-container :deep(.section-input),
-  .masked-text-container :deep(.placeholder-caret) {
+  .masked-text-container :deep(.section-input) {
     line-height: 1.2;
     height: 1.2rem;
     position: relative;
