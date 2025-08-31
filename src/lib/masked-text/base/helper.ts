@@ -212,7 +212,15 @@ const getClosestMaskCharTargetNode = (
       for (let maskCharIndex = 0; maskCharIndex < sectionNode.childNodes.length; maskCharIndex += 1) {
         const maskCharNode = sectionNode.childNodes[maskCharIndex] as HTMLElement;
 
-        if (maskCharNode.classList.contains('mask-char-value')) {
+        if (maskCharNode.classList.contains('mask-char-value-placeholder')) {
+          flattenedElements.push({
+            validTarget: true,
+            element: maskCharNode,
+            positionInValueSpace: `${sectionValueIndex}:${sectionValuePosition}`,
+            offset: textOffset,
+            length: 1,
+          });
+        } else if (maskCharNode.classList.contains('mask-char-value')) {
           if (sectionValuePosition === 0) {
             flattenedElements.push({
               validTarget: true,
@@ -277,7 +285,7 @@ const getClosestMaskCharTargetNode = (
     const targetNode = flattenedElements[targetNodeIndex];
 
     if (targetNode.validTarget) {
-      return [targetNode.element, startOffset];
+      return [targetNode.element, startOffset > targetNode.length / 2 ? targetNode.length : 0];
     } else {
       let closestLeftValidTarget: TargetNode | undefined = undefined;
       let closestLeftValidTargetOffset = Infinity;
@@ -379,7 +387,7 @@ export const getValueSpaceCoordinatesFromSelection = (
           caretCoordinates = `${valueSectionIndex}:${valueSectionPosition}`;
         }
 
-        if (maskCharacterNode.classList.contains('mask-char-value')) {
+        if (maskCharacterNode.classList.contains('mask-char-value') && !maskCharacterNode.classList.contains('mask-char-value-placeholder')) {
           valueSectionPosition += 1;
         }
 
@@ -404,6 +412,7 @@ export const getValueSpaceCoordinatesFromSelection = (
 export const getSelectionNodeAndOffsetFromPositionInValueSpace = (
   containerNode: HTMLElement,
   positionInValueSpace: string,
+  derivedState: MaskDerivedState,
   maskDefinition: MaskDefinition,
 ): [HTMLElement | undefined, number] => {
   const [targetSectionIndex, targetValuePositionInSection] = positionInValueSpace.split(':').map((x) => Number.parseInt(x));
@@ -417,7 +426,7 @@ export const getSelectionNodeAndOffsetFromPositionInValueSpace = (
     for (let i = 0; i < sectionNode.childNodes.length; i++) {
       const maskCharacterNode = sectionNode.childNodes[i] as HTMLElement;
 
-      if (maskCharacterNode.classList.contains('mask-char-value')) {
+      if (maskCharacterNode.classList.contains('mask-char-value') && !maskCharacterNode.classList.contains('mask-char-value-placeholder')) {
         if (valueSpacePosition === 0 && targetValuePositionInSection === 0) {
           return [maskCharacterNode as HTMLElement, 0];
         }
@@ -445,7 +454,7 @@ export const getSelectionNodeAndOffsetFromPositionInValueSpace = (
             } else {
               const lastChild = sectionNode.childNodes[sectionNode.childNodes.length - 1] as HTMLElement;
 
-              return [lastChild, 1];
+              return [lastChild, lastChild.innerText.length];
             }
           }
         }

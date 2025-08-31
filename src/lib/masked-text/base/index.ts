@@ -140,7 +140,7 @@ const getFixedSectionHTMLStrings = (
     classes.push('selected');
   }
 
-  return `<span class="${classes.join(' ')}">${maskSection.textInputDisplayString}</span>`;
+  return `<span class="${classes.join(' ')}" contenteditable="false">${maskSection.textInputDisplayString}</span>`;
 };
 
 const getInputSectionDerivedState = (
@@ -234,9 +234,14 @@ const getInputSectionHTMLStrings = (
   const inputHTMLStringParts: InputHTMLStringPart[] = [];
 
   let posDisplaySpace = 0;
+  let posValueSpace = 0;
 
   for (const maskChar of maskSection.maskCharacters.values()) {
     posDisplaySpace += maskChar.char.length;
+
+    if (maskChar.type === 'value') {
+      posValueSpace += 1;
+    }
 
     inputHTMLStringParts.push({
       cls: maskChar.type === 'mask' ? 'mask-char-mask' : 'mask-char-value',
@@ -265,11 +270,18 @@ const getInputSectionHTMLStrings = (
     classes.push('syntax-error');
   }
 
-  if (inputHTMLStringParts.length === 0) {
-    inputHTMLStringParts.push({
-      cls: 'mask-char-mask',
-      value: '&nbsp;',
-    });
+  if (posValueSpace === 0) {
+    if (maskSection.alignment === 'left') {
+      inputHTMLStringParts.unshift({
+        cls: 'mask-char-value mask-char-value-placeholder',
+        value: '&#8288;',
+      });
+    } else {
+      inputHTMLStringParts.push({
+        cls: 'mask-char-value mask-char-value-placeholder',
+        value: '&#8288;',
+      });
+    }
   }
 
   return `<span class="${classes.join(' ')}">${inputHTMLStringParts.map((inputHTMLStringPart) => inputHTMLStringPartToHTML(inputHTMLStringPart)).join('')}</span>`;
