@@ -529,44 +529,35 @@ export const applyPatchOperations = (
 
     if (patchOperation.op === 'move-cursor') {
       currentState = applyPatchOperationMoveCursor(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'set-cursor-position') {
       currentState = applyPatchOperationSetCursorPosition(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'clear-selection') {
       currentState = applyPatchOperationClearSelection(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'delete-selection') {
       currentState = applyPatchOperationDeleteSelection(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'insert-character') {
       currentState = applyPatchOperationInsert(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'delete-backwards') {
       currentState = applyPatchOperationDeleteBackwards(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'delete-forwards') {
       currentState = applyPatchOperationDeleteForwards(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'apply-value-normalization') {
       currentState = applyPatchOperationApplyValueNormalization(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'spin') {
       currentState = applyPatchOperationSpin(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'select-next-section') {
       currentState = applyPatchOperationSelectNextSection(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'select-all') {
       currentState = applyPatchOperationSelectAll(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'set-selection') {
       currentState = applyPatchOperationSetSelection(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
     } else if (patchOperation.op === 'set-values') {
       currentState = applyPatchOperationSetValues(patchOperation, currentState, currentDerivedState, maskDefinition);
-      currentDerivedState = getDerivedState(currentState, maskDefinition);
+    } else {
+      return [currentState, currentDerivedState, reRenderImmediately];
     }
+
+    currentDerivedState = getDerivedState(currentState, maskDefinition);
 
     if (maskDefinition.valueNormalizationFn && lastDerivedState.caretValueSpaceIndex !== currentDerivedState.caretValueSpaceIndex) {
       currentState = applyPatchOperationApplyValueNormalization(
