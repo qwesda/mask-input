@@ -24,22 +24,35 @@
 - [x] ~~merge spinUp and spinDown functions~~
 - [x] ~~change maskingFn to receive all section values~~
 - [x] ~~add `autoAdvanceFn` for dynamic section lengths~~
+- [x] skipkeys shouldn't keep selection
+- [x] delete selection should put cursor to lower pos
 - [ ] holding key should repeat last key
 - [ ] maybe add partial (selection) copy/pase support
 - [ ] maybe add highlighting of problematic sections for semantic validation
 - [ ] maybe dynamic section hiding based on cursor position and values
+- [ ] __maybe__ add keyStroke interception Fn
 
 ## masks 
 
 - [x] ~~uuid~~
 - [x] year/month
 - [x] year
-- [ ] year/week
+- [x] year/week
 - [ ] date+time
+- [x] ipv4
 - [ ] ipv4 subnet
+- [x] ipv6
 - [ ] ipv6 subnet
-- [ ] isrc
-- [ ] barcode (ean13, upc, isbn)
+- [x] ISRC
+- [x] EAN13
+- [ ] UPC
+- [ ] ISWC
+- [x] ISBN
+- [ ] GTIN
+- [ ] GRID
+- [ ] IBAN
+- [ ] credit cards
+- [ ] zip codes
 
 ## test app
 
