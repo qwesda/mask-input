@@ -417,6 +417,32 @@ export const applyPatchOperationInsert = (
   const currentSectionValue = currentState.values[sectionDefinition.slug] ?? [];
   const inputBehavior = patchOperation.inputBehavior ?? sectionDefinition.inputBehavior;
 
+  if (patchOperation.character.length === 1) {
+    for (const [index, section] of maskDefinition.sections.entries()) {
+      if (
+        index > currentDerivedState.caretDisplaySpaceIndex &&
+        section.type === 'fixed' &&
+        section.skipKeys &&
+        section.skipKeys.includes(patchOperation.character)
+      ) {
+        const targetSection = findSection(currentDerivedState, {
+          direction: 'right',
+          type: 'input',
+          startIndex: index,
+          includeStartIndex: false,
+        }) as MaskSectionInputDerivedState | undefined;
+
+        if (targetSection !== undefined) {
+          return {
+            ...currentState,
+            caretPositionInValueSpace: targetSection.valueSpace[0],
+            selectionEndPositionInValueSpace: targetSection.valueSpace[0],
+          };
+        }
+      }
+    }
+  }
+
   const atSectionMaxLengthLimit =
     sectionDefinition.maxLength &&
     ((inputBehavior === 'insert' && currentSectionValue.length >= sectionDefinition.maxLength) ||

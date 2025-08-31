@@ -161,28 +161,6 @@ export const determinePatchOperationFromKeydownEvent = (
     return [true, [{ op: 'select-all' }]];
   }
 
-  if (event.key.length === 1) {
-    for (const [index, section] of maskDefinition.sections.entries()) {
-      if (
-        index > currentDerivedState.caretDisplaySpaceIndex &&
-        section.type === 'fixed' &&
-        section.skipKeys &&
-        section.skipKeys.includes(event.key)
-      ) {
-        const targetSection = findSection(currentDerivedState, {
-          direction: 'right',
-          type: 'input',
-          startIndex: index,
-          includeStartIndex: false,
-        }) as MaskSectionInputDefinition | undefined;
-
-        if (targetSection) {
-          return [true, [{ op: 'move-cursor', direction: 'right', level: 'section', keepSelectionEnd: maintainSelectionKeyPressed }]];
-        }
-      }
-    }
-  }
-
   return [false, []];
 };
 
