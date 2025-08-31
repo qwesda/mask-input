@@ -6,7 +6,7 @@ import { YearMonthMask } from './yearMonth';
 import { YearMask } from './year';
 import { UuidMask } from './uuid';
 import { IsrcMask } from './isrc';
-import { EanMask } from './ean';
+import { EanMask } from './ean13.ts';
 import { IsbnMask } from './isbn';
 
 export {
