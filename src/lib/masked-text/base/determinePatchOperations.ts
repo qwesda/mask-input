@@ -2,14 +2,6 @@ import type { MaskDefinition, MaskDerivedState, MaskSectionInputDefinition, Mask
 import { findSection, getValueSpaceCoordinatesFromSelection, splitStringIntoGraphemes } from './helper';
 import { getDerivedState } from './index';
 
-export const determinePatchOperationFromKeyupEvent = (event: KeyboardEvent): [boolean, PatchOperation[]] => {
-  if (event.isComposing) {
-    return [false, []];
-  }
-
-  return [false, []];
-};
-
 export const determinePatchOperationFromBeforeInputEvent = (event: InputEvent, state: MaskState): [boolean, PatchOperation[]] => {
   if (event.isComposing) {
     return [false, []];

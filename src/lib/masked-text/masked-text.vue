@@ -8,7 +8,6 @@
     @focusin.capture="handleFocusin"
     @focusout="handleFocusout"
     @keydown.capture="handleKeydown"
-    @keyup.capture="handleKeyup"
     @beforeinput.capture="handleBeforeInput"
     @compositionstart.capture="handleCompositionStart"
     @ompositionupdate.capture="handleCompositionUpdate"
@@ -40,7 +39,6 @@
     determinePatchOperationFromBeforeInputEvent,
     determinePatchOperationFromCompositionEndEvent,
     determinePatchOperationFromKeydownEvent,
-    determinePatchOperationFromKeyupEvent,
   } from './base/determinePatchOperations';
 
   interface Props {
@@ -255,21 +253,6 @@
         reRenderImmediately: true,
       });
     }
-
-    if (stopEvent) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-
-    runComponentInternalUpdateLoop(patchOperations);
-  };
-
-  const handleKeyup = (event: KeyboardEvent) => {
-    if (!hasFocus.value || isIMEComposing.value) {
-      return;
-    }
-
-    const [stopEvent, patchOperations] = determinePatchOperationFromKeyupEvent(event);
 
     if (stopEvent) {
       event.preventDefault();
