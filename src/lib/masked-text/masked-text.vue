@@ -10,7 +10,7 @@
     @keydown.capture="handleKeydown"
     @beforeinput.capture="handleBeforeInput"
     @compositionstart.capture="handleCompositionStart"
-    @ompositionupdate.capture="handleCompositionUpdate"
+    @compositionupdate.capture="handleCompositionUpdate"
     @compositionend.capture="handleCompositionEnd"
     @copy.capture="copyWholeValue"
     @paste.capture="pasteWholeValue"
@@ -275,7 +275,7 @@
     if (hasFocus.value) {
       setTimeout(() => {
         if (containerRef.value && !containerRef.value.contains(document.activeElement)) {
-          looseFocus();
+          loseFocus();
         }
       }, 50);
     }
@@ -299,28 +299,28 @@
   const gainFocus = () => {
     hasFocus.value = true;
 
-    registerGlobalEvenListeners();
+    registerGlobalEventListeners();
 
     emits('focus');
   };
 
-  const looseFocus = () => {
+  const loseFocus = () => {
     hasFocus.value = false;
 
-    deregisterGlobalEventListener();
+    deregisterGlobalEventListeners();
 
     runComponentInternalUpdateLoop([{ op: 'apply-value-normalization' }]);
 
     emits('blur');
   };
 
-  const registerGlobalEvenListeners = () => {
+  const registerGlobalEventListeners = () => {
     document.addEventListener('selectionchange', handleDocumentSelectionChange);
     document.addEventListener('mouseup', handleDocumentMouseUp);
     document.addEventListener('mousedown', handleDocumentMouseDown);
   };
 
-  const deregisterGlobalEventListener = () => {
+  const deregisterGlobalEventListeners = () => {
     document.removeEventListener('selectionchange', handleDocumentSelectionChange);
     document.removeEventListener('mouseup', handleDocumentMouseUp);
     document.removeEventListener('mousedown', handleDocumentMouseDown);
@@ -337,7 +337,7 @@
   const handleDocumentMouseDown = (event: MouseEvent) => {
     if (hasFocus.value) {
       if (containerRef.value && !containerRef.value.contains(event.target as Node)) {
-        looseFocus();
+        loseFocus();
       }
     }
   };
@@ -410,7 +410,7 @@
   });
 
   onBeforeUnmount(() => {
-    deregisterGlobalEventListener();
+    deregisterGlobalEventListeners();
   });
 </script>
 
