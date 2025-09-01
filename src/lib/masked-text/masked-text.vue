@@ -420,35 +420,13 @@
 </script>
 
 <style scoped>
-  .masked-text-container {
-    line-height: 1.2;
-  }
-
   .masked-text-container:focus {
-    outline: none;
-  }
-  .masked-text-container :deep(div) {
-    display: inline-block;
-  }
-
-  .masked-text-container :deep(.section-input) {
-    cursor: text;
-    border-bottom: 1px solid transparent;
-  }
-  .masked-text-container :deep(:focus) {
     outline: none;
   }
 
   .masked-text-container.has-focus :deep(.section-input.active) {
     background-color: rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-  }
-
-  .masked-text-container :deep(.section-input) {
-    line-height: 1.2;
-    height: 1.2rem;
-    position: relative;
-    top: 0;
   }
 
   .masked-text-container :deep(.mask-char-input) {
