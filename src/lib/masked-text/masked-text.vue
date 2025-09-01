@@ -3,6 +3,7 @@
     ref="containerRef"
     class="masked-text-container"
     contenteditable="true"
+    spellcheck="false"
     :class="{ 'has-focus': hasFocus }"
     @focusin.capture="handleFocusin"
     @focusout="handleFocusout"
