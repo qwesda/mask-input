@@ -111,8 +111,12 @@
         const selection = window.getSelection();
 
         if (selection && caretNode && selectionEndNode) {
-          selection.removeAllRanges();
-          selection.setBaseAndExtent(selectionEndNode, selectionEndOffset, caretNode, caretOffset);
+          try {
+            selection.removeAllRanges();
+            selection.setBaseAndExtent(selectionEndNode, selectionEndOffset, caretNode, caretOffset);
+          } catch (error) {
+            console.error('Failed to update selection:', error);
+          }
         }
       }
     }
