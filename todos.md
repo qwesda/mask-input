@@ -53,6 +53,14 @@
 - [ ] IBAN
 - [ ] credit cards
 - [ ] zip codes
+- [ ] discogs artist id :: bigint, no check digit
+- [ ] apple artist id :: bigint, no check digit
+- [ ] spotify artist id :: ai overview says: There is no documented Spotify Artist ID check digit system; however, the Spotify ID itself is a base-62 identifier
+- [ ] isni artist id :: https://en.wikipedia.org/wiki/International_Standard_Name_Identifier
+- [ ] ipn artist id :: ai overview says: The International Performer Number (IPN) has a two-digit check digit, but the specific algorithm for its calculation is not publicly available, as it is managed by SCAPR (the international network of collective management organizations) and its member CMOs like PPL.
+- [ ] VAT ID (as in Umsatzsteuer-Identifikationsnummer)
+- [ ] German Tax ID
+- [ ] EIN (US - Employer Identification Number)
 
 ## test app
 
