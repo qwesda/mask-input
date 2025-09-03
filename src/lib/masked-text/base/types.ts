@@ -103,11 +103,22 @@ export type MaskDerivedState = {
   caretDisplaySpaceIndex: number;
   caretDisplaySpacePosition: number;
 
+  selectionEndValueSpaceIndex: number;
+  selectionEndValueSpacePosition: number;
+
+  selectionEndDisplaySpaceIndex: number;
+  selectionEndDisplaySpacePosition: number;
+
+  hasSelection: boolean;
+  hasSelectionAtBegin: boolean;
+  hasSelectionAtEnd: boolean;
+
   valueSpaceToDisplaySpaceMap: Map<string, string>;
   displaySpaceToValueSpaceMap: Map<string, string>;
 
   textInputDisplayString: string;
   textInputDisplayStringWithSelection: string;
+  selectedDisplayString: string;
 
   inputHTMLString: string;
 
@@ -159,6 +170,7 @@ export type PatchOperationInsertCharacter = {
   op: 'insert-character';
   character: string;
   inputBehavior?: 'replace' | 'insert';
+  nextCharacter?: string;
 };
 
 export type PatchOperationDeleteBackwards = {

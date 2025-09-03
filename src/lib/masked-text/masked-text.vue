@@ -13,15 +13,24 @@
     @compositionstart.capture="handleCompositionStart"
     @compositionupdate.capture="handleCompositionUpdate"
     @compositionend.capture="handleCompositionEnd"
-    @copy.capture="copyWholeValue"
-    @paste.capture="pasteWholeValue"
+    @copy.capture="handleCopy"
+    @paste.capture="handlePaste"
   />
 </template>
 
 <script lang="ts" setup>
   import { onBeforeUnmount, onMounted, ref, type Ref, watch } from 'vue';
   import type { MaskDefinition, MaskDerivedState, MaskState, PatchOperation } from './base/types';
-  import { getDerivedState, getInitialMaskState, updateMaskStateCaretAndSelection, updateMaskStateValues } from './base/index';
+  import {
+    getDerivedState,
+    getInitialMaskState,
+    updateMaskStateCaretAndSelection,
+    updateMaskStateValues,
+    copyWholeValue,
+    copyPartialValue,
+    getPasteWholeValues,
+    getPastePartialValues,
+  } from './base/index';
 
   import {
     encodeValuesAsHtml,
@@ -355,51 +364,37 @@
     isMouseDown.value = true;
   };
 
-  const copyWholeValue = async (event: ClipboardEvent) => {
-    if (event.clipboardData) {
-      if (lastDerivedState.value.validatedStringEncodedValue !== undefined) {
-        event.clipboardData.setData('text/plain', lastDerivedState.value.validatedStringEncodedValue);
-      }
+  const handleCopy = async (event: ClipboardEvent) => {
+    const handleWholeValue =
+      !lastDerivedState.value.hasSelection || (lastDerivedState.value.hasSelectionAtBegin && lastDerivedState.value.hasSelectionAtEnd);
 
-      const htmlValues = encodeValuesAsHtml(props.mask, state.value.values);
-
-      event.clipboardData.setData('text/html', htmlValues);
-
-      event.preventDefault();
+    if (handleWholeValue) {
+      copyWholeValue(event, state.value, lastDerivedState.value, props.mask);
+    } else {
+      copyPartialValue(event, state.value, lastDerivedState.value, props.mask);
     }
   };
 
-  const pasteWholeValue = async () => {
-    try {
-      const clipboardData = await navigator.clipboard.read();
+  const handlePaste = async () => {
+    const handleWholeValue =
+      !lastDerivedState.value.hasSelection || (lastDerivedState.value.hasSelectionAtBegin && lastDerivedState.value.hasSelectionAtEnd);
 
-      for (const item of clipboardData) {
-        if (item.types.includes('text/html')) {
-          const htmlBlob = await item.getType('text/html');
-          const htmlText = await htmlBlob.text();
-          const values = parseValuesFromHtml(htmlText);
+    let patchOperations: PatchOperation[] = [];
 
-          if (values) {
-            runComponentInternalUpdateLoop([{ op: 'set-values', values: values }]);
+    if (handleWholeValue) {
+      patchOperations = await getPasteWholeValues(state.value, lastDerivedState.value, props.mask);
+    }
 
-            return;
-          }
-        }
+    if (!handleWholeValue || patchOperations.length === 0) {
+      patchOperations = await getPastePartialValues(state.value, lastDerivedState.value, props.mask);
 
-        if (item.types.includes('text/plain')) {
-          const textBlob = await item.getType('text/plain');
-          const plainText = await textBlob.text();
-
-          if (props.mask.getValuesFromStringRepresentation) {
-            const values = props.mask.getValuesFromStringRepresentation(plainText);
-
-            runComponentInternalUpdateLoop([{ op: 'set-values', values: values }]);
-            return;
-          }
-        }
+      if (!handleWholeValue && lastDerivedState.value.hasSelection && patchOperations.length > 0) {
+        patchOperations.unshift({ op: 'delete-selection' });
       }
-    } catch (error) {
-      console.error('Failed to read clipboard:', error);
+    }
+
+    if (patchOperations.length > 0) {
+      runComponentInternalUpdateLoop(patchOperations);
     }
   };
 

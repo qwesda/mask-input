@@ -8,9 +8,11 @@ import type {
   MaskSectionInputDefinition,
   MaskSectionInputDerivedState,
   MaskState,
+  PatchOperationInsertCharacter,
+  PatchOperationSetValues,
 } from './types';
 
-import { compareSpaceCoordinates, splitStringIntoGraphemes } from './helper';
+import { compareSpaceCoordinates, encodeValuesAsHtml, parseValuesFromHtml, splitStringIntoGraphemes } from './helper';
 
 // local types
 type InputHTMLStringPart = {
@@ -365,23 +367,50 @@ export const getDerivedState = (maskState: MaskState, maskDefinition: MaskDefini
   const encodedState = encodeState(maskState, maskDefinition);
   const textInputDisplayString = sectionsDeriveState.map((section) => section.textInputDisplayString).join('');
   const textInputDisplayStringWithSelection = getTextInputDisplayStringWithSelection(maskState, sectionsDeriveState, valueSpaceToDisplaySpaceMap);
+  const selectedDisplayString = textInputDisplayStringWithSelection.replace(/\|/g, '').replace(/^[^\[\]]*[\[\]]([^\[\]]+)[\[\]][^\[\]]*$/, '$1');
 
   const [caretValueSpaceIndex, caretValueSpacePosition] = maskState.caretPositionInValueSpace.split(':').map((x) => Number.parseInt(x));
   const [caretDisplaySpaceIndex, caretDisplaySpacePosition] = (valueSpaceToDisplaySpaceMap.get(maskState.caretPositionInValueSpace) ?? '-1:-1')
     .split(':')
     .map((x) => Number.parseInt(x));
 
+  const [selectionEndValueSpaceIndex, selectionEndValueSpacePosition] = maskState.selectionEndPositionInValueSpace
+    .split(':')
+    .map((x) => Number.parseInt(x));
+  const [selectionEndDisplaySpaceIndex, selectionEndDisplaySpacePosition] = (
+    valueSpaceToDisplaySpaceMap.get(maskState.selectionEndPositionInValueSpace) ?? '-1:-1'
+  )
+    .split(':')
+    .map((x) => Number.parseInt(x));
+
+  const hasSelection = maskState.caretPositionInValueSpace !== maskState.selectionEndPositionInValueSpace;
+  const hasSelectionAtBegin =
+    hasSelection && (maskState.caretPositionInValueSpace === valueSpace[0] || maskState.selectionEndPositionInValueSpace === valueSpace[0]);
+  const hasSelectionAtEnd =
+    hasSelection &&
+    (maskState.caretPositionInValueSpace === valueSpace[valueSpace.length - 1] ||
+      maskState.selectionEndPositionInValueSpace === valueSpace[valueSpace.length - 1]);
+
   return {
     validatedStringEncodedValue,
     encodedState,
     textInputDisplayString,
     textInputDisplayStringWithSelection,
+    selectedDisplayString,
 
     caretValueSpaceIndex,
     caretValueSpacePosition,
-
     caretDisplaySpaceIndex,
     caretDisplaySpacePosition,
+
+    selectionEndValueSpaceIndex,
+    selectionEndValueSpacePosition,
+    selectionEndDisplaySpaceIndex,
+    selectionEndDisplaySpacePosition,
+
+    hasSelection,
+    hasSelectionAtBegin,
+    hasSelectionAtEnd,
 
     syntacticValidationStatus,
     semanticValidationStatus,
@@ -514,3 +543,112 @@ export function getTextInputDisplayStringWithSelection(
 
   return textInputDisplayStringWithSelectionParts.join('|');
 }
+
+export const copyWholeValue = async (
+  event: ClipboardEvent,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+  maskDefinition: MaskDefinition,
+) => {
+  if (event.clipboardData) {
+    if (currentDerivedState.validatedStringEncodedValue !== undefined) {
+      event.clipboardData.setData('text/plain', currentDerivedState.validatedStringEncodedValue);
+    }
+
+    const htmlValues = encodeValuesAsHtml(maskDefinition, currentState.values);
+
+    event.clipboardData.setData('text/html', htmlValues);
+
+    event.preventDefault();
+  }
+};
+
+export const copyPartialValue = async (
+  event: ClipboardEvent,
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+  maskDefinition: MaskDefinition,
+) => {
+  if (event.clipboardData) {
+    if (currentDerivedState.selectedDisplayString !== '') {
+      event.clipboardData.setData('text/plain', currentDerivedState.selectedDisplayString);
+    }
+
+    event.preventDefault();
+  }
+};
+
+export const getPasteWholeValues = async (
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+  maskDefinition: MaskDefinition,
+): Promise<PatchOperationSetValues[]> => {
+  try {
+    const clipboardData = await navigator.clipboard.read();
+
+    for (const item of clipboardData) {
+      if (item.types.includes('text/html')) {
+        const htmlBlob = await item.getType('text/html');
+        const htmlText = await htmlBlob.text();
+
+        const values = parseValuesFromHtml(htmlText);
+
+        if (values) {
+          return [{ op: 'set-values', values: values }];
+        }
+      }
+
+      if (item.types.includes('text/plain')) {
+        const textBlob = await item.getType('text/plain');
+        const plainText = await textBlob.text();
+
+        if (maskDefinition.getValuesFromStringRepresentation) {
+          const values = maskDefinition.getValuesFromStringRepresentation(plainText);
+
+          if (values) {
+            return [{ op: 'set-values', values: values }];
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to read clipboard:', error);
+  }
+
+  return [];
+};
+
+export const getPastePartialValues = async (
+  currentState: MaskState,
+  currentDerivedState: MaskDerivedState,
+  maskDefinition: MaskDefinition,
+): Promise<PatchOperationInsertCharacter[]> => {
+  const patchOperations: PatchOperationInsertCharacter[] = [];
+
+  try {
+    const clipboardData = await navigator.clipboard.read();
+
+    for (const item of clipboardData) {
+      if (item.types.includes('text/plain')) {
+        const textBlob = await item.getType('text/plain');
+        const plainText = await textBlob.text();
+
+        if (plainText) {
+          const plainTextSplit = splitStringIntoGraphemes(plainText);
+
+          for (let i = 0; i < plainTextSplit.length; i++) {
+            patchOperations.push({
+              op: 'insert-character',
+              character: plainTextSplit[i],
+              nextCharacter: i + 1 < plainTextSplit.length - 1 ? plainTextSplit[i + 1] : undefined,
+            });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to read clipboard:', error);
+  }
+
+  return patchOperations;
+};

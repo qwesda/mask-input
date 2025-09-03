@@ -483,14 +483,14 @@ export const encodeValuesAsHtml = (maskDefinition: MaskDefinition, values: Recor
   return `<div class="masked-text-clipboard-data">${spans.join('')}</div>`;
 };
 
-export const parseValuesFromHtml = (html: string): Record<string, string[]> | null => {
+export const parseValuesFromHtml = (html: string): Record<string, string[]> | undefined => {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const container = doc.querySelector('.masked-text-clipboard-data');
 
     if (!container) {
-      return null;
+      return undefined;
     }
 
     const values: Record<string, string[]> = {};
@@ -515,6 +515,24 @@ export const parseValuesFromHtml = (html: string): Record<string, string[]> | nu
   } catch (error) {
     console.error('Failed to parse HTML clipboard data:', error);
 
-    return null;
+    return undefined;
   }
+};
+
+export const encodePartialValuesAsText = (maskDefinition: MaskDefinition, values: Record<string, string[]>): string => {
+  const spans = [];
+
+  for (const section of maskDefinition.sections) {
+    if (section.type === 'input') {
+      const className = `masked-text-value-${section.slug}`;
+
+      for (const value of values[section.slug]) {
+        spans.push(`<span class="${className}">${value}</span>`);
+      }
+    } else if (section.type === 'fixed') {
+      spans.push(`<span>${section.mask}</span>`);
+    }
+  }
+
+  return `<div class="masked-text-clipboard-data">${spans.join('')}</div>`;
 };

@@ -1,6 +1,9 @@
 import type {
   MaskDefinition,
   MaskDerivedState,
+  MaskSectionDerivedState,
+  MaskSectionFixedDefinition,
+  MaskSectionFixedDerivedState,
   MaskSectionInputDefinition,
   MaskSectionInputDerivedState,
   MaskState,
@@ -478,13 +481,35 @@ export const applyPatchOperationInsert = (
 
   newValues[sectionDefinition.slug] = newSectionValue;
 
+  let mayAutoAdvance = true;
   let shouldAutoAdvance = false;
 
-  if (sectionDefinition.autoAdvanceFn) {
+  if (patchOperation.nextCharacter !== undefined) {
+    const nextFixedSectionDerivedState = findSection(currentDerivedState, {
+      direction: 'right',
+      type: 'fixed',
+      startIndex: currentDerivedState.caretDisplaySpaceIndex,
+      includeStartIndex: false,
+    }) as MaskSectionDerivedState | undefined;
+
+    if (nextFixedSectionDerivedState !== undefined && nextFixedSectionDerivedState.type === 'fixed') {
+      const nextFixedSection = maskDefinition.sections[nextFixedSectionDerivedState.index] as MaskSectionFixedDefinition;
+
+      if (nextFixedSection && nextFixedSection.skipKeys?.includes(patchOperation.nextCharacter)) {
+        mayAutoAdvance = false;
+      }
+    }
+  }
+
+  if (mayAutoAdvance && sectionDefinition.autoAdvanceFn) {
     shouldAutoAdvance = sectionDefinition.autoAdvanceFn(newValues);
   }
 
-  if (shouldAutoAdvance || (sectionDefinition.maxLength && currentDerivedState.caretValueSpacePosition + 1 >= sectionDefinition.maxLength)) {
+  if (mayAutoAdvance && !shouldAutoAdvance) {
+    shouldAutoAdvance = sectionDefinition.maxLength !== undefined && currentDerivedState.caretValueSpacePosition + 1 >= sectionDefinition.maxLength;
+  }
+
+  if (mayAutoAdvance && shouldAutoAdvance) {
     const nextInputSection = findSection(currentDerivedState, {
       startIndex: currentDerivedState.caretDisplaySpaceIndex,
       direction: 'right',
