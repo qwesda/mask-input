@@ -80,7 +80,7 @@ export type MaskDefinition = {
   encodeValidatedValue: (values: Record<string, string[]>) => string | undefined;
   semanticValidationFn?: (values: Record<string, string[]>) => [boolean, string];
   valueNormalizationFn?: (values: Record<string, string[]>) => Record<string, string[]>;
-  getValuesFromStringRepresentation?: (stringRepresentation: string) => Record<string, string[]>;
+  getValuesFromStringRepresentation?: (stringRepresentation: string) => Record<string, string[]> | undefined;
   sections: MaskSectionDefinition[];
 };
 
