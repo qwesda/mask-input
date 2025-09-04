@@ -2,6 +2,159 @@ import type { MaskCharacter, MaskDefinition, MaskSectionDefinition } from '../ba
 import { MaskSectionFixed, MaskSectionInput, validationFnFromRegexString } from '../base/index';
 import { splitStringIntoGraphemes } from '../base/helper';
 
+type DateStyle = 'YYYY-MM-DD' | 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'DD.MM.YYYY' | 'YYYY年MM月DD日' | 'YYYY년MM월DD일' | 'DD-MM-YYYY' | 'MM-DD-YYYY';
+type DateFormatValueField = 'year' | 'month' | 'day';
+
+type DateFormat = {
+  valueFieldOrder: DateFormatValueField[];
+  associatedDateStyles: DateStyle[];
+};
+
+type DateFormatGroup = {
+  syntaxRegexp: RegExp;
+  dateFormats: DateFormat[];
+};
+
+const isValidDate = (yearStr: string, monthStr: string, dayStr: string): boolean => {
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
+
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    return false;
+  } else if (year < 1000 || year > 9999) {
+    return false;
+  } else if (month < 1 || month > 12) {
+    return false;
+  } else if (day < 1 || day > 31) {
+    return false;
+  }
+
+  const date = new Date(year, month - 1, day);
+
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+};
+
+const dateFormatGroupDefinitions: DateFormatGroup[] = [
+  {
+    syntaxRegexp: /^\s*(\d{4})-(\d{1,2})-(\d{1,2})\s*$/,
+    dateFormats: [
+      {
+        valueFieldOrder: ['year', 'month', 'day'],
+        associatedDateStyles: ['YYYY-MM-DD'],
+      },
+    ],
+  },
+  {
+    syntaxRegexp: /^\s*(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s*$/,
+    dateFormats: [
+      {
+        valueFieldOrder: ['month', 'day', 'year'],
+        associatedDateStyles: ['MM/DD/YYYY'],
+      },
+      {
+        valueFieldOrder: ['day', 'month', 'year'],
+        associatedDateStyles: ['DD/MM/YYYY'],
+      },
+    ],
+  },
+  {
+    syntaxRegexp: /^\s*(\d{1,2})\.(\d{1,2})\.(\d{2,4})\s*$/,
+    dateFormats: [
+      {
+        valueFieldOrder: ['day', 'month', 'year'],
+        associatedDateStyles: ['DD.MM.YYYY'],
+      },
+    ],
+  },
+  {
+    // Japanese format:
+    syntaxRegexp: /^\s*(\d{2,4})年(\d{1,2})月(\d{1,2})日\s*$/,
+    dateFormats: [
+      {
+        valueFieldOrder: ['year', 'month', 'day'],
+        associatedDateStyles: ['YYYY年MM月DD日'],
+      },
+    ],
+  },
+  {
+    // Korean format:
+    syntaxRegexp: /^\s*(\d{2,4})년(\d{1,2})월(\d{1,2})일\s*$/,
+    dateFormats: [
+      {
+        valueFieldOrder: ['year', 'month', 'day'],
+        associatedDateStyles: ['YYYY년MM월DD일'],
+      },
+    ],
+  },
+  {
+    // Generic formats with dash separators (alternative orders)
+    syntaxRegexp: /^\s*(\d{1,2})-(\d{1,2})-(\d{2,4})\s*$/,
+    dateFormats: [
+      {
+        valueFieldOrder: ['day', 'month', 'year'],
+        associatedDateStyles: ['DD-MM-YYYY'],
+      },
+      {
+        valueFieldOrder: ['month', 'day', 'year'],
+        associatedDateStyles: ['MM-DD-YYYY'],
+      },
+    ],
+  },
+];
+
+const dateGetValuesFromStringRepresentation = (mainStyle: DateStyle): ((stringRepresentation: string) => Record<string, string[]> | undefined) => {
+  return (stringRepresentation: string): Record<string, string[]> | undefined => {
+    const dateFormatCandidates: { associatedDateStyles: DateStyle[]; parsedValues: { year: string; month: string; day: string } }[] = [];
+
+    for (const dateFormatGroupDefinition of dateFormatGroupDefinitions) {
+      const match = stringRepresentation.match(dateFormatGroupDefinition.syntaxRegexp);
+
+      if (match) {
+        for (const dateFormat of dateFormatGroupDefinition.dateFormats) {
+          const parsedValues: { year: string; month: string; day: string } = { year: '', month: '', day: '' };
+
+          for (const [i, field] of dateFormat.valueFieldOrder.entries()) {
+            parsedValues[field] = match[i + 1];
+          }
+
+          dateFormatCandidates.push({ associatedDateStyles: dateFormat.associatedDateStyles, parsedValues });
+        }
+      }
+    }
+
+    let bestCandidate: { year: string; month: string; day: string } | undefined = undefined;
+
+    if (dateFormatCandidates.length === 1) {
+      bestCandidate = dateFormatCandidates[0].parsedValues;
+    } else if (dateFormatCandidates.length > 1) {
+      for (const dateFormatCandidate of dateFormatCandidates) {
+        if (dateFormatCandidate.associatedDateStyles.includes(mainStyle)) {
+          bestCandidate = dateFormatCandidate.parsedValues;
+        }
+      }
+    }
+
+    if (bestCandidate === undefined) {
+      const filteredDateFormatCandidates = dateFormatCandidates.filter(({ parsedValues }) =>
+        isValidDate(parsedValues.year, parsedValues.month, parsedValues.day),
+      );
+
+      if (filteredDateFormatCandidates.length === 1) {
+        bestCandidate = filteredDateFormatCandidates[0].parsedValues;
+      }
+    }
+
+    if (bestCandidate) {
+      return {
+        year: splitStringIntoGraphemes(bestCandidate.year),
+        month: splitStringIntoGraphemes(bestCandidate.month),
+        day: splitStringIntoGraphemes(bestCandidate.day),
+      };
+    }
+  };
+};
+
 const dateEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
   const year = (values['year'] ?? []).join('');
   const month = (values['month'] ?? []).join('');
@@ -256,7 +409,7 @@ const dateValueNormalizationFn = (values: Record<string, string[]>): Record<stri
   return normalizedValues;
 };
 
-export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDate?: Date, maxDate?: Date): MaskDefinition => {
+export const DateMask = (style: DateStyle, minDate?: Date, maxDate?: Date): MaskDefinition => {
   const minDateISOString = minDate?.toISOString() ?? '1900-01-01';
   const maxDateISOString = maxDate?.toISOString() ?? '2100-12-31';
 
@@ -291,15 +444,15 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
   const semanticValidationFn = dateSemanticValidationFn(minDateISOString, maxDateISOString);
   let sections: MaskSectionDefinition[];
 
-  if (style === 'en') {
+  if (style === 'DD/MM/YYYY') {
     sections = [sectionDay, MaskSectionFixed('/', skipKeys), sectionMonth, MaskSectionFixed('/', skipKeys), sectionYear];
-  } else if (style === 'us') {
+  } else if (style === 'MM/DD/YYYY') {
     sections = [sectionMonth, MaskSectionFixed('/', skipKeys), sectionDay, MaskSectionFixed('/', skipKeys), sectionYear];
-  } else if (style === 'de') {
+  } else if (style === 'DD.MM.YYYY') {
     sections = [sectionDay, MaskSectionFixed('.', skipKeys), sectionMonth, MaskSectionFixed('.', skipKeys), sectionYear];
-  } else if (style === 'jp') {
+  } else if (style === 'YYYY年MM月DD日') {
     sections = [sectionYear, MaskSectionFixed('年', skipKeys), sectionMonth, MaskSectionFixed('月', skipKeys), sectionDay, MaskSectionFixed('日')];
-  } else if (style === 'kr') {
+  } else if (style === 'YYYY년MM월DD일') {
     sections = [sectionYear, MaskSectionFixed('년', skipKeys), sectionMonth, MaskSectionFixed('월', skipKeys), sectionDay, MaskSectionFixed('일')];
   } else {
     sections = [sectionYear, MaskSectionFixed('-', skipKeys), sectionMonth, MaskSectionFixed('-', skipKeys), sectionDay];
@@ -310,5 +463,6 @@ export const DateMask = (style: 'iso' | 'de' | 'en' | 'us' | 'jp' | 'kr', minDat
     semanticValidationFn,
     valueNormalizationFn: dateValueNormalizationFn,
     sections,
+    getValuesFromStringRepresentation: dateGetValuesFromStringRepresentation(style),
   };
 };

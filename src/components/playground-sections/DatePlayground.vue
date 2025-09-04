@@ -29,12 +29,12 @@
   const dateValue2 = ref({ year: '2000', month: '2', day: '29' } as Record<string, string>);
   const dateValue3 = ref({ year: '', month: '', day: '' } as Record<string, string>);
 
-  const dateMaskISO = DateMask('iso');
-  const dateMaskDE = DateMask('de');
-  const dateMaskEN = DateMask('en');
-  const dateMaskUS = DateMask('us');
-  const dateMaskJP = DateMask('jp');
-  const dateMaskKR = DateMask('kr');
+  const dateMaskISO = DateMask('YYYY-MM-DD');
+  const dateMaskDE = DateMask('DD.MM.YYYY');
+  const dateMaskEN = DateMask('DD/MM/YYYY');
+  const dateMaskUS = DateMask('MM/DD/YYYY');
+  const dateMaskJP = DateMask('YYYY年MM月DD日');
+  const dateMaskKR = DateMask('YYYY년MM월DD일');
 
   const parentSectionActiveMaskComponentMaskState = inject<Ref<MaskState | undefined>>('activeMaskComponentMaskState')!;
   const parentSectionActiveMaskComponentMaskDerivedState = inject<Ref<MaskDerivedState | undefined>>('activeMaskComponentMaskDerivedState')!;
