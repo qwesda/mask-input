@@ -26,11 +26,14 @@
 - [x] ~~add `autoAdvanceFn` for dynamic section lengths~~
 - [x] skipkeys shouldn't keep selection
 - [x] delete selection should put cursor to lower pos
-- [ ] holding key should repeat last key
-- [ ] maybe add partial (selection) copy/pase support
+- [x] maybe add partial (selection) copy/pase support
 - [ ] maybe add highlighting of problematic sections for semantic validation
+
+## unlikely/rejected
+
+- [ ] holding key should repeat last key
 - [ ] maybe dynamic section hiding based on cursor position and values
-- [ ] __maybe__ add keyStroke interception Fn
+- [ ] __maybe__ add keyStroke interception function
 
 ## masks 
 
