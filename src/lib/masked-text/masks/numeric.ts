@@ -15,6 +15,67 @@ export type NumericMaskProps = {
 
   minDecimalDigits?: number;
   maxDecimalDigits?: number;
+
+  minValue?: number;
+  maxValue?: number;
+};
+
+const getNumericValueFromValues = (values: Record<string, string[]>): number => {
+  const integersStr = values['integers'].join('') || '0';
+  const decimalsStr = values['decimals'].join('') || '0';
+
+  return parseFloat(`${integersStr}.${decimalsStr}`);
+};
+
+const clampValue = (
+  values: Record<string, string[]>,
+  minDecimalDigits: number,
+  minValue: number | undefined,
+  maxValue: number | undefined,
+): Record<string, string[]> => {
+  if (minValue === undefined && maxValue === undefined) {
+    return values;
+  }
+
+  const numericValue = getNumericValueFromValues(values);
+  const clampedValue =
+    maxValue !== undefined && numericValue > maxValue ? maxValue : minValue !== undefined && numericValue < minValue ? minValue : undefined;
+
+  if (clampedValue !== undefined) {
+    const newValues: Record<string, string[]> = {};
+    const [intPart, decPart = '0'] = clampedValue.toString().split('.');
+
+    newValues['integers'] = splitStringIntoGraphemes(intPart);
+    newValues['decimals'] = splitStringIntoGraphemes(decPart.padEnd(minDecimalDigits, '0').substring(0, minDecimalDigits));
+
+    return newValues;
+  } else {
+    return values;
+  }
+};
+
+const numericSemanticValidationFn = (minValue?: number, maxValue?: number) => {
+  return (values: Record<string, string[]>): [boolean, string] => {
+    if (minValue === undefined && maxValue === undefined) {
+      return [true, ''];
+    }
+
+    const numericValue = getNumericValueFromValues(values);
+
+    if (isNaN(numericValue)) {
+      return [false, 'invalid number'];
+    }
+
+    if (maxValue !== undefined && numericValue > maxValue) {
+      return [false, `value larger than max value ${maxValue}`];
+    }
+
+    if (minValue !== undefined && numericValue < minValue) {
+      return [false, `value smaller than min value ${minValue}`];
+    }
+
+    return [true, ''];
+  };
 };
 
 const numericEncodeValidatedValue = (values: Record<string, string[]>): string | undefined => {
@@ -72,7 +133,7 @@ const numericDecimalsMaskFn = (minDigits: number | undefined) => {
   };
 };
 
-const numericSpinFn = (minDecimalDigits: number) => {
+const numericSpinFn = (minDecimalDigits: number, minValue?: number, maxValue?: number) => {
   return (
     direction: 'up' | 'down',
     values: Record<string, string[]>,
@@ -124,7 +185,7 @@ const numericSpinFn = (minDecimalDigits: number) => {
       newValues['decimals'] = splitStringIntoGraphemes(absoluteDecimalsInt.toString().padStart(minDecimalDigits, '0'));
     }
 
-    return newValues;
+    return clampValue(newValues, minDecimalDigits, minValue, maxValue);
   };
 };
 
@@ -140,6 +201,8 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
   const maxIntegerDigits = props.maxIntegerDigits;
   const minDecimalDigits = props.minDecimalDigits ?? 1;
   const maxDecimalDigits = props.maxDecimalDigits;
+  const minValue = props.minValue;
+  const maxValue = props.maxValue;
 
   if (infixes.length === 0) {
     infixes.push(MaskSectionFixed(decimalSeparator, decimalSeparator.length === 1 ? [decimalSeparator] : undefined));
@@ -151,7 +214,7 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
     alignment: 'right',
     syntacticValidationFn: validationFnFromRegexString(`^-?(|[0-9]|[1-9][0-9]*)$`),
     maxLength: maxIntegerDigits,
-    spinFn: numericSpinFn(minDecimalDigits),
+    spinFn: numericSpinFn(minDecimalDigits, minValue, maxValue),
   });
 
   const decimalsInputSection = MaskSectionInput('decimals', {
@@ -160,11 +223,12 @@ export const NumericMask = (props: NumericMaskProps): MaskDefinition => {
     alignment: 'left',
     syntacticValidationFn: validationFnFromRegexString(`^([0-9]*)$`),
     maxLength: maxDecimalDigits,
-    spinFn: numericSpinFn(minDecimalDigits),
+    spinFn: numericSpinFn(minDecimalDigits, minValue, maxValue),
   });
 
   return {
     encodeValidatedValue: numericEncodeValidatedValue,
+    semanticValidationFn: numericSemanticValidationFn(minValue, maxValue),
     sections: [...prefixes, integersInputSection, ...infixes, decimalsInputSection, ...suffixes],
   };
 };
