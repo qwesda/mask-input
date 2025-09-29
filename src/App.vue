@@ -18,6 +18,10 @@
       <NumericPlayground />
     </PlaygroundSection>
 
+    <PlaygroundSection v-else-if="activeSection === 'integer'">
+      <IntegerPlayground />
+    </PlaygroundSection>
+
     <PlaygroundSection v-else-if="activeSection === 'ip-addresses'">
       <IpAddressesPlayground />
     </PlaygroundSection>
@@ -55,6 +59,7 @@
   import YearMonthPlayground from '@/components/playground-sections/YearMonthPlayground.vue';
   import YearPlayground from '@/components/playground-sections/YearPlayground.vue';
   import NumericPlayground from '@/components/playground-sections/NumericPlayground.vue';
+  import IntegerPlayground from '@/components/playground-sections/IntegerPlayground.vue';
   import IpAddressesPlayground from '@/components/playground-sections/IpAddressesPlayground.vue';
   import SpecialPlayground from '@/components/playground-sections/SpecialPlayground.vue';
   import UuidPlayground from '@/components/playground-sections/UuidPlayground.vue';
@@ -62,7 +67,7 @@
   import EanPlayground from '@/components/playground-sections/EanPlayground.vue';
   import IsbnPlayground from '@/components/playground-sections/IsbnPlayground.vue';
 
-  const activeSection: Ref<'date' | 'year-month' | 'year' | 'numeric' | 'ip-addresses' | 'special' | 'uuid' | 'isrc' | 'ean' | 'isbn'> = ref('date' as const);
+  const activeSection: Ref<'date' | 'year-month' | 'year' | 'numeric' | 'integer' | 'ip-addresses' | 'special' | 'uuid' | 'isrc' | 'ean' | 'isbn'> = ref('date' as const);
 
   bindToLocalStorage(activeSection, 'playground/activeSection');
 </script>

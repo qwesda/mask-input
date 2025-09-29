@@ -2,7 +2,7 @@
   <div
     ref="containerRef"
     class="masked-text-container"
-    contenteditable="true"
+    :contenteditable="isActive"
     spellcheck="false"
     :class="{ 'has-focus': hasFocus }"
     @focusin.capture="handleFocusin"
@@ -19,7 +19,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { onBeforeUnmount, onMounted, ref, type Ref, watch } from 'vue';
+  import { computed, onBeforeUnmount, onMounted, ref, type Ref, watch } from 'vue';
   import type { MaskDefinition, MaskDerivedState, MaskState, PatchOperation } from './base/types';
   import {
     getDerivedState,
@@ -53,11 +53,15 @@
 
   interface Props {
     mask: MaskDefinition;
+    readonly?: boolean;
+    disabled?: boolean;
     modelValue?: Record<string, string>;
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: () => ({}),
+    readonly: false,
+    disabled: false,
   });
 
   const emits = defineEmits<{
@@ -79,6 +83,8 @@
   const isMouseDown = ref(false);
   const isIMEComposing = ref(false);
   const isRenderScheduled = ref(false);
+
+  const isActive = computed(() => !props.disabled && !props.readonly);
 
   const containerRef: Ref<HTMLDivElement | undefined> = ref<HTMLDivElement>();
 
@@ -280,6 +286,7 @@
   };
 
   const handleFocusin = () => {
+    console.log('handleFocusin');
     if (!hasFocus.value) {
       gainFocus();
     }
@@ -311,6 +318,10 @@
   };
 
   const gainFocus = () => {
+    if (!isActive.value) {
+      return;
+    }
+
     hasFocus.value = true;
 
     registerGlobalEventListeners();
