@@ -1,4 +1,6 @@
-# Simple workflow for deploying static content to GitHub Pages
+# Deploys the pre-built static site committed under ./site (no build step).
+# The site is the @bb/masked-text playground, built from the indie-stack monorepo
+# with base=/mask-input/ and committed here as a snapshot for on-device testing.
 name: Deploy static content to Pages
 
 on:
@@ -30,22 +32,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Build
-        run: npm run build
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload dist folder
-          path: './dist'
+          # Upload the pre-built static site (committed snapshot; not rebuilt here)
+          path: './site'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
